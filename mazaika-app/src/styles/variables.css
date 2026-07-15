@@ -1,0 +1,124 @@
+/* =============================================
+   MAZAIKA — Aurora Dark Design System
+   ============================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* === COLORS === */
+  --bg-primary: #07090f;
+  --bg-secondary: #0c0f1a;
+  --bg-tertiary: #111527;
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --bg-card-hover: rgba(255, 255, 255, 0.07);
+  --bg-glass: rgba(12, 15, 26, 0.85);
+  --bg-glass-light: rgba(255, 255, 255, 0.06);
+
+  /* Accent - Uzbek Blue */
+  --accent-blue: #1e90ff;
+  --accent-blue-dim: rgba(30, 144, 255, 0.15);
+  --accent-blue-glow: rgba(30, 144, 255, 0.4);
+
+  /* Accent - Neon Aqua */
+  --accent-aqua: #00f5c4;
+  --accent-aqua-dim: rgba(0, 245, 196, 0.12);
+  --accent-aqua-glow: rgba(0, 245, 196, 0.35);
+
+  /* Accent - Amber */
+  --accent-amber: #ffb830;
+  --accent-amber-dim: rgba(255, 184, 48, 0.12);
+
+  /* Accent - Rose */
+  --accent-rose: #ff4d8d;
+  --accent-rose-dim: rgba(255, 77, 141, 0.12);
+
+  /* Accent - Violet */
+  --accent-violet: #a855f7;
+  --accent-violet-dim: rgba(168, 85, 247, 0.12);
+
+  /* Accent - Emerald */
+  --accent-emerald: #10d974;
+  --accent-emerald-dim: rgba(16, 217, 116, 0.12);
+
+  /* Text */
+  --text-primary: #f0f4ff;
+  --text-secondary: #8892aa;
+  --text-muted: #4a5468;
+  --text-accent: var(--accent-aqua);
+
+  /* Borders */
+  --border-primary: rgba(255, 255, 255, 0.08);
+  --border-accent: rgba(30, 144, 255, 0.3);
+  --border-bright: rgba(255, 255, 255, 0.15);
+
+  /* Node Colors */
+  --node-start: var(--accent-emerald);
+  --node-message: var(--accent-blue);
+  --node-chain: var(--accent-aqua);
+  --node-question: var(--accent-violet);
+  --node-condition: var(--accent-amber);
+  --node-delay: #64748b;
+  --node-api: #06b6d4;
+  --node-variable: #f97316;
+  --node-payment: var(--accent-emerald);
+  --node-broadcast: var(--accent-rose);
+  --node-sheets: #34a853;
+  --node-tag: #8b5cf6;
+  --node-crm: #ec4899;
+
+  /* === TYPOGRAPHY === */
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --text-6xl: 3.75rem;
+
+  /* === SPACING === */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  /* === BORDERS === */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* === SHADOWS === */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-blue: 0 0 24px rgba(30, 144, 255, 0.25);
+  --shadow-aqua: 0 0 24px rgba(0, 245, 196, 0.2);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  /* === TRANSITIONS === */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* === LAYOUT === */
+  --sidebar-width: 64px;
+  --sidebar-expanded: 240px;
+  --topbar-height: 60px;
+  --panel-width: 320px;
+}

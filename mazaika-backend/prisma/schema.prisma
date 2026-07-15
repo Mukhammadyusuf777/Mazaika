@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  bots      Bot[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Bot {
+  id        String     @id @default(uuid())
+  name      String
+  token     String     @unique
+  status    String     @default("active")
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  workflows Workflow[]
+  contacts  Contact[]
+  webhooks  Webhook[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Workflow {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  isMain      Boolean  @default(false)
+  nodes       String   // Changed from Json to String for SQLite compatibility
+  edges       String   // Changed from Json to String for SQLite compatibility
+  botId       String
+  bot         Bot      @relation(fields: [botId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Contact {
+  id           String    @id @default(uuid())
+  telegramId   String
+  firstName    String?
+  lastName     String?
+  username     String?
+  languageCode String?
+  state        String?   // Changed from Json to String for SQLite compatibility
+  botId        String
+  bot          Bot       @relation(fields: [botId], references: [id])
+  messages     Message[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([botId, telegramId])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  text      String?
+  direction String
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Webhook {
+  id        String   @id @default(uuid())
+  name      String
+  url       String
+  method    String   @default("POST")
+  active    Boolean  @default(true)
+  botId     String
+  bot       Bot      @relation(fields: [botId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
