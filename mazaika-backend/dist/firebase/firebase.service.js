@@ -77,7 +77,7 @@ let FirebaseService = FirebaseService_1 = class FirebaseService {
                     });
                 }
                 else {
-                    this.logger.warn('No Firebase credentials found! Using default initializeApp for mazaika-uz project');
+                    this.logger.warn(`No Firebase credentials found! Detected: FIREBASE_PROJECT_ID=${!!process.env.FIREBASE_PROJECT_ID}, FIREBASE_PRIVATE_KEY=${!!process.env.FIREBASE_PRIVATE_KEY}, FIREBASE_CLIENT_EMAIL=${!!process.env.FIREBASE_CLIENT_EMAIL}. Using default initializeApp for mazaika-uz project`);
                     (0, app_1.initializeApp)({
                         projectId: 'mazaika-uz',
                     });
