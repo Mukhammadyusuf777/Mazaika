@@ -38,10 +38,16 @@ export async function getUser(uid: string): Promise<any> {
 // BOTS
 // ============================================================
 export async function getBotsByUser(userId: string): Promise<any[]> {
-  const q = query(collection(db, 'bots'), where('userId', '==', userId), orderBy('createdAt', 'desc'))
+  const q = query(collection(db, 'bots'), where('userId', '==', userId))
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as any))
+  const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any))
+  return list.sort((a, b) => {
+    const t1 = a.createdAt?.seconds || 0
+    const t2 = b.createdAt?.seconds || 0
+    return t2 - t1
+  })
 }
+
 
 export async function getBotById(botId: string): Promise<any> {
   const snap = await getDoc(doc(db, 'bots', botId))
