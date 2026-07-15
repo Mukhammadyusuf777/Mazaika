@@ -92,14 +92,12 @@ export default function LoginPage() {
       const result = await signInWithEmailAndPassword(auth, email, password)
       saveUser(result.user)
     } catch (firebaseError: any) {
-      // Fallback to our own backend
-      try {
-        const res = await apiClient.post('/auth/login', { identifier: email, password })
-        if (res.data.success) { setUser(res.data.user); navigate('/dashboard') }
-        else setError(res.data.message)
-      } catch { setError(firebaseError.message) }
-    } finally { setIsLoading(false) }
+      setError(firebaseError.message)
+    } finally {
+      setIsLoading(false)
+    }
   }
+
 
   // PHONE - Send OTP
   const handleSendOtp = async (e: React.FormEvent) => {

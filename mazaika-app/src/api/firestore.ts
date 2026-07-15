@@ -28,28 +28,28 @@ export async function createOrUpdateUser(uid: string, data: { name: string; emai
   }, { merge: true })
 }
 
-export async function getUser(uid: string) {
+export async function getUser(uid: string): Promise<any> {
   const snap = await getDoc(doc(db, 'users', uid))
-  if (snap.exists()) return { id: snap.id, ...snap.data() }
+  if (snap.exists()) return { id: snap.id, ...snap.data() } as any
   return null
 }
 
 // ============================================================
 // BOTS
 // ============================================================
-export async function getBotsByUser(userId: string) {
+export async function getBotsByUser(userId: string): Promise<any[]> {
   const q = query(collection(db, 'bots'), where('userId', '==', userId), orderBy('createdAt', 'desc'))
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as any))
 }
 
-export async function getBotById(botId: string) {
+export async function getBotById(botId: string): Promise<any> {
   const snap = await getDoc(doc(db, 'bots', botId))
-  if (snap.exists()) return { id: snap.id, ...snap.data() }
+  if (snap.exists()) return { id: snap.id, ...snap.data() } as any
   return null
 }
 
-export async function createBot(userId: string, data: { name: string; token: string; template?: string }) {
+export async function createBot(userId: string, data: { name: string; token: string; template?: string }): Promise<any> {
   const ref = await addDoc(collection(db, 'bots'), {
     ...data,
     userId,
@@ -73,15 +73,15 @@ export async function deleteBot(botId: string) {
 // ============================================================
 // WORKFLOWS
 // ============================================================
-export async function getWorkflows(botId: string) {
+export async function getWorkflows(botId: string): Promise<any[]> {
   const q = query(collection(db, 'bots', botId, 'workflows'), orderBy('createdAt', 'desc'))
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as any))
 }
 
-export async function getWorkflow(botId: string, workflowId: string) {
+export async function getWorkflow(botId: string, workflowId: string): Promise<any> {
   const snap = await getDoc(doc(db, 'bots', botId, 'workflows', workflowId))
-  if (snap.exists()) return { id: snap.id, ...snap.data() }
+  if (snap.exists()) return { id: snap.id, ...snap.data() } as any
   return null
 }
 
@@ -95,7 +95,7 @@ export async function saveWorkflow(botId: string, workflowId: string, data: { na
   }, { merge: true })
 }
 
-export async function createWorkflow(botId: string, data: { name: string; nodes: any[]; edges: any[]; isMain?: boolean }) {
+export async function createWorkflow(botId: string, data: { name: string; nodes: any[]; edges: any[]; isMain?: boolean }): Promise<string> {
   const ref = await addDoc(collection(db, 'bots', botId, 'workflows'), {
     ...data,
     nodes: JSON.stringify(data.nodes),
@@ -114,12 +114,12 @@ export async function deleteWorkflow(botId: string, workflowId: string) {
 // ============================================================
 // WEBHOOKS
 // ============================================================
-export async function getWebhooks(botId: string) {
+export async function getWebhooks(botId: string): Promise<any[]> {
   const snap = await getDocs(collection(db, 'bots', botId, 'webhooks'))
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as any))
 }
 
-export async function createWebhook(botId: string, data: { name: string; url: string; method: string }) {
+export async function createWebhook(botId: string, data: { name: string; url: string; method: string }): Promise<any> {
   const ref = await addDoc(collection(db, 'bots', botId, 'webhooks'), {
     ...data,
     active: true,
@@ -136,17 +136,17 @@ export async function deleteWebhook(botId: string, webhookId: string) {
 // ============================================================
 // CONTACTS
 // ============================================================
-export async function getContacts(botId: string) {
+export async function getContacts(botId: string): Promise<any[]> {
   const q = query(collection(db, 'bots', botId, 'contacts'), orderBy('createdAt', 'desc'))
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as any))
 }
 
 // ============================================================
 // MESSAGES (Chats)
 // ============================================================
-export async function getMessages(botId: string, contactId: string) {
+export async function getMessages(botId: string, contactId: string): Promise<any[]> {
   const q = query(collection(db, 'bots', botId, 'contacts', contactId, 'messages'), orderBy('createdAt', 'asc'))
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as any))
 }

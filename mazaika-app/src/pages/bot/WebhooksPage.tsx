@@ -64,6 +64,7 @@ export default function WebhooksPage() {
   }
 
   const handleDeleteWebhook = async (webhookId: string) => {
+    if (!botId) return
     if (!window.confirm("Haqiqatan ham ushbu webhookni o'chirmoqchimisiz?")) return
     setIsLoading(true)
     try {
@@ -75,6 +76,7 @@ export default function WebhooksPage() {
       setIsLoading(false)
     }
   }
+
 
 
   const handleCopyUrl = (url: string, id: string) => {
