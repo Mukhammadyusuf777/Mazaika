@@ -39,6 +39,39 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 languageCode: ctx.from?.language_code || null
             });
         }
+        if (text.startsWith('webapp:')) {
+            const payloadStr = text.substring(7);
+            try {
+                const payload = JSON.parse(payloadStr);
+                if (payload.action === 'order') {
+                    const itemNames = payload.items.map((i) => i.name).join(', ');
+                    const responseText = `🛒 Yangi buyurtma qabul qilindi!\n\n🛍 Mahsulotlar: ${itemNames}\n💰 Jami: ${payload.total.toLocaleString()} UZS\n👤 Mijoz: ${payload.customer.name}\n📞 Tel: ${payload.customer.phone}\n\nRahmat! Tez orada siz bilan bog'lanamiz.`;
+                    await ctx.reply(responseText);
+                    await this.firebaseService.addMessage(botId, contact.id, `Buyurtma: ${itemNames} (${payload.total} UZS)`, 'inbound');
+                    await this.firebaseService.addMessage(botId, contact.id, responseText, 'outbound');
+                }
+                else if (payload.action === 'form_submit') {
+                    let fieldSummary = '';
+                    for (const [key, val] of Object.entries(payload.responses)) {
+                        fieldSummary += `\n- ${key}: ${val}`;
+                    }
+                    const responseText = `📝 So'rovnoma qabul qilindi!${fieldSummary}\n\nRahmat!`;
+                    await ctx.reply(responseText);
+                    await this.firebaseService.addMessage(botId, contact.id, `So'rovnoma: ${payload.formName}`, 'inbound');
+                    await this.firebaseService.addMessage(botId, contact.id, responseText, 'outbound');
+                }
+                else if (payload.action === 'prize') {
+                    const responseText = `🎉 Tabriklaymiz! Omad G'ildiragida siz yutgan sovg'a: "${payload.prize}"\n\nYutuqni olish uchun ushbu xabarni adminga taqdim eting.`;
+                    await ctx.reply(responseText);
+                    await this.firebaseService.addMessage(botId, contact.id, `Yutuq: ${payload.prize}`, 'inbound');
+                    await this.firebaseService.addMessage(botId, contact.id, responseText, 'outbound');
+                }
+            }
+            catch (err) {
+                this.logger.error(`Failed to parse WebApp payload: ${err.message}`);
+            }
+            return;
+        }
         if (text !== '/start' && !text.startsWith('btn_') && !text.startsWith('contact:') && !text.startsWith('location:')) {
             await this.firebaseService.addMessage(botId, contact.id, text, 'inbound');
         }
@@ -185,7 +218,13 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 const buttons = node.data?.buttons || [];
                 const extra = buttons.length > 0 ? {
                     reply_markup: {
-                        inline_keyboard: buttons.map((btn, idx) => [{ text: btn, callback_data: `btn_${idx}` }])
+                        inline_keyboard: buttons.map((btn, idx) => {
+                            const parts = btn.split('|');
+                            if (parts.length > 1 && (parts[1].trim().startsWith('http://') || parts[1].trim().startsWith('https://'))) {
+                                return [{ text: parts[0].trim(), web_app: { url: parts[1].trim() } }];
+                            }
+                            return [{ text: btn, callback_data: `btn_${idx}` }];
+                        })
                     }
                 } : undefined;
                 await ctx.reply(text, extra);

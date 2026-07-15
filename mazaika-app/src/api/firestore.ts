@@ -278,3 +278,40 @@ export async function getMessages(botId: string, contactId: string): Promise<any
   const snap = await getDocs(q)
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as any))
 }
+
+// ============================================================
+// MINI APPS
+// ============================================================
+export async function getMiniApps(botId: string): Promise<any[]> {
+  const snap = await getDocs(collection(db, 'bots', botId, 'miniapps'))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as any))
+}
+
+export async function getMiniAppById(botId: string, appId: string): Promise<any> {
+  const snap = await getDoc(doc(db, 'bots', botId, 'miniapps', appId))
+  if (snap.exists()) return { id: snap.id, ...snap.data() } as any
+  return null
+}
+
+export async function createMiniApp(botId: string, data: { name: string; type: string; config: any }): Promise<any> {
+  const ref = await addDoc(collection(db, 'bots', botId, 'miniapps'), {
+    ...data,
+    botId,
+    active: true,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+  return { id: ref.id, ...data, botId, active: true }
+}
+
+export async function updateMiniApp(botId: string, appId: string, data: any) {
+  await updateDoc(doc(db, 'bots', botId, 'miniapps', appId), {
+    ...data,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export async function deleteMiniApp(botId: string, appId: string) {
+  await deleteDoc(doc(db, 'bots', botId, 'miniapps', appId))
+}
+

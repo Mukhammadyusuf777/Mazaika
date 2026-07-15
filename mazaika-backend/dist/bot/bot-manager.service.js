@@ -54,6 +54,10 @@ let BotManagerService = BotManagerService_1 = class BotManagerService {
                     const { latitude, longitude } = ctx.message.location;
                     await this.workflowService.processIncomingMessage(botId, telegramId, `location:${latitude},${longitude}`, ctx);
                 }
+                else if (ctx.message && 'web_app_data' in ctx.message && ctx.message.web_app_data) {
+                    const data = ctx.message.web_app_data.data;
+                    await this.workflowService.processIncomingMessage(botId, telegramId, `webapp:${data}`, ctx);
+                }
             });
             telegrafBot.on('callback_query', async (ctx) => {
                 if ('data' in ctx.callbackQuery) {

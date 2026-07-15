@@ -14,6 +14,8 @@ import AnalyticsPage from './pages/bot/AnalyticsPage'
 import BotSettingsPage from './pages/bot/BotSettingsPage'
 import ContactsPage from './pages/bot/ContactsPage'
 import WebhooksPage from './pages/bot/WebhooksPage'
+import MiniAppsPage from './pages/bot/MiniAppsPage'
+import WebAppViewer from './pages/bot/WebAppViewer'
 
 // Layout
 import AppLayout from './components/layout/AppLayout'
@@ -32,6 +34,9 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        
+        {/* Public WebApp Viewer */}
+        <Route path="/webapp/:botId/:appId" element={<WebAppViewer />} />
 
         {/* App (authenticated) */}
         <Route element={<ProtectedRoute />}>
@@ -39,6 +44,7 @@ function App() {
           <Route path="/bot/:botId" element={<AppLayout />}>
             <Route index element={<Navigate to="editor" replace />} />
             <Route path="editor" element={<EditorPage />} />
+            <Route path="miniapps" element={<MiniAppsPage />} />
             <Route path="chats" element={<ChatsPage />} />
             <Route path="broadcasts" element={<BroadcastsPage />} />
             <Route path="contacts" element={<ContactsPage />} />
@@ -53,5 +59,6 @@ function App() {
     </BrowserRouter>
   )
 }
+
 
 export default App
