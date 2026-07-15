@@ -11,7 +11,8 @@ export declare class AuthController {
         user: {
             id: string;
             name: string;
-            email: string;
+            email: string | null;
+            phone: string | null;
         };
         message?: undefined;
     }>;
@@ -24,8 +25,25 @@ export declare class AuthController {
         user: {
             id: string;
             name: string;
-            email: string;
+            email: string | null;
+            phone: string | null;
         };
         message?: undefined;
+    }>;
+    loginGoogle(body: {
+        credential: string;
+    }): Promise<{
+        success: boolean;
+        user: {
+            id: string;
+            name: string;
+            email: string | null;
+            phone: string | null;
+        };
+        message?: undefined;
+    } | {
+        success: boolean;
+        message: any;
+        user?: undefined;
     }>;
 }

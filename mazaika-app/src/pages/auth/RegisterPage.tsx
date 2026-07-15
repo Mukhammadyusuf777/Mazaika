@@ -7,7 +7,7 @@ import './AuthPages.css'
 export default function RegisterPage() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [lang, setLang] = useState<'uz' | 'ru'>('uz')
 
@@ -20,7 +20,16 @@ export default function RegisterPage() {
     setIsLoading(true)
     setError('')
     try {
-      const res = await apiClient.post('/auth/register', { name, email, password })
+      // Determine if identifier is email or phone
+      const isEmail = identifier.includes('@')
+      const payload = {
+        name,
+        email: isEmail ? identifier : undefined,
+        phone: !isEmail ? identifier : undefined,
+        password,
+      }
+
+      const res = await apiClient.post('/auth/register', payload)
       if (res.data.success) {
         setUser(res.data.user)
         navigate('/dashboard')
@@ -28,7 +37,7 @@ export default function RegisterPage() {
         setError(res.data.message)
       }
     } catch (err) {
-      setError('Tizimda xatolik yuz berdi')
+      setError(lang === 'uz' ? 'Tizimda xatolik yuz berdi' : 'Произошла системная ошибка')
     } finally {
       setIsLoading(false)
     }
@@ -63,15 +72,38 @@ export default function RegisterPage() {
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="input-group">
             <label className="input-label">{lang === 'uz' ? 'To\'liq ism' : 'Полное имя'}</label>
-            <input type="text" className="input" placeholder={lang === 'uz' ? 'Sardor Aliyev' : 'Sardor Aliyev'} value={name} onChange={e => setName(e.target.value)} required />
+            <input 
+              type="text" 
+              className="input" 
+              placeholder={lang === 'uz' ? 'Sardor Aliyev' : 'Sardor Aliyev'} 
+              value={name} 
+              onChange={e => setName(e.target.value)} 
+              required 
+            />
           </div>
+          
           <div className="input-group">
-            <label className="input-label">Email</label>
-            <input type="email" className="input" placeholder="example@gmail.com" value={email} onChange={e => setEmail(e.target.value)} required />
+            <label className="input-label">{lang === 'uz' ? 'Email yoki Telefon raqami' : 'Email или Номер телефона'}</label>
+            <input 
+              type="text" 
+              className="input" 
+              placeholder={lang === 'uz' ? 'example@gmail.com yoki +998901234567' : 'example@gmail.com или +998901234567'} 
+              value={identifier} 
+              onChange={e => setIdentifier(e.target.value)} 
+              required 
+            />
           </div>
+
           <div className="input-group">
             <label className="input-label">{lang === 'uz' ? 'Parol' : 'Пароль'}</label>
-            <input type="password" className="input" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
+            <input 
+              type="password" 
+              className="input" 
+              placeholder="••••••••" 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+              required 
+            />
           </div>
 
           <div className="register-agree">
