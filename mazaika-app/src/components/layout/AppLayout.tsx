@@ -1,14 +1,16 @@
 import { Outlet, useNavigate, useParams, useLocation } from 'react-router-dom'
 import {
   LayoutGrid, MessageSquare, Megaphone, Users, BarChart2,
+
   Webhook, Settings, ChevronLeft, Play, AlertCircle, Bot,
-  AppWindow
+  AppWindow, Globe
 } from 'lucide-react'
 import './AppLayout.css'
 
 const NAV_ITEMS = [
   { icon: LayoutGrid, label: 'Redaktor', path: 'editor', tooltip: 'Vizual redaktor' },
   { icon: AppWindow, label: 'Mini ilova', path: 'miniapps', tooltip: 'Telegram Mini Apps' },
+  { icon: Globe, label: 'Konstruktor', path: 'sitebuilder', tooltip: 'No-code Sayt Konstruktori' },
   { icon: MessageSquare, label: 'Chatlar', path: 'chats', tooltip: 'CRM chatlar' },
   { icon: Megaphone, label: 'Tarqatma', path: 'broadcasts', tooltip: 'Avto-tarqatmalar' },
   { icon: Users, label: 'Kontaktlar', path: 'contacts', tooltip: 'Foydalanuvchilar' },
@@ -16,6 +18,7 @@ const NAV_ITEMS = [
   { icon: Webhook, label: 'Webhooks', path: 'webhooks', tooltip: 'Kiruvchi webhook' },
   { icon: Settings, label: 'Sozlama', path: 'settings', tooltip: 'Bot sozlamalari' },
 ]
+
 
 
 export default function AppLayout() {

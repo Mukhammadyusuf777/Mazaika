@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param } from '@nestjs/common';
+
 import { BotManagerService } from './bot-manager.service';
 import { FirebaseService } from '../firebase/firebase.service';
 
@@ -94,4 +95,15 @@ export class BotController {
       ]
     };
   }
+
+  @Post(':id/menu-button')
+  async setMenuButton(@Param('id') id: string, @Body() data: { text: string; url: string }) {
+    return this.botManager.setMenuButton(id, data.text, data.url);
+  }
+
+  @Delete(':id/menu-button')
+  async resetMenuButton(@Param('id') id: string) {
+    return this.botManager.resetMenuButton(id);
+  }
 }
+

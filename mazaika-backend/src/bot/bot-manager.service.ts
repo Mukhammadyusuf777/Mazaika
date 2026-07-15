@@ -77,6 +77,21 @@ export class BotManagerService implements OnModuleInit {
       this.activeBots.set(botId, telegrafBot);
       this.logger.log(`Bot ${botId} started successfully.`);
 
+      // Auto-set chat menu button if enabled in Firestore
+      try {
+        const botDoc = await this.firebaseService.getBot(botId);
+        if (botDoc && botDoc.menuButtonEnabled) {
+          await telegrafBot.telegram.setChatMenuButton({
+            type: 'web_app',
+            text: botDoc.menuButtonText || 'Open App',
+            web_app: { url: botDoc.menuButtonUrl || `https://mazaika.pages.dev/site/${botId}` }
+          });
+          this.logger.log(`Auto-set Web App menu button for bot ${botId}`);
+        }
+      } catch (err: any) {
+        this.logger.error(`Failed to auto-set menu button on startup for bot ${botId}: ${err.message}`);
+      }
+
       // Update DB status
       await this.firebaseService.updateBotStatus(botId, 'active');
 
@@ -107,6 +122,35 @@ export class BotManagerService implements OnModuleInit {
     return { success: false, message: 'Bot not running' };
   }
 
+  async setMenuButton(botId: string, text: string, url: string) {
+    const telegrafBot = this.activeBots.get(botId);
+    if (!telegrafBot) return { success: false, message: 'Bot not running' };
+    try {
+      await telegrafBot.telegram.setChatMenuButton({
+        type: 'web_app',
+        text,
+        web_app: { url }
+      });
+      return { success: true };
+    } catch (e: any) {
+      this.logger.error(`Failed to set menu button for bot ${botId}: ${e.message}`);
+      return { success: false, message: e.message };
+    }
+  }
+
+  async resetMenuButton(botId: string) {
+    const telegrafBot = this.activeBots.get(botId);
+    if (!telegrafBot) return { success: false, message: 'Bot not running' };
+    try {
+      await telegrafBot.telegram.setChatMenuButton({
+        type: 'default'
+      });
+      return { success: true };
+    } catch (e: any) {
+      this.logger.error(`Failed to reset menu button for bot ${botId}: ${e.message}`);
+      return { success: false, message: e.message };
+    }
+  }
 
   getBotStatus(botId: string) {
     return { isRunning: this.activeBots.has(botId) };
@@ -125,3 +169,4 @@ export class BotManagerService implements OnModuleInit {
     }
   }
 }
+

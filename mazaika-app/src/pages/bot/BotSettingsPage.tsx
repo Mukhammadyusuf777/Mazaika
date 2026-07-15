@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Save, Copy, RefreshCw, AlertTriangle } from 'lucide-react'
+import { Save, Copy, RefreshCw, AlertTriangle, Globe } from 'lucide-react'
 import { getBotById, updateBot, deleteBot } from '../../api/firestore'
+import { apiClient } from '../../api/apiClient'
 
 export default function BotSettingsPage() {
   const { botId } = useParams<{ botId: string }>()
@@ -15,6 +16,12 @@ export default function BotSettingsPage() {
   const [isSaved, setIsSaved] = useState(false)
   const [copied, setCopied] = useState(false)
 
+  // Menu Button Web App State
+  const [menuButtonEnabled, setMenuButtonEnabled] = useState(false)
+  const [menuButtonText, setMenuButtonText] = useState('🌐 Saytimiz')
+  const [menuButtonUrl, setMenuButtonUrl] = useState('')
+
+
   // Fetch bot details
   const fetchBotDetails = async () => {
     if (!botId) return
@@ -24,6 +31,9 @@ export default function BotSettingsPage() {
       if (data) {
         setName(data.name || '')
         setToken(data.token || '')
+        setMenuButtonEnabled(data.menuButtonEnabled || false)
+        setMenuButtonText(data.menuButtonText || '🌐 Saytimiz')
+        setMenuButtonUrl(data.menuButtonUrl || `https://mazaika.pages.dev/site/${botId}`)
         // Parse token to extract mock username or use username field
         const botToken = data.token || ''
         const idPart = botToken.split(':')[0] || '12345678'
@@ -47,8 +57,28 @@ export default function BotSettingsPage() {
     try {
       await updateBot(botId, {
         name,
-        token
+        token,
+        menuButtonEnabled,
+        menuButtonText,
+        menuButtonUrl
       })
+
+      // Sync menu button state with Telegram API via NestJS backend
+      if (token) {
+        try {
+          if (menuButtonEnabled) {
+            await apiClient.post(`/bots/${botId}/menu-button`, {
+              text: menuButtonText,
+              url: menuButtonUrl || `https://mazaika.pages.dev/site/${botId}`
+            })
+          } else {
+            await apiClient.delete(`/bots/${botId}/menu-button`)
+          }
+        } catch (apiErr) {
+          console.error("Failed to update Telegram menu button:", apiErr)
+        }
+      }
+
       setIsSaved(true)
       setTimeout(() => setIsSaved(false), 2000)
     } catch (e) {
@@ -57,6 +87,7 @@ export default function BotSettingsPage() {
       setIsLoading(false)
     }
   }
+
 
 
   const handleCopyToken = () => {
@@ -154,7 +185,60 @@ export default function BotSettingsPage() {
           </div>
         </div>
 
+        {/* TELEGRAM MENU BUTTON (WEB APP) SECTION */}
+        <div style={{ background: 'var(--bg-card)', padding: 'var(--space-6)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)' }}>
+          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Globe size={18} style={{ color: 'var(--accent-blue)' }} /> Chat Menu Tugmasi (Web App)
+          </h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)' }}>
+            Foydalanuvchilar botingizga kirganda chap pastki burchakda turadigan doimiy «Menu» tugmasini shaxsiy veb-saytingizga o'zgartiring.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={menuButtonEnabled} 
+                onChange={(e) => setMenuButtonEnabled(e.target.checked)} 
+              />
+              <span style={{ fontSize: 'var(--text-sm)' }}>Sayt tugmasini faollashtirish</span>
+            </label>
+
+            {menuButtonEnabled && (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                  <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Tugma matni (maksimal 12 ta belgi)</label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={menuButtonText}
+                    onChange={(e) => setMenuButtonText(e.target.value)}
+                    placeholder="🌐 Saytimiz"
+                    required
+                  />
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                  <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Tugma bosilganda ochiladigan Web App havolasi (URL)</label>
+                  <input
+                    type="url"
+                    className="input"
+                    value={menuButtonUrl}
+                    onChange={(e) => setMenuButtonUrl(e.target.value)}
+                    placeholder={`https://mazaika.pages.dev/site/${botId}`}
+                    required
+                  />
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                    Konstruktorda yaratilgan shaxsiy saytingiz havolasidan foydalanishingiz mumkin.
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
         {/* DANGER ZONE */}
+
         <div style={{ background: 'var(--bg-card)', padding: 'var(--space-6)', borderRadius: 'var(--radius-xl)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
           <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: 'var(--space-2)', color: '#ef4444', display: 'flex', alignItems: 'center', gap: 8 }}>
             <AlertTriangle size={18} /> Xavfli Hudud

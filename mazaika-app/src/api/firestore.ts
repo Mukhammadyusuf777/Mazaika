@@ -190,9 +190,20 @@ export async function createBot(userId: string, data: { name: string; token: str
 }
 
 
-export async function updateBot(botId: string, data: Partial<{ name: string; token: string; status: string }>) {
+export async function updateBot(
+  botId: string,
+  data: Partial<{
+    name: string;
+    token: string;
+    status: string;
+    menuButtonEnabled: boolean;
+    menuButtonText: string;
+    menuButtonUrl: string;
+  }>
+) {
   await updateDoc(doc(db, 'bots', botId), { ...data, updatedAt: serverTimestamp() })
 }
+
 
 export async function deleteBot(botId: string) {
   await deleteDoc(doc(db, 'bots', botId))
@@ -314,4 +325,21 @@ export async function updateMiniApp(botId: string, appId: string, data: any) {
 export async function deleteMiniApp(botId: string, appId: string) {
   await deleteDoc(doc(db, 'bots', botId, 'miniapps', appId))
 }
+
+// ============================================================
+// SITE CONFIG (No-Code Website Builder)
+// ============================================================
+export async function getSiteConfig(botId: string): Promise<any> {
+  const snap = await getDoc(doc(db, 'bots', botId, 'site', 'config'))
+  if (snap.exists()) return snap.data()
+  return null
+}
+
+export async function saveSiteConfig(botId: string, config: any): Promise<void> {
+  await setDoc(doc(db, 'bots', botId, 'site', 'config'), {
+    ...config,
+    updatedAt: serverTimestamp(),
+  }, { merge: true })
+}
+
 
