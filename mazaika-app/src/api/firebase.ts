@@ -16,4 +16,5 @@ const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const googleProvider = new GoogleAuthProvider()
 export const db = getFirestore(app)
-// Build trigger comment for Cloudflare Pages root directory update
+// Build trigger comment for Cloudflare Pages environment variables update
+
