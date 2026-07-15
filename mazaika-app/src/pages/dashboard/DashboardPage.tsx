@@ -4,6 +4,8 @@ import { Plus, Bot, Settings, BarChart2, Zap, MessageSquare, TrendingUp, Users, 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { apiClient } from '../../api/apiClient'
 import { useAuthStore } from '../../store/useAuthStore'
+import { auth } from '../../api/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
 import './DashboardPage.css'
 
 const TEMPLATES = [
@@ -27,7 +29,7 @@ const MOCK_ANALYTICS_DATA = [
 
 export default function DashboardPage() {
   const navigate = useNavigate()
-  const { user } = useAuthStore()
+  const { user, setUser } = useAuthStore()
   
   const [bots, setBots] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'bots' | 'analytics' | 'templates' | 'settings'>('bots')
@@ -41,19 +43,39 @@ export default function DashboardPage() {
   const [profileEmail, setProfileEmail] = useState(user?.email || '')
   const [settingsSaved, setSettingsSaved] = useState(false)
 
-  const fetchBots = async () => {
-    if (!user) return
+  const fetchBots = async (userId?: string) => {
+    const uid = userId || user?.id
+    if (!uid) return
     try {
-      const res = await apiClient.get(`/bots/user/${user.id}`)
-      setBots(res.data)
-    } catch (e) {
-      console.error(e)
+      const res = await apiClient.get(`/bots/user/${uid}`)
+      if (Array.isArray(res.data)) setBots(res.data)
+      else setBots([])
+    } catch {
+      // Backend may not have this Firebase user yet - show empty state
+      setBots([])
     }
   }
 
   useEffect(() => {
-    fetchBots()
-  }, [user])
+    // Sync Firebase auth state on mount
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser && !user) {
+        const fbUser = {
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || firebaseUser.email || firebaseUser.phoneNumber || 'User',
+          email: firebaseUser.email,
+          phone: firebaseUser.phoneNumber,
+        }
+        setUser(fbUser)
+        fetchBots(firebaseUser.uid)
+      }
+    })
+    return () => unsub()
+  }, [])
+
+  useEffect(() => {
+    if (user) fetchBots()
+  }, [user?.id])
 
   const handleCreateBot = async (e: React.FormEvent) => {
     e.preventDefault()

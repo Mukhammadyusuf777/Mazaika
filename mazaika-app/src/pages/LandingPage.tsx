@@ -222,7 +222,7 @@ export default function LandingPage() {
         </div>
         <h1 className="hero-title">
           Telegram botlarni<br />
-          <span className="gradient-text">mозаика</span> kabi qurang
+          <span className="gradient-text">Mazaika</span> kabi quring
         </h1>
         <p className="hero-desc">
           Bloklarni tortib ulang — professional bot tayyor. Kod yozmasdan,<br />
