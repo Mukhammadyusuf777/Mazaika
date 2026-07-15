@@ -19,4 +19,9 @@ export class AuthController {
   async loginGoogle(@Body() body: { credential: string }) {
     return this.authService.loginGoogle(body);
   }
+
+  @Post('firebase-sync')
+  async firebaseSync(@Body() body: { firebaseUid: string; email?: string; name?: string; phone?: string }) {
+    return this.authService.firebaseSync(body);
+  }
 }

@@ -100,4 +100,45 @@ export class AuthService {
       return { success: false, message: e.message };
     }
   }
+  async firebaseSync(data: { firebaseUid: string; email?: string; name?: string; phone?: string }) {
+    try {
+      const { firebaseUid, email, name, phone } = data;
+
+      // 1) Try to find by firebaseUid
+      let user = await this.prisma.user.findUnique({ where: { firebaseUid } });
+
+      // 2) Try to find by email (link existing account)
+      if (!user && email) {
+        user = await this.prisma.user.findUnique({ where: { email } });
+        if (user) {
+          user = await this.prisma.user.update({ where: { id: user.id }, data: { firebaseUid } });
+        }
+      }
+
+      // 3) Try to find by phone (link existing account)
+      if (!user && phone) {
+        user = await this.prisma.user.findUnique({ where: { phone } });
+        if (user) {
+          user = await this.prisma.user.update({ where: { id: user.id }, data: { firebaseUid } });
+        }
+      }
+
+      // 4) Create new user
+      if (!user) {
+        user = await this.prisma.user.create({
+          data: {
+            name: name || email || phone || 'User',
+            email: email || null,
+            phone: phone || null,
+            firebaseUid,
+            password: null,
+          },
+        });
+      }
+
+      return { success: true, user: { id: user.id, name: user.name, email: user.email, phone: user.phone } };
+    } catch (e: any) {
+      return { success: false, message: e.message };
+    }
+  }
 }

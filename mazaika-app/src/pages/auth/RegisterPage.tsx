@@ -10,6 +10,7 @@ import {
 import type { ConfirmationResult } from 'firebase/auth'
 import { auth, googleProvider } from '../../api/firebase'
 import { useAuthStore } from '../../store/useAuthStore'
+import { syncFirebaseUser } from '../../api/syncFirebaseUser'
 import './AuthPages.css'
 
 type RegTab = 'email' | 'phone' | 'google'
@@ -66,8 +67,18 @@ export default function RegisterPage() {
     },
   }[lang]
 
-  const saveUser = (user: any, displayName?: string) => {
-    setUser({ id: user.uid, name: displayName || user.displayName || user.email || user.phoneNumber || 'User', email: user.email, phone: user.phoneNumber })
+  const saveUser = async (firebaseUser: any, displayName?: string) => {
+    const dbUser = await syncFirebaseUser({
+      uid: firebaseUser.uid,
+      email: firebaseUser.email,
+      displayName: displayName || firebaseUser.displayName,
+      phoneNumber: firebaseUser.phoneNumber,
+    })
+    if (dbUser) {
+      setUser(dbUser)
+    } else {
+      setUser({ id: firebaseUser.uid, name: displayName || firebaseUser.displayName || firebaseUser.email || firebaseUser.phoneNumber || 'User', email: firebaseUser.email, phone: firebaseUser.phoneNumber })
+    }
     navigate('/dashboard')
   }
 
