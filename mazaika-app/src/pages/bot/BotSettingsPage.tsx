@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Save, Copy, RefreshCw, AlertTriangle } from 'lucide-react'
-import { apiClient } from '../../api/apiClient'
+import { getBotById, updateBot, deleteBot } from '../../api/firestore'
 
 export default function BotSettingsPage() {
   const { botId } = useParams<{ botId: string }>()
@@ -20,12 +20,12 @@ export default function BotSettingsPage() {
     if (!botId) return
     setIsLoading(true)
     try {
-      const res = await apiClient.get(`/bots/${botId}`)
-      if (res.data) {
-        setName(res.data.name || '')
-        setToken(res.data.token || '')
+      const data = await getBotById(botId)
+      if (data) {
+        setName(data.name || '')
+        setToken(data.token || '')
         // Parse token to extract mock username or use username field
-        const botToken = res.data.token || ''
+        const botToken = data.token || ''
         const idPart = botToken.split(':')[0] || '12345678'
         setUsername(`@Mazaika_${idPart}_bot`)
       }
@@ -45,7 +45,7 @@ export default function BotSettingsPage() {
     if (!botId) return
     setIsLoading(true)
     try {
-      await apiClient.put(`/bots/${botId}`, {
+      await updateBot(botId, {
         name,
         token
       })
@@ -58,6 +58,7 @@ export default function BotSettingsPage() {
     }
   }
 
+
   const handleCopyToken = () => {
     navigator.clipboard.writeText(token)
     setCopied(true)
@@ -69,13 +70,14 @@ export default function BotSettingsPage() {
     if (!window.confirm("Haqiqatan ham ushbu botni butunlay o'chirib tashlamoqchimisiz? Barcha ma'lumotlar qayta tiklanmaydi!")) return
     setIsLoading(true)
     try {
-      await apiClient.delete(`/bots/${botId}`)
+      await deleteBot(botId)
       navigate('/dashboard')
     } catch (e) {
       alert("Botni o'chirishda xatolik yuz berdi.")
       setIsLoading(false)
     }
   }
+
 
   return (
     <div style={{ padding: 'var(--space-8)', maxWidth: 800, margin: '0 auto' }}>

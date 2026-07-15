@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { FirebaseService } from '../firebase/firebase.service';
 import { WorkflowService } from './workflow.service';
 import { Telegraf } from 'telegraf';
 
@@ -11,16 +11,14 @@ export class BotManagerService implements OnModuleInit {
   private activeBots: Map<string, Telegraf> = new Map();
 
   constructor(
-    private prisma: PrismaService,
+    private firebaseService: FirebaseService,
     private workflowService: WorkflowService
   ) {}
 
   async onModuleInit() {
     this.logger.log('Initializing Bot Manager...');
     // Load all active bots from DB and start them
-    const bots = await this.prisma.bot.findMany({
-      where: { status: 'active' }
-    });
+    const bots = await this.firebaseService.getActiveBots();
 
     for (const bot of bots) {
       if (bot.token) {
@@ -69,30 +67,21 @@ export class BotManagerService implements OnModuleInit {
       telegrafBot.launch().catch(async (error) => {
         this.logger.error(`Bot ${botId} crashed during polling: ${error.message}`);
         this.activeBots.delete(botId);
-        await this.prisma.bot.update({
-          where: { id: botId },
-          data: { status: 'error' }
-        }).catch(() => {});
+        await this.firebaseService.updateBotStatus(botId, 'error');
       });
       
       this.activeBots.set(botId, telegrafBot);
       this.logger.log(`Bot ${botId} started successfully.`);
 
       // Update DB status
-      await this.prisma.bot.update({
-        where: { id: botId },
-        data: { status: 'active' }
-      });
+      await this.firebaseService.updateBotStatus(botId, 'active');
 
       return { success: true };
     } catch (error: any) {
       this.logger.error(`Failed to start bot ${botId}: ${error.message}`);
       
       // Update DB status to error
-      await this.prisma.bot.update({
-        where: { id: botId },
-        data: { status: 'error' }
-      }).catch(() => {});
+      await this.firebaseService.updateBotStatus(botId, 'error');
 
       return { success: false, message: error.message };
     }
@@ -106,16 +95,14 @@ export class BotManagerService implements OnModuleInit {
       this.activeBots.delete(botId);
       this.logger.log(`Bot ${botId} stopped.`);
 
-      await this.prisma.bot.update({
-        where: { id: botId },
-        data: { status: 'paused' }
-      });
+      await this.firebaseService.updateBotStatus(botId, 'paused');
 
       return { success: true };
     }
 
     return { success: false, message: 'Bot not running' };
   }
+
 
   getBotStatus(botId: string) {
     return { isRunning: this.activeBots.has(botId) };

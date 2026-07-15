@@ -1,33 +1,22 @@
-import { PrismaService } from '../prisma/prisma.service';
+import { FirebaseService } from '../firebase/firebase.service';
 export declare class WorkflowController {
-    private prisma;
-    constructor(prisma: PrismaService);
+    private firebaseService;
+    constructor(firebaseService: FirebaseService);
     getWorkflow(botId: string): Promise<{
+        nodes: never[];
+        edges: never[];
+        name: string;
+        botId: string;
+        isMain: boolean;
+    } | {
         nodes: any;
         edges: any;
-        id: string;
-        name: string;
-        createdAt: Date;
-        updatedAt: Date;
-        description: string | null;
-        isMain: boolean;
-        botId: string;
     }>;
     updateWorkflow(botId: string, body: {
         nodes: any[];
         edges: any[];
     }): Promise<{
-        error: string;
-    } | {
-        nodes: any;
-        edges: any;
-        id: string;
-        name: string;
-        createdAt: Date;
-        updatedAt: Date;
-        description: string | null;
-        isMain: boolean;
-        botId: string;
-        error?: undefined;
+        nodes: any[];
+        edges: any[];
     }>;
 }

@@ -6,19 +6,17 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AppModule = void 0;
+exports.FirebaseModule = void 0;
 const common_1 = require("@nestjs/common");
-const firebase_module_1 = require("./firebase/firebase.module");
-const bot_module_1 = require("./bot/bot.module");
-const auth_module_1 = require("./auth/auth.module");
-let AppModule = class AppModule {
+const firebase_service_1 = require("./firebase.service");
+let FirebaseModule = class FirebaseModule {
 };
-exports.AppModule = AppModule;
-exports.AppModule = AppModule = __decorate([
+exports.FirebaseModule = FirebaseModule;
+exports.FirebaseModule = FirebaseModule = __decorate([
+    (0, common_1.Global)(),
     (0, common_1.Module)({
-        imports: [firebase_module_1.FirebaseModule, bot_module_1.BotModule, auth_module_1.AuthModule],
-        controllers: [],
-        providers: [],
+        providers: [firebase_service_1.FirebaseService],
+        exports: [firebase_service_1.FirebaseService],
     })
-], AppModule);
-//# sourceMappingURL=app.module.js.map
+], FirebaseModule);
+//# sourceMappingURL=firebase.module.js.map

@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Bot, Settings, BarChart2, Zap, MessageSquare, TrendingUp, Users, Activity, Globe, Mail, Trash2 } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { apiClient } from '../../api/apiClient'
 import { useAuthStore } from '../../store/useAuthStore'
 import { auth } from '../../api/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
+import { getBotsByUser, createBot, deleteBot, createOrUpdateUser } from '../../api/firestore'
 import './DashboardPage.css'
 
 const TEMPLATES = [
@@ -47,18 +47,16 @@ export default function DashboardPage() {
     const uid = userId || user?.id
     if (!uid) return
     try {
-      const res = await apiClient.get(`/bots/user/${uid}`)
-      if (Array.isArray(res.data)) setBots(res.data)
-      else setBots([])
+      const data = await getBotsByUser(uid)
+      setBots(data)
     } catch {
-      // Backend may not have this Firebase user yet - show empty state
       setBots([])
     }
   }
 
   useEffect(() => {
     // Sync Firebase auth state on mount
-    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser && !user) {
         const fbUser = {
           id: firebaseUser.uid,
@@ -66,6 +64,7 @@ export default function DashboardPage() {
           email: firebaseUser.email,
           phone: firebaseUser.phoneNumber,
         }
+        await createOrUpdateUser(firebaseUser.uid, { name: fbUser.name, email: fbUser.email, phone: fbUser.phone })
         setUser(fbUser)
         fetchBots(firebaseUser.uid)
       }
@@ -81,24 +80,23 @@ export default function DashboardPage() {
     e.preventDefault()
     if (!user) return
     try {
-      const res = await apiClient.post('/bots', {
+      const bot = await createBot(user.id, {
         name: newBotName,
         token: newBotToken,
-        userId: user.id,
-        template: selectedTemplate || undefined
+        template: selectedTemplate || undefined,
       })
-      if (res.data.id) {
-        navigate(`/bot/${res.data.id}/editor`)
-      }
-    } catch (e) {
-      alert("Botni yaratishda xatolik yuz berdi. Token to'g'riligini tekshiring.")
+      setShowCreateModal(false)
+      setNewBotName(''); setNewBotToken(''); setSelectedTemplate('')
+      navigate(`/bot/${bot.id}/editor`)
+    } catch (e: any) {
+      alert('Botni yaratishda xatolik: ' + e.message)
     }
   }
 
   const handleDeleteBot = async (botId: string, botName: string) => {
     if (!window.confirm(`Haqiqatan ham "${botName}" botini o'chirmoqchimisiz?`)) return
     try {
-      await apiClient.delete(`/bots/${botId}`)
+      await deleteBot(botId)
       fetchBots()
     } catch (e) {
       console.error(e)

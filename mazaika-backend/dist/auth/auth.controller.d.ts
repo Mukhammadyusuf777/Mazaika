@@ -46,4 +46,23 @@ export declare class AuthController {
         message: any;
         user?: undefined;
     }>;
+    firebaseSync(body: {
+        firebaseUid: string;
+        email?: string;
+        name?: string;
+        phone?: string;
+    }): Promise<{
+        success: boolean;
+        user: {
+            id: string;
+            name: string;
+            email: string | null;
+            phone: string | null;
+        };
+        message?: undefined;
+    } | {
+        success: boolean;
+        message: any;
+        user?: undefined;
+    }>;
 }

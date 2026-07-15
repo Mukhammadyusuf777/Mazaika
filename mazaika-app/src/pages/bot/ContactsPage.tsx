@@ -1,7 +1,7 @@
 import { Search, Filter, Download } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { apiClient } from '../../api/apiClient'
+import { getContacts } from '../../api/firestore'
 
 interface Contact {
   id: string
@@ -9,19 +9,19 @@ interface Contact {
   firstName: string | null
   lastName: string | null
   username: string | null
-  createdAt: string
+  createdAt: any
 }
 
 export default function ContactsPage() {
-  const { botId } = useParams()
+  const { botId } = useParams<{ botId: string }>()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (botId) {
-      apiClient.get(`/bots/${botId}/contacts`)
-        .then(res => {
-          setContacts(res.data)
+      getContacts(botId)
+        .then(data => {
+          setContacts(data as Contact[])
           setLoading(false)
         })
         .catch(err => {
@@ -30,6 +30,7 @@ export default function ContactsPage() {
         })
     }
   }, [botId])
+
 
   return (
     <div style={{ padding: 'var(--space-8)' }}>

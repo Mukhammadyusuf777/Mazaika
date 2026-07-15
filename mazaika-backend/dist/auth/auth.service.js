@@ -97,6 +97,39 @@ let AuthService = class AuthService {
             return { success: false, message: e.message };
         }
     }
+    async firebaseSync(data) {
+        try {
+            const { firebaseUid, email, name, phone } = data;
+            let user = await this.prisma.user.findUnique({ where: { firebaseUid } });
+            if (!user && email) {
+                user = await this.prisma.user.findUnique({ where: { email } });
+                if (user) {
+                    user = await this.prisma.user.update({ where: { id: user.id }, data: { firebaseUid } });
+                }
+            }
+            if (!user && phone) {
+                user = await this.prisma.user.findUnique({ where: { phone } });
+                if (user) {
+                    user = await this.prisma.user.update({ where: { id: user.id }, data: { firebaseUid } });
+                }
+            }
+            if (!user) {
+                user = await this.prisma.user.create({
+                    data: {
+                        name: name || email || phone || 'User',
+                        email: email || null,
+                        phone: phone || null,
+                        firebaseUid,
+                        password: null,
+                    },
+                });
+            }
+            return { success: true, user: { id: user.id, name: user.name, email: user.email, phone: user.phone } };
+        }
+        catch (e) {
+            return { success: false, message: e.message };
+        }
+    }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([

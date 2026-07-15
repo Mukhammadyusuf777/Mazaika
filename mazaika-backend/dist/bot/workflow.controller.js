@@ -14,50 +14,46 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WorkflowController = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../prisma/prisma.service");
+const firebase_service_1 = require("../firebase/firebase.service");
 let WorkflowController = class WorkflowController {
-    prisma;
-    constructor(prisma) {
-        this.prisma = prisma;
+    firebaseService;
+    constructor(firebaseService) {
+        this.firebaseService = firebaseService;
     }
     async getWorkflow(botId) {
-        let workflow = await this.prisma.workflow.findFirst({
-            where: { botId, isMain: true }
-        });
-        if (!workflow) {
-            workflow = await this.prisma.workflow.create({
-                data: {
-                    name: 'Asosiy Ssenariy',
-                    botId,
-                    isMain: true,
-                    nodes: '[]',
-                    edges: '[]'
-                }
-            });
+        const docRef = this.firebaseService.db.collection('bots').doc(botId).collection('workflows').doc('main');
+        const snap = await docRef.get();
+        if (!snap.exists) {
+            const data = {
+                name: 'Asosiy Ssenariy',
+                botId,
+                isMain: true,
+                nodes: '[]',
+                edges: '[]'
+            };
+            await docRef.set(data);
+            return { ...data, nodes: [], edges: [] };
         }
+        const data = snap.data();
+        if (!data)
+            return { nodes: [], edges: [] };
         return {
-            ...workflow,
-            nodes: JSON.parse(workflow.nodes),
-            edges: JSON.parse(workflow.edges)
+            ...data,
+            nodes: data.nodes ? JSON.parse(data.nodes) : [],
+            edges: data.edges ? JSON.parse(data.edges) : []
         };
     }
     async updateWorkflow(botId, body) {
-        const workflow = await this.prisma.workflow.findFirst({
-            where: { botId, isMain: true }
-        });
-        if (!workflow)
-            return { error: 'Workflow not found' };
-        const updated = await this.prisma.workflow.update({
-            where: { id: workflow.id },
-            data: {
-                nodes: JSON.stringify(body.nodes || []),
-                edges: JSON.stringify(body.edges || [])
-            }
-        });
+        const docRef = this.firebaseService.db.collection('bots').doc(botId).collection('workflows').doc('main');
+        const data = {
+            nodes: JSON.stringify(body.nodes || []),
+            edges: JSON.stringify(body.edges || []),
+            updatedAt: new Date()
+        };
+        await docRef.set(data, { merge: true });
         return {
-            ...updated,
-            nodes: JSON.parse(updated.nodes),
-            edges: JSON.parse(updated.edges)
+            nodes: body.nodes,
+            edges: body.edges
         };
     }
 };
@@ -79,6 +75,6 @@ __decorate([
 ], WorkflowController.prototype, "updateWorkflow", null);
 exports.WorkflowController = WorkflowController = __decorate([
     (0, common_1.Controller)('workflows'),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [firebase_service_1.FirebaseService])
 ], WorkflowController);
 //# sourceMappingURL=workflow.controller.js.map

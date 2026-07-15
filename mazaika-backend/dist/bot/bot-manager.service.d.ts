@@ -1,12 +1,12 @@
 import { OnModuleInit } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { FirebaseService } from '../firebase/firebase.service';
 import { WorkflowService } from './workflow.service';
 export declare class BotManagerService implements OnModuleInit {
-    private prisma;
+    private firebaseService;
     private workflowService;
     private readonly logger;
     private activeBots;
-    constructor(prisma: PrismaService, workflowService: WorkflowService);
+    constructor(firebaseService: FirebaseService, workflowService: WorkflowService);
     onModuleInit(): Promise<void>;
     startBot(botId: string, token: string): Promise<{
         success: boolean;

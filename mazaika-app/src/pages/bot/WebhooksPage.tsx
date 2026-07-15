@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Webhook, Plus, Copy, Trash2, Globe } from 'lucide-react'
-import { apiClient } from '../../api/apiClient'
+import { getWebhooks, createWebhook, deleteWebhook } from '../../api/firestore'
 
 interface WebhookItem {
   id: string
@@ -28,10 +28,8 @@ export default function WebhooksPage() {
     if (!botId) return
     setIsLoading(true)
     try {
-      const res = await apiClient.get(`/bots/${botId}/webhooks`)
-      if (Array.isArray(res.data)) {
-        setWebhooks(res.data)
-      }
+      const data = await getWebhooks(botId)
+      setWebhooks(data as WebhookItem[])
     } catch (e) {
       console.error(e)
     } finally {
@@ -48,7 +46,7 @@ export default function WebhooksPage() {
     if (!botId) return
     setIsLoading(true)
     try {
-      await apiClient.post(`/bots/${botId}/webhooks`, {
+      await createWebhook(botId, {
         name: newWebhookName,
         url: newWebhookUrl,
         method: newWebhookMethod
@@ -69,7 +67,7 @@ export default function WebhooksPage() {
     if (!window.confirm("Haqiqatan ham ushbu webhookni o'chirmoqchimisiz?")) return
     setIsLoading(true)
     try {
-      await apiClient.delete(`/bots/${botId}/webhooks/${webhookId}`)
+      await deleteWebhook(botId, webhookId)
       fetchWebhooks()
     } catch (e) {
       alert("Webhookni o'chirishda xatolik yuz berdi.")
@@ -77,6 +75,7 @@ export default function WebhooksPage() {
       setIsLoading(false)
     }
   }
+
 
   const handleCopyUrl = (url: string, id: string) => {
     navigator.clipboard.writeText(url)

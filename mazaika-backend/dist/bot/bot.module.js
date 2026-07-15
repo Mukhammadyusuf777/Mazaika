@@ -9,7 +9,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BotModule = void 0;
 const common_1 = require("@nestjs/common");
 const bot_controller_1 = require("./bot.controller");
-const bot_service_1 = require("./bot.service");
 const workflow_service_1 = require("./workflow.service");
 const workflow_controller_1 = require("./workflow.controller");
 const bot_manager_service_1 = require("./bot-manager.service");
@@ -19,7 +18,7 @@ exports.BotModule = BotModule;
 exports.BotModule = BotModule = __decorate([
     (0, common_1.Module)({
         controllers: [bot_controller_1.BotController, workflow_controller_1.WorkflowController],
-        providers: [bot_service_1.BotService, workflow_service_1.WorkflowService, bot_manager_service_1.BotManagerService],
+        providers: [workflow_service_1.WorkflowService, bot_manager_service_1.BotManagerService],
     })
 ], BotModule);
 //# sourceMappingURL=bot.module.js.map

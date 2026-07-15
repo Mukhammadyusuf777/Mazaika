@@ -10,7 +10,7 @@ import {
 import type { ConfirmationResult } from 'firebase/auth'
 import { auth, googleProvider } from '../../api/firebase'
 import { useAuthStore } from '../../store/useAuthStore'
-import { syncFirebaseUser } from '../../api/syncFirebaseUser'
+import { createOrUpdateUser } from '../../api/firestore'
 import './AuthPages.css'
 
 type RegTab = 'email' | 'phone' | 'google'
@@ -68,17 +68,13 @@ export default function RegisterPage() {
   }[lang]
 
   const saveUser = async (firebaseUser: any, displayName?: string) => {
-    const dbUser = await syncFirebaseUser({
-      uid: firebaseUser.uid,
-      email: firebaseUser.email,
-      displayName: displayName || firebaseUser.displayName,
-      phoneNumber: firebaseUser.phoneNumber,
+    const name = displayName || firebaseUser.displayName || firebaseUser.email || firebaseUser.phoneNumber || 'User'
+    await createOrUpdateUser(firebaseUser.uid, {
+      name,
+      email: firebaseUser.email || null,
+      phone: firebaseUser.phoneNumber || null,
     })
-    if (dbUser) {
-      setUser(dbUser)
-    } else {
-      setUser({ id: firebaseUser.uid, name: displayName || firebaseUser.displayName || firebaseUser.email || firebaseUser.phoneNumber || 'User', email: firebaseUser.email, phone: firebaseUser.phoneNumber })
-    }
+    setUser({ id: firebaseUser.uid, name, email: firebaseUser.email, phone: firebaseUser.phoneNumber })
     navigate('/dashboard')
   }
 

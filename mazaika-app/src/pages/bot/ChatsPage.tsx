@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Send, User, CheckCheck, Loader2 } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import { apiClient } from '../../api/apiClient'
+import { getContacts, getMessages } from '../../api/firestore'
 import './ChatsPage.css'
 
 interface Contact {
@@ -9,18 +10,18 @@ interface Contact {
   telegramId: string
   firstName: string | null
   lastName: string | null
-  createdAt: string
+  createdAt: any
 }
 
 interface Message {
   id: string
   text: string | null
   direction: string
-  createdAt: string
+  createdAt: any
 }
 
 export default function ChatsPage() {
-  const { botId } = useParams()
+  const { botId } = useParams<{ botId: string }>()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [activeContactId, setActiveContactId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -32,11 +33,11 @@ export default function ChatsPage() {
 
   useEffect(() => {
     if (botId) {
-      apiClient.get(`/bots/${botId}/contacts`)
-        .then(res => {
-          setContacts(res.data)
-          if (res.data.length > 0) {
-            setActiveContactId(res.data[0].id)
+      getContacts(botId)
+        .then(data => {
+          setContacts(data as Contact[])
+          if (data.length > 0) {
+            setActiveContactId(data[0].id)
           }
         })
     }
@@ -45,14 +46,15 @@ export default function ChatsPage() {
   useEffect(() => {
     if (botId && activeContactId) {
       setLoading(true)
-      apiClient.get(`/bots/${botId}/contacts/${activeContactId}/messages`)
-        .then(res => {
-          setMessages(res.data)
+      getMessages(botId, activeContactId)
+        .then(data => {
+          setMessages(data as Message[])
           setLoading(false)
         })
         .catch(() => setLoading(false))
     }
   }, [botId, activeContactId])
+
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })

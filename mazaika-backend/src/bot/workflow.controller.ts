@@ -1,59 +1,52 @@
 import { Controller, Get, Put, Body, Param } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { FirebaseService } from '../firebase/firebase.service';
 
 @Controller('workflows')
 export class WorkflowController {
-  constructor(private prisma: PrismaService) {}
+  constructor(private firebaseService: FirebaseService) {}
 
   @Get(':botId')
   async getWorkflow(@Param('botId') botId: string) {
-    let workflow = await this.prisma.workflow.findFirst({
-      where: { botId, isMain: true }
-    });
+    const docRef = this.firebaseService.db.collection('bots').doc(botId).collection('workflows').doc('main');
+    const snap = await docRef.get();
 
-    if (!workflow) {
-      // Create empty workflow if not exists
-      workflow = await this.prisma.workflow.create({
-        data: {
-          name: 'Asosiy Ssenariy',
-          botId,
-          isMain: true,
-          nodes: '[]',
-          edges: '[]'
-        }
-      });
+    if (!snap.exists) {
+      const data = {
+        name: 'Asosiy Ssenariy',
+        botId,
+        isMain: true,
+        nodes: '[]',
+        edges: '[]'
+      };
+      await docRef.set(data);
+      return { ...data, nodes: [], edges: [] };
     }
 
+    const data = snap.data();
+    if (!data) return { nodes: [], edges: [] };
     return {
-      ...workflow,
-      nodes: JSON.parse(workflow.nodes),
-      edges: JSON.parse(workflow.edges)
+      ...data,
+      nodes: data.nodes ? JSON.parse(data.nodes) : [],
+      edges: data.edges ? JSON.parse(data.edges) : []
     };
   }
+
 
   @Put(':botId')
   async updateWorkflow(
     @Param('botId') botId: string,
     @Body() body: { nodes: any[], edges: any[] }
   ) {
-    const workflow = await this.prisma.workflow.findFirst({
-      where: { botId, isMain: true }
-    });
-
-    if (!workflow) return { error: 'Workflow not found' };
-
-    const updated = await this.prisma.workflow.update({
-      where: { id: workflow.id },
-      data: {
-        nodes: JSON.stringify(body.nodes || []),
-        edges: JSON.stringify(body.edges || [])
-      }
-    });
-
+    const docRef = this.firebaseService.db.collection('bots').doc(botId).collection('workflows').doc('main');
+    const data = {
+      nodes: JSON.stringify(body.nodes || []),
+      edges: JSON.stringify(body.edges || []),
+      updatedAt: new Date()
+    };
+    await docRef.set(data, { merge: true });
     return {
-      ...updated,
-      nodes: JSON.parse(updated.nodes),
-      edges: JSON.parse(updated.edges)
+      nodes: body.nodes,
+      edges: body.edges
     };
   }
 }

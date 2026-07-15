@@ -9,8 +9,7 @@ import {
 import type { ConfirmationResult } from 'firebase/auth'
 import { auth, googleProvider } from '../../api/firebase'
 import { useAuthStore } from '../../store/useAuthStore'
-import { apiClient } from '../../api/apiClient'
-import { syncFirebaseUser } from '../../api/syncFirebaseUser'
+import { createOrUpdateUser } from '../../api/firestore'
 import './AuthPages.css'
 
 type AuthTab = 'email' | 'phone' | 'google'
@@ -63,14 +62,14 @@ export default function LoginPage() {
   }[lang]
 
   const saveUser = async (firebaseUser: any) => {
-    // Sync with our PostgreSQL DB to get real UUID
-    const dbUser = await syncFirebaseUser(firebaseUser)
-    if (dbUser) {
-      setUser(dbUser)
-    } else {
-      // Fallback: use Firebase UID (bots list will be empty but won't crash)
-      setUser({ id: firebaseUser.uid, name: firebaseUser.displayName || firebaseUser.email || firebaseUser.phoneNumber || 'User', email: firebaseUser.email, phone: firebaseUser.phoneNumber })
-    }
+    const name = firebaseUser.displayName || firebaseUser.email || firebaseUser.phoneNumber || 'User'
+    // Save to Firestore (creates doc if not exists)
+    await createOrUpdateUser(firebaseUser.uid, {
+      name,
+      email: firebaseUser.email || null,
+      phone: firebaseUser.phoneNumber || null,
+    })
+    setUser({ id: firebaseUser.uid, name, email: firebaseUser.email, phone: firebaseUser.phoneNumber })
     navigate('/dashboard')
   }
 

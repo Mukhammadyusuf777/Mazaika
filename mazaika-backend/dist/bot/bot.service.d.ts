@@ -3,34 +3,34 @@ export declare class BotService {
     private prisma;
     constructor(prisma: PrismaService);
     getUserBots(userId: string): Promise<{
+        status: string;
+        updatedAt: Date;
+        createdAt: Date;
         id: string;
         name: string;
         token: string;
-        status: string;
         userId: string;
-        createdAt: Date;
-        updatedAt: Date;
     }[]>;
     getBotById(id: string): Promise<({
         workflows: {
-            id: string;
-            name: string;
-            createdAt: Date;
             updatedAt: Date;
-            description: string | null;
-            isMain: boolean;
+            createdAt: Date;
+            id: string;
+            botId: string;
             nodes: string;
             edges: string;
-            botId: string;
+            name: string;
+            description: string | null;
+            isMain: boolean;
         }[];
     } & {
+        status: string;
+        updatedAt: Date;
+        createdAt: Date;
         id: string;
         name: string;
         token: string;
-        status: string;
         userId: string;
-        createdAt: Date;
-        updatedAt: Date;
     }) | null>;
     createBot(data: {
         name: string;
@@ -38,45 +38,45 @@ export declare class BotService {
         userId: string;
         template?: string;
     }): Promise<{
+        status: string;
+        updatedAt: Date;
+        createdAt: Date;
         id: string;
         name: string;
         token: string;
-        status: string;
         userId: string;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     deleteBot(id: string): Promise<{
+        status: string;
+        updatedAt: Date;
+        createdAt: Date;
         id: string;
         name: string;
         token: string;
-        status: string;
         userId: string;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     updateBot(id: string, data: {
         name?: string;
         token?: string;
         status?: string;
     }): Promise<{
+        status: string;
+        updatedAt: Date;
+        createdAt: Date;
         id: string;
         name: string;
         token: string;
-        status: string;
         userId: string;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     getWebhooks(botId: string): Promise<{
-        id: string;
-        name: string;
-        createdAt: Date;
-        updatedAt: Date;
-        url: string;
-        method: string;
         active: boolean;
+        updatedAt: Date;
+        createdAt: Date;
+        method: string;
+        url: string;
+        id: string;
         botId: string;
+        name: string;
     }[]>;
     createWebhook(botId: string, data: {
         name: string;
@@ -84,23 +84,23 @@ export declare class BotService {
         method?: string;
         active?: boolean;
     }): Promise<{
-        id: string;
-        name: string;
-        createdAt: Date;
-        updatedAt: Date;
-        url: string;
-        method: string;
         active: boolean;
+        updatedAt: Date;
+        createdAt: Date;
+        method: string;
+        url: string;
+        id: string;
         botId: string;
+        name: string;
     }>;
     deleteWebhook(id: string): Promise<{
-        id: string;
-        name: string;
-        createdAt: Date;
-        updatedAt: Date;
-        url: string;
-        method: string;
         active: boolean;
+        updatedAt: Date;
+        createdAt: Date;
+        method: string;
+        url: string;
+        id: string;
         botId: string;
+        name: string;
     }>;
 }

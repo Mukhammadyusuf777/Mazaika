@@ -1,46 +1,38 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { FirebaseService } from '../firebase/firebase.service';
 
 @Injectable()
 export class WorkflowService {
   private readonly logger = new Logger(WorkflowService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private firebaseService: FirebaseService) {}
 
   async processIncomingMessage(botId: string, telegramId: string, text: string, ctx: any) {
     this.logger.log(`Processing input from ${telegramId} for bot ${botId}: ${text}`);
     
-    const bot = await this.prisma.bot.findUnique({
-      where: { id: botId },
-      include: { workflows: { where: { isMain: true } } }
-    });
+    const bot = await this.firebaseService.getBot(botId);
+    if (!bot) return;
 
-    if (!bot || bot.workflows.length === 0) return;
-    const workflow = bot.workflows[0];
+    const workflow = await this.firebaseService.getBotWorkflow(botId);
+    if (!workflow) return;
 
-    let contact = await this.prisma.contact.findUnique({
-      where: { botId_telegramId: { botId, telegramId } }
-    });
+    let contact = await this.firebaseService.getContact(botId, telegramId);
 
     if (!contact) {
-      contact = await this.prisma.contact.create({
-        data: {
-          telegramId,
-          botId,
-          state: JSON.stringify({ currentNodeId: null, variables: {}, waitingFor: null }),
-          firstName: ctx.from?.first_name,
-          lastName: ctx.from?.last_name,
-          username: ctx.from?.username,
-          languageCode: ctx.from?.language_code
-        }
+      contact = await this.firebaseService.createContact(botId, {
+        telegramId,
+        botId,
+        state: JSON.stringify({ currentNodeId: null, variables: {}, waitingFor: null }),
+        firstName: ctx.from?.first_name || null,
+        lastName: ctx.from?.last_name || null,
+        username: ctx.from?.username || null,
+        languageCode: ctx.from?.language_code || null
       });
     }
 
     // Save user message unless it's /start or structured share triggers
     if (text !== '/start' && !text.startsWith('btn_') && !text.startsWith('contact:') && !text.startsWith('location:')) {
-      await this.prisma.message.create({
-        data: { text, direction: 'in', contactId: contact.id }
-      });
+      await this.firebaseService.addMessage(botId, contact.id, text, 'inbound');
     }
 
     const nodes = JSON.parse(workflow.nodes) as any[];
@@ -103,7 +95,7 @@ export class WorkflowService {
     }
 
     while (nextNode) {
-      const { wait, stateUpdates } = await this.executeNodeAction(ctx, nextNode, contact.id, state.variables);
+      const { wait, stateUpdates } = await this.executeNodeAction(ctx, nextNode, contact.id, state.variables, botId);
       
       if (stateUpdates) {
         state = { ...state, ...stateUpdates };
@@ -111,10 +103,7 @@ export class WorkflowService {
 
       state.currentNodeId = nextNode.id;
 
-      await this.prisma.contact.update({
-        where: { id: contact.id },
-        data: { state: JSON.stringify(state) }
-      });
+      await this.firebaseService.updateContactState(botId, contact.id, JSON.stringify(state));
 
       if (wait) {
         break; 
@@ -123,6 +112,7 @@ export class WorkflowService {
       nextNode = this.getNextNode(nextNode, null, edges, nodes, state);
     }
   }
+
 
   private getNextNode(currentNode: any, input: string | null, edges: any[], nodes: any[], state: any) {
     if (!currentNode) return null;
@@ -169,13 +159,13 @@ export class WorkflowService {
     return null;
   }
 
-  private async executeNodeAction(ctx: any, node: any, contactId: string, variables: any): Promise<{wait: boolean, stateUpdates?: any}> {
+  private async executeNodeAction(ctx: any, node: any, contactId: string, variables: any, botId: string): Promise<{wait: boolean, stateUpdates?: any}> {
     try {
       if (node.type === 'start') {
         const text = node.data?.text;
         if (text) {
           await ctx.reply(text);
-          await this.prisma.message.create({ data: { text, direction: 'out', contactId } });
+          await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
         }
         return { wait: false };
       }
@@ -196,7 +186,7 @@ export class WorkflowService {
         } : undefined;
 
         await ctx.reply(text, extra);
-        await this.prisma.message.create({ data: { text, direction: 'out', contactId } });
+        await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
         
         if (buttons.length > 0) return { wait: true, stateUpdates: { waitingFor: 'button' } };
         return { wait: false };
@@ -221,7 +211,7 @@ export class WorkflowService {
            text = text.replace(new RegExp(`{${k}}`, 'g'), v as string);
         }
         await ctx.reply(text);
-        await this.prisma.message.create({ data: { text, direction: 'out', contactId } });
+        await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
         return { wait: true, stateUpdates: { waitingFor: 'question' } };
       }
 
@@ -234,14 +224,14 @@ export class WorkflowService {
             resize_keyboard: true
           }
         });
-        await this.prisma.message.create({ data: { text, direction: 'out', contactId } });
+        await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
         return { wait: true, stateUpdates: { waitingFor: 'phone' } };
       }
 
       if (node.type === 'email') {
         let text = node.data?.text || 'Iltimos, email manzilingizni kiriting:';
         await ctx.reply(text);
-        await this.prisma.message.create({ data: { text, direction: 'out', contactId } });
+        await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
         return { wait: true, stateUpdates: { waitingFor: 'email' } };
       }
 
@@ -254,7 +244,7 @@ export class WorkflowService {
             resize_keyboard: true
           }
         });
-        await this.prisma.message.create({ data: { text, direction: 'out', contactId } });
+        await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
         return { wait: true, stateUpdates: { waitingFor: 'location' } };
       }
 
@@ -353,7 +343,7 @@ export class WorkflowService {
               currency,
               prices: [{ label: title, amount: price * 100 }]
             });
-            await this.prisma.message.create({ data: { text: `[Invoice sent: ${title} - ${price} ${currency}]`, direction: 'out', contactId } });
+            await this.firebaseService.addMessage(botId, contactId, `[Invoice sent: ${title} - ${price} ${currency}]`, 'outbound');
           } catch (err) {
             this.logger.error(`Failed to send ${node.type} invoice: ${err.message}`);
             await ctx.reply(`To'lov xizmatini ishga tushirib bo'lmadi.`);
@@ -363,6 +353,7 @@ export class WorkflowService {
         }
         return { wait: false };
       }
+
 
       if (node.type === 'dealStage') {
         const stage = node.data?.stage || 'New';

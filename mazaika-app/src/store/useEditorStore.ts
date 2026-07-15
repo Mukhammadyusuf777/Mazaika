@@ -7,8 +7,6 @@ import {
   applyEdgeChanges,
   addEdge,
 } from '@xyflow/react'
-import { apiClient } from '../api/apiClient'
-
 // We define our own Node/Edge interfaces to avoid import issues
 export interface FlowNode {
   id: string
@@ -94,10 +92,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   saveToStorage: async (botId: string) => {
     set({ isLoading: true })
     try {
-      const data = { nodes: get().nodes, edges: get().edges }
-      await apiClient.put(`/workflows/${botId}`, data)
+      const { doc, setDoc } = await import('firebase/firestore')
+      const { db } = await import('../api/firebase')
+      const data = {
+        nodes: JSON.stringify(get().nodes),
+        edges: JSON.stringify(get().edges),
+        updatedAt: new Date(),
+      }
+      await setDoc(doc(db, 'bots', botId, 'workflows', 'main'), data, { merge: true })
     } catch (e) {
-      console.error('Failed to save to server', e)
+      console.error('Failed to save to Firestore', e)
     } finally {
       set({ isLoading: false })
     }
@@ -105,12 +109,20 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   loadFromStorage: async (botId: string) => {
     set({ isLoading: true })
     try {
-      const res = await apiClient.get(`/workflows/${botId}`)
-      if (res.data && res.data.nodes && res.data.edges) {
-        set({ nodes: res.data.nodes, edges: res.data.edges })
+      const { doc, getDoc } = await import('firebase/firestore')
+      const { db } = await import('../api/firebase')
+      const snap = await getDoc(doc(db, 'bots', botId, 'workflows', 'main'))
+      if (snap.exists()) {
+        const data = snap.data()
+        const parsedNodes = data.nodes ? JSON.parse(data.nodes) : INITIAL_NODES
+        const parsedEdges = data.edges ? JSON.parse(data.edges) : []
+        set({ nodes: parsedNodes, edges: parsedEdges })
+      } else {
+        set({ nodes: INITIAL_NODES, edges: [] })
       }
     } catch (e) {
-      console.error('Failed to load editor state from server', e)
+      console.error('Failed to load editor state from Firestore', e)
+      set({ nodes: INITIAL_NODES, edges: [] })
     } finally {
       set({ isLoading: false })
     }

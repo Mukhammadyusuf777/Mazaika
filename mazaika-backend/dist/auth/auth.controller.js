@@ -29,6 +29,9 @@ let AuthController = class AuthController {
     async loginGoogle(body) {
         return this.authService.loginGoogle(body);
     }
+    async firebaseSync(body) {
+        return this.authService.firebaseSync(body);
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -52,6 +55,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "loginGoogle", null);
+__decorate([
+    (0, common_1.Post)('firebase-sync'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "firebaseSync", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

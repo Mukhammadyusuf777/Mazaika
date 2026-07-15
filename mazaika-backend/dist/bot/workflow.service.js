@@ -12,42 +12,35 @@ var WorkflowService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WorkflowService = void 0;
 const common_1 = require("@nestjs/common");
-const prisma_service_1 = require("../prisma/prisma.service");
+const firebase_service_1 = require("../firebase/firebase.service");
 let WorkflowService = WorkflowService_1 = class WorkflowService {
-    prisma;
+    firebaseService;
     logger = new common_1.Logger(WorkflowService_1.name);
-    constructor(prisma) {
-        this.prisma = prisma;
+    constructor(firebaseService) {
+        this.firebaseService = firebaseService;
     }
     async processIncomingMessage(botId, telegramId, text, ctx) {
         this.logger.log(`Processing input from ${telegramId} for bot ${botId}: ${text}`);
-        const bot = await this.prisma.bot.findUnique({
-            where: { id: botId },
-            include: { workflows: { where: { isMain: true } } }
-        });
-        if (!bot || bot.workflows.length === 0)
+        const bot = await this.firebaseService.getBot(botId);
+        if (!bot)
             return;
-        const workflow = bot.workflows[0];
-        let contact = await this.prisma.contact.findUnique({
-            where: { botId_telegramId: { botId, telegramId } }
-        });
+        const workflow = await this.firebaseService.getBotWorkflow(botId);
+        if (!workflow)
+            return;
+        let contact = await this.firebaseService.getContact(botId, telegramId);
         if (!contact) {
-            contact = await this.prisma.contact.create({
-                data: {
-                    telegramId,
-                    botId,
-                    state: JSON.stringify({ currentNodeId: null, variables: {}, waitingFor: null }),
-                    firstName: ctx.from?.first_name,
-                    lastName: ctx.from?.last_name,
-                    username: ctx.from?.username,
-                    languageCode: ctx.from?.language_code
-                }
+            contact = await this.firebaseService.createContact(botId, {
+                telegramId,
+                botId,
+                state: JSON.stringify({ currentNodeId: null, variables: {}, waitingFor: null }),
+                firstName: ctx.from?.first_name || null,
+                lastName: ctx.from?.last_name || null,
+                username: ctx.from?.username || null,
+                languageCode: ctx.from?.language_code || null
             });
         }
         if (text !== '/start' && !text.startsWith('btn_') && !text.startsWith('contact:') && !text.startsWith('location:')) {
-            await this.prisma.message.create({
-                data: { text, direction: 'in', contactId: contact.id }
-            });
+            await this.firebaseService.addMessage(botId, contact.id, text, 'inbound');
         }
         const nodes = JSON.parse(workflow.nodes);
         const edges = JSON.parse(workflow.edges);
@@ -116,15 +109,12 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
             }
         }
         while (nextNode) {
-            const { wait, stateUpdates } = await this.executeNodeAction(ctx, nextNode, contact.id, state.variables);
+            const { wait, stateUpdates } = await this.executeNodeAction(ctx, nextNode, contact.id, state.variables, botId);
             if (stateUpdates) {
                 state = { ...state, ...stateUpdates };
             }
             state.currentNodeId = nextNode.id;
-            await this.prisma.contact.update({
-                where: { id: contact.id },
-                data: { state: JSON.stringify(state) }
-            });
+            await this.firebaseService.updateContactState(botId, contact.id, JSON.stringify(state));
             if (wait) {
                 break;
             }
@@ -175,13 +165,13 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
         }
         return null;
     }
-    async executeNodeAction(ctx, node, contactId, variables) {
+    async executeNodeAction(ctx, node, contactId, variables, botId) {
         try {
             if (node.type === 'start') {
                 const text = node.data?.text;
                 if (text) {
                     await ctx.reply(text);
-                    await this.prisma.message.create({ data: { text, direction: 'out', contactId } });
+                    await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
                 }
                 return { wait: false };
             }
@@ -199,7 +189,7 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                     }
                 } : undefined;
                 await ctx.reply(text, extra);
-                await this.prisma.message.create({ data: { text, direction: 'out', contactId } });
+                await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
                 if (buttons.length > 0)
                     return { wait: true, stateUpdates: { waitingFor: 'button' } };
                 return { wait: false };
@@ -223,7 +213,7 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                     text = text.replace(new RegExp(`{${k}}`, 'g'), v);
                 }
                 await ctx.reply(text);
-                await this.prisma.message.create({ data: { text, direction: 'out', contactId } });
+                await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
                 return { wait: true, stateUpdates: { waitingFor: 'question' } };
             }
             if (node.type === 'phone') {
@@ -235,13 +225,13 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                         resize_keyboard: true
                     }
                 });
-                await this.prisma.message.create({ data: { text, direction: 'out', contactId } });
+                await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
                 return { wait: true, stateUpdates: { waitingFor: 'phone' } };
             }
             if (node.type === 'email') {
                 let text = node.data?.text || 'Iltimos, email manzilingizni kiriting:';
                 await ctx.reply(text);
-                await this.prisma.message.create({ data: { text, direction: 'out', contactId } });
+                await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
                 return { wait: true, stateUpdates: { waitingFor: 'email' } };
             }
             if (node.type === 'location') {
@@ -253,7 +243,7 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                         resize_keyboard: true
                     }
                 });
-                await this.prisma.message.create({ data: { text, direction: 'out', contactId } });
+                await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
                 return { wait: true, stateUpdates: { waitingFor: 'location' } };
             }
             if (node.type === 'condition') {
@@ -339,7 +329,7 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                             currency,
                             prices: [{ label: title, amount: price * 100 }]
                         });
-                        await this.prisma.message.create({ data: { text: `[Invoice sent: ${title} - ${price} ${currency}]`, direction: 'out', contactId } });
+                        await this.firebaseService.addMessage(botId, contactId, `[Invoice sent: ${title} - ${price} ${currency}]`, 'outbound');
                     }
                     catch (err) {
                         this.logger.error(`Failed to send ${node.type} invoice: ${err.message}`);
@@ -434,6 +424,6 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
 exports.WorkflowService = WorkflowService;
 exports.WorkflowService = WorkflowService = WorkflowService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [firebase_service_1.FirebaseService])
 ], WorkflowService);
 //# sourceMappingURL=workflow.service.js.map
