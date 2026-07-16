@@ -74,6 +74,22 @@ let BotManagerService = BotManagerService_1 = class BotManagerService {
             });
             this.activeBots.set(botId, telegrafBot);
             this.logger.log(`Bot ${botId} started successfully.`);
+            try {
+                const botDoc = await this.firebaseService.getBot(botId);
+                if (botDoc && botDoc.menuButtonEnabled) {
+                    await telegrafBot.telegram.setChatMenuButton({
+                        menuButton: {
+                            type: 'web_app',
+                            text: botDoc.menuButtonText || 'Open App',
+                            web_app: { url: botDoc.menuButtonUrl || `https://mazaika.pages.dev/site/${botId}` }
+                        }
+                    });
+                    this.logger.log(`Auto-set Web App menu button for bot ${botId}`);
+                }
+            }
+            catch (err) {
+                this.logger.error(`Failed to auto-set menu button on startup for bot ${botId}: ${err.message}`);
+            }
             await this.firebaseService.updateBotStatus(botId, 'active');
             return { success: true };
         }
@@ -93,6 +109,42 @@ let BotManagerService = BotManagerService_1 = class BotManagerService {
             return { success: true };
         }
         return { success: false, message: 'Bot not running' };
+    }
+    async setMenuButton(botId, text, url) {
+        const telegrafBot = this.activeBots.get(botId);
+        if (!telegrafBot)
+            return { success: false, message: 'Bot not running' };
+        try {
+            await telegrafBot.telegram.setChatMenuButton({
+                menuButton: {
+                    type: 'web_app',
+                    text,
+                    web_app: { url }
+                }
+            });
+            return { success: true };
+        }
+        catch (e) {
+            this.logger.error(`Failed to set menu button for bot ${botId}: ${e.message}`);
+            return { success: false, message: e.message };
+        }
+    }
+    async resetMenuButton(botId) {
+        const telegrafBot = this.activeBots.get(botId);
+        if (!telegrafBot)
+            return { success: false, message: 'Bot not running' };
+        try {
+            await telegrafBot.telegram.setChatMenuButton({
+                menuButton: {
+                    type: 'default'
+                }
+            });
+            return { success: true };
+        }
+        catch (e) {
+            this.logger.error(`Failed to reset menu button for bot ${botId}: ${e.message}`);
+            return { success: false, message: e.message };
+        }
     }
     getBotStatus(botId) {
         return { isRunning: this.activeBots.has(botId) };

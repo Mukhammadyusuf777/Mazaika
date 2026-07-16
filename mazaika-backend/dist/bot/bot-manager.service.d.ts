@@ -22,6 +22,20 @@ export declare class BotManagerService implements OnModuleInit {
         success: boolean;
         message: string;
     }>;
+    setMenuButton(botId: string, text: string, url: string): Promise<{
+        success: boolean;
+        message?: undefined;
+    } | {
+        success: boolean;
+        message: any;
+    }>;
+    resetMenuButton(botId: string): Promise<{
+        success: boolean;
+        message?: undefined;
+    } | {
+        success: boolean;
+        message: any;
+    }>;
     getBotStatus(botId: string): {
         isRunning: boolean;
     };

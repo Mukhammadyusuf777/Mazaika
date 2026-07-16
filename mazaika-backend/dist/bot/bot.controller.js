@@ -89,6 +89,12 @@ let BotController = class BotController {
             ]
         };
     }
+    async setMenuButton(id, data) {
+        return this.botManager.setMenuButton(id, data.text, data.url);
+    }
+    async resetMenuButton(id) {
+        return this.botManager.resetMenuButton(id);
+    }
 };
 exports.BotController = BotController;
 __decorate([
@@ -136,6 +142,21 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], BotController.prototype, "getAnalytics", null);
+__decorate([
+    (0, common_1.Post)(':id/menu-button'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], BotController.prototype, "setMenuButton", null);
+__decorate([
+    (0, common_1.Delete)(':id/menu-button'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], BotController.prototype, "resetMenuButton", null);
 exports.BotController = BotController = __decorate([
     (0, common_1.Controller)('bots'),
     __metadata("design:paramtypes", [bot_manager_service_1.BotManagerService,

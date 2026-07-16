@@ -45,4 +45,21 @@ export declare class BotController {
             msgs: number;
         }[];
     }>;
+    setMenuButton(id: string, data: {
+        text: string;
+        url: string;
+    }): Promise<{
+        success: boolean;
+        message?: undefined;
+    } | {
+        success: boolean;
+        message: any;
+    }>;
+    resetMenuButton(id: string): Promise<{
+        success: boolean;
+        message?: undefined;
+    } | {
+        success: boolean;
+        message: any;
+    }>;
 }

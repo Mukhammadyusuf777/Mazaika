@@ -82,9 +82,11 @@ export class BotManagerService implements OnModuleInit {
         const botDoc = await this.firebaseService.getBot(botId);
         if (botDoc && botDoc.menuButtonEnabled) {
           await telegrafBot.telegram.setChatMenuButton({
-            type: 'web_app',
-            text: botDoc.menuButtonText || 'Open App',
-            web_app: { url: botDoc.menuButtonUrl || `https://mazaika.pages.dev/site/${botId}` }
+            menuButton: {
+              type: 'web_app',
+              text: botDoc.menuButtonText || 'Open App',
+              web_app: { url: botDoc.menuButtonUrl || `https://mazaika.pages.dev/site/${botId}` }
+            }
           });
           this.logger.log(`Auto-set Web App menu button for bot ${botId}`);
         }
@@ -127,9 +129,11 @@ export class BotManagerService implements OnModuleInit {
     if (!telegrafBot) return { success: false, message: 'Bot not running' };
     try {
       await telegrafBot.telegram.setChatMenuButton({
-        type: 'web_app',
-        text,
-        web_app: { url }
+        menuButton: {
+          type: 'web_app',
+          text,
+          web_app: { url }
+        }
       });
       return { success: true };
     } catch (e: any) {
@@ -143,7 +147,9 @@ export class BotManagerService implements OnModuleInit {
     if (!telegrafBot) return { success: false, message: 'Bot not running' };
     try {
       await telegrafBot.telegram.setChatMenuButton({
-        type: 'default'
+        menuButton: {
+          type: 'default'
+        }
       });
       return { success: true };
     } catch (e: any) {
