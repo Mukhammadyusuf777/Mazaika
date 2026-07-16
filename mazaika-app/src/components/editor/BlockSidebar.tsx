@@ -26,6 +26,7 @@ const CATEGORIES = [
     name: 'Mantiq va O\'zgaruvchilar',
     blocks: [
       { type: 'condition',      name: 'Shart (If)',    emoji: '🔀', color: '#ffb830' },
+      { type: 'subscription',   name: 'Kanalga a\'zolik', emoji: '📢', color: '#8b5cf6' },
       { type: 'variable',       name: 'O\'zgaruvchi',   emoji: '📝', color: '#06b6d4' },
       { type: 'deleteVariable', name: 'O\'zg. O\'chirish',emoji: '❌', color: '#ef4444' },
       { type: 'abTest',         name: 'A/B Test',       emoji: '⚗',  color: '#ec4899' },

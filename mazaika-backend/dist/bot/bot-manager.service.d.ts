@@ -1,10 +1,12 @@
 import { OnModuleInit } from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
 import { WorkflowService } from './workflow.service';
+import { Telegraf } from 'telegraf';
 export declare class BotManagerService implements OnModuleInit {
     private firebaseService;
     private workflowService;
     private readonly logger;
+    static activeBotsMap: Map<string, Telegraf>;
     private activeBots;
     constructor(firebaseService: FirebaseService, workflowService: WorkflowService);
     onModuleInit(): Promise<void>;

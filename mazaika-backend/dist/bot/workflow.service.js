@@ -43,28 +43,58 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
             const payloadStr = text.substring(7);
             try {
                 const payload = JSON.parse(payloadStr);
+                const contactRef = this.firebaseService.db.collection('bots').doc(botId).collection('contacts').doc(contact.id);
+                let state = contact.state ? JSON.parse(contact.state) : { variables: {}, waitingFor: null };
+                if (!state.variables)
+                    state.variables = {};
+                const variables = { ...state.variables };
+                let stage = contact.stage || 'Yangi';
                 if (payload.action === 'order') {
                     const itemNames = payload.items.map((i) => i.name).join(', ');
                     const responseText = `🛒 Yangi buyurtma qabul qilindi!\n\n🛍 Mahsulotlar: ${itemNames}\n💰 Jami: ${payload.total.toLocaleString()} UZS\n👤 Mijoz: ${payload.customer.name}\n📞 Tel: ${payload.customer.phone}\n\nRahmat! Tez orada siz bilan bog'lanamiz.`;
                     await ctx.reply(responseText);
                     await this.firebaseService.addMessage(botId, contact.id, `Buyurtma: ${itemNames} (${payload.total} UZS)`, 'inbound');
                     await this.firebaseService.addMessage(botId, contact.id, responseText, 'outbound');
+                    variables.last_order_items = itemNames;
+                    variables.last_order_total = payload.total.toString();
+                    variables.customer_name = payload.customer.name;
+                    variables.customer_phone = payload.customer.phone;
+                    stage = 'Kelishuv';
                 }
                 else if (payload.action === 'form_submit') {
                     let fieldSummary = '';
                     for (const [key, val] of Object.entries(payload.responses)) {
                         fieldSummary += `\n- ${key}: ${val}`;
+                        const varName = key.toLowerCase().replace(/\s+/g, '_');
+                        variables[varName] = val;
                     }
                     const responseText = `📝 So'rovnoma qabul qilindi!${fieldSummary}\n\nRahmat!`;
                     await ctx.reply(responseText);
                     await this.firebaseService.addMessage(botId, contact.id, `So'rovnoma: ${payload.formName}`, 'inbound');
                     await this.firebaseService.addMessage(botId, contact.id, responseText, 'outbound');
+                    stage = 'Muloqot';
                 }
                 else if (payload.action === 'prize') {
                     const responseText = `🎉 Tabriklaymiz! Omad G'ildiragida siz yutgan sovg'a: "${payload.prize}"\n\nYutuqni olish uchun ushbu xabarni adminga taqdim eting.`;
                     await ctx.reply(responseText);
                     await this.firebaseService.addMessage(botId, contact.id, `Yutuq: ${payload.prize}`, 'inbound');
                     await this.firebaseService.addMessage(botId, contact.id, responseText, 'outbound');
+                    variables.last_prize = payload.prize;
+                }
+                const updatedState = { ...state, variables };
+                await contactRef.update({
+                    state: JSON.stringify(updatedState),
+                    stage,
+                    updatedAt: new Date()
+                });
+                if (state.currentNodeId) {
+                    const nodes = JSON.parse(workflow.nodes);
+                    const edges = JSON.parse(workflow.edges);
+                    const outgoingEdges = edges.filter(e => e.source === state.currentNodeId);
+                    if (outgoingEdges.length > 0) {
+                        const nextNodeId = outgoingEdges[0].target;
+                        await this.resumeWorkflow(botId, contact.id, nextNodeId, ctx);
+                    }
                 }
             }
             catch (err) {
@@ -94,7 +124,14 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
         else if (state.waitingFor === 'question') {
             const varName = currentNode?.data?.variable;
             if (varName) {
-                state.variables[varName] = text;
+                let answer = text;
+                if (text.startsWith('btn_') && currentNode?.data?.buttons) {
+                    const idx = parseInt(text.split('_')[1]);
+                    if (!isNaN(idx) && currentNode.data.buttons[idx]) {
+                        answer = currentNode.data.buttons[idx];
+                    }
+                }
+                state.variables[varName] = answer;
             }
             state.waitingFor = null;
             nextNode = this.getNextNode(currentNode, null, edges, nodes, state);
@@ -107,20 +144,31 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 nextNode = this.getNextNode(currentNode, null, edges, nodes, state);
             }
             else {
-                await ctx.reply("Iltimos, telefon raqamingizni yuborish tugmasini bosing.");
-                return;
+                const cleanText = text.replace(/[\s\-\(\)\+]/g, '');
+                const isDigits = /^[0-9]{9,15}$/.test(cleanText);
+                if (isDigits) {
+                    state.variables[varName] = text;
+                    state.waitingFor = null;
+                    nextNode = this.getNextNode(currentNode, null, edges, nodes, state);
+                }
+                else {
+                    const btnText = currentNode?.data?.buttonText || '📞 Raqamni yuborish';
+                    await ctx.reply(`Iltimos, "${btnText}" tugmasini bosing yoki telefon raqamingizni to'g'ri formatda yozib yuboring (Masalan: +998901234567).`);
+                    return;
+                }
             }
         }
         else if (state.waitingFor === 'email') {
             const varName = currentNode?.data?.variable || 'email';
+            const trimmedText = text.trim().toLowerCase();
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (emailRegex.test(text)) {
-                state.variables[varName] = text;
+            if (emailRegex.test(trimmedText)) {
+                state.variables[varName] = trimmedText;
                 state.waitingFor = null;
                 nextNode = this.getNextNode(currentNode, null, edges, nodes, state);
             }
             else {
-                await ctx.reply("Noto'g'ri email shakli. Iltimos, qaytadan kiriting:");
+                await ctx.reply("Noto'g'ri email manzili kiritildi. Iltimos, elektron pochta manzilingizni to'g'ri formatda yozib yuboring (Masalan: user@domain.com):");
                 return;
             }
         }
@@ -132,7 +180,23 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 nextNode = this.getNextNode(currentNode, null, edges, nodes, state);
             }
             else {
-                await ctx.reply("Iltimos, lokatsiyangizni yuborish tugmasini bosing.");
+                const btnText = currentNode?.data?.buttonText || '📍 Lokatsiyani yuborish';
+                await ctx.reply(`Iltimos, "${btnText}" tugmasini bosing.`);
+                return;
+            }
+        }
+        else if (state.waitingFor === 'payment') {
+            if (text.startsWith('payment_success:')) {
+                const parts = text.split(':');
+                const payload = parts[1];
+                const amount = parts[2];
+                state.variables['last_payment_payload'] = payload;
+                state.variables['last_payment_amount'] = amount;
+                state.waitingFor = null;
+                nextNode = this.getNextNode(currentNode, null, edges, nodes, state);
+            }
+            else {
+                await ctx.reply("Iltimos, to'lovni yakunlang. To'lov amalga oshirilgandan so'ng bot avtomatik ravishda davom etadi.");
                 return;
             }
         }
@@ -145,8 +209,49 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 nextNode = currentNode;
             }
         }
+        const visitedNodeIds = new Set();
         while (nextNode) {
-            const { wait, stateUpdates } = await this.executeNodeAction(ctx, nextNode, contact.id, state.variables, botId);
+            if (visitedNodeIds.has(nextNode.id)) {
+                this.logger.error(`Infinite loop detected in workflow execution at node ${nextNode.id} for contact ${contact.id}. Stopping workflow.`);
+                break;
+            }
+            visitedNodeIds.add(nextNode.id);
+            const { wait, stateUpdates } = await this.executeNodeAction(ctx, nextNode, contact.id, state.variables, botId, edges);
+            if (stateUpdates) {
+                state = { ...state, ...stateUpdates };
+            }
+            state.currentNodeId = nextNode.id;
+            await this.firebaseService.updateContactState(botId, contact.id, JSON.stringify(state));
+            if (wait) {
+                break;
+            }
+            nextNode = this.getNextNode(nextNode, null, edges, nodes, state);
+        }
+    }
+    async resumeWorkflow(botId, contactId, nextNodeId, ctx) {
+        this.logger.log(`Resuming workflow for contact ${contactId} at node ${nextNodeId}`);
+        const workflow = await this.firebaseService.getBotWorkflow(botId);
+        if (!workflow)
+            return;
+        const nodes = JSON.parse(workflow.nodes);
+        const edges = JSON.parse(workflow.edges);
+        const contactSnap = await this.firebaseService.db.collection('bots').doc(botId).collection('contacts').doc(contactId).get();
+        if (!contactSnap.exists)
+            return;
+        const contact = contactSnap.data();
+        contact.id = contactSnap.id;
+        let state = contact.state ? JSON.parse(contact.state) : { variables: {}, waitingFor: null };
+        if (!state.variables)
+            state.variables = {};
+        let nextNode = nodes.find(n => n.id === nextNodeId);
+        const visitedNodeIds = new Set();
+        while (nextNode) {
+            if (visitedNodeIds.has(nextNode.id)) {
+                this.logger.error(`Infinite loop detected in resumed workflow execution at node ${nextNode.id} for contact ${contact.id}. Stopping workflow.`);
+                break;
+            }
+            visitedNodeIds.add(nextNode.id);
+            const { wait, stateUpdates } = await this.executeNodeAction(ctx, nextNode, contact.id, state.variables, botId, edges);
             if (stateUpdates) {
                 state = { ...state, ...stateUpdates };
             }
@@ -175,26 +280,61 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
         }
         else if (currentNode.type === 'condition') {
             const data = currentNode.data || {};
-            const varValue = parseFloat(state.variables[data.variable || '']?.toString() || '0') || state.variables[data.variable || '']?.toString() || '';
-            const checkValue = parseFloat(data.value?.toString() || '0') || data.value?.toString() || '';
+            const variableName = data.variable || '';
+            const varRaw = state.variables[variableName];
+            const varStr = varRaw !== undefined && varRaw !== null ? varRaw.toString() : '';
             let isTrue = false;
-            if (data.operator === 'contains')
-                isTrue = varValue.toString().includes(checkValue.toString());
-            else if (data.operator === '!=')
-                isTrue = varValue !== checkValue;
-            else if (data.operator === '>')
-                isTrue = varValue > checkValue;
-            else if (data.operator === '<')
-                isTrue = varValue < checkValue;
-            else
-                isTrue = varValue === checkValue;
+            const op = data.operator || '==';
+            if (op === 'is_empty') {
+                isTrue = varStr.trim() === '';
+            }
+            else if (op === 'is_filled') {
+                isTrue = varStr.trim() !== '';
+            }
+            else if (op === 'regex') {
+                try {
+                    const checkVal = data.value || '';
+                    const regex = new RegExp(checkVal);
+                    isTrue = regex.test(varStr);
+                }
+                catch (regexErr) {
+                    this.logger.error(`Invalid regex in condition node ${currentNode.id}: ${data.value}`);
+                    isTrue = false;
+                }
+            }
+            else {
+                const parsedVar = parseFloat(varStr);
+                const varValue = !isNaN(parsedVar) ? parsedVar : varStr;
+                const checkStr = data.value?.toString() || '';
+                const parsedCheck = parseFloat(checkStr);
+                const checkValue = !isNaN(parsedCheck) ? parsedCheck : checkStr;
+                if (op === 'contains') {
+                    isTrue = varStr.toLowerCase().includes(checkStr.toLowerCase());
+                }
+                else if (op === '!=') {
+                    isTrue = varValue !== checkValue;
+                }
+                else if (op === '>') {
+                    isTrue = varValue > checkValue;
+                }
+                else if (op === '<') {
+                    isTrue = varValue < checkValue;
+                }
+                else {
+                    isTrue = varValue === checkValue;
+                }
+            }
+            targetHandle = isTrue ? 'true' : 'false';
+        }
+        else if (currentNode.type === 'subscription') {
+            const isTrue = !!state.lastSubscriptionCheck;
             targetHandle = isTrue ? 'true' : 'false';
         }
         else if (currentNode.type === 'abTest') {
-            targetHandle = Math.random() < 0.5 ? 'A' : 'B';
+            targetHandle = state.lastAbResult || (Math.random() < 0.5 ? 'A' : 'B');
         }
         let edge = edges.find(e => e.source === currentNode.id && e.sourceHandle === targetHandle);
-        if (!edge && !['condition', 'message', 'abTest'].includes(currentNode.type)) {
+        if (!edge && !['condition', 'subscription', 'message', 'abTest'].includes(currentNode.type)) {
             edge = edges.find(e => e.source === currentNode.id);
         }
         if (edge) {
@@ -202,7 +342,7 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
         }
         return null;
     }
-    async executeNodeAction(ctx, node, contactId, variables, botId) {
+    async executeNodeAction(ctx, node, contactId, variables, botId, edges) {
         try {
             if (node.type === 'start') {
                 const text = node.data?.text;
@@ -219,19 +359,47 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 for (const [k, v] of Object.entries(variables)) {
                     text = text.replace(new RegExp(`{${k}}`, 'g'), v);
                 }
+                const mediaUrl = node.data?.mediaUrl;
                 const buttons = node.data?.buttons || [];
-                const extra = buttons.length > 0 ? {
+                const inlineKeyboard = buttons.map((btn, idx) => {
+                    const parts = btn.split('|');
+                    if (parts.length > 1) {
+                        const label = parts[0].trim();
+                        const urlVal = parts[1].trim();
+                        if (urlVal.startsWith('webapp:')) {
+                            return [{ text: label, web_app: { url: urlVal.substring(7).trim() } }];
+                        }
+                        else if (urlVal.startsWith('http://') || urlVal.startsWith('https://')) {
+                            return [{ text: label, url: urlVal }];
+                        }
+                    }
+                    return [{ text: btn, callback_data: `btn_${idx}` }];
+                });
+                const extra = inlineKeyboard.length > 0 ? {
                     reply_markup: {
-                        inline_keyboard: buttons.map((btn, idx) => {
-                            const parts = btn.split('|');
-                            if (parts.length > 1 && (parts[1].trim().startsWith('http://') || parts[1].trim().startsWith('https://'))) {
-                                return [{ text: parts[0].trim(), web_app: { url: parts[1].trim() } }];
-                            }
-                            return [{ text: btn, callback_data: `btn_${idx}` }];
-                        })
+                        inline_keyboard: inlineKeyboard
                     }
                 } : undefined;
-                await ctx.reply(text, extra);
+                if (mediaUrl && (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://'))) {
+                    const isVideo = mediaUrl.toLowerCase().endsWith('.mp4') ||
+                        mediaUrl.toLowerCase().endsWith('.mov') ||
+                        mediaUrl.toLowerCase().endsWith('.avi');
+                    try {
+                        if (isVideo) {
+                            await ctx.replyWithVideo(mediaUrl, { caption: text, ...extra });
+                        }
+                        else {
+                            await ctx.replyWithPhoto(mediaUrl, { caption: text, ...extra });
+                        }
+                    }
+                    catch (mediaErr) {
+                        this.logger.error(`Failed to send media message for bot ${botId}: ${mediaErr.message}. Falling back to text.`);
+                        await ctx.reply(text, extra);
+                    }
+                }
+                else {
+                    await ctx.reply(text, extra);
+                }
                 await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
                 if (buttons.length > 0)
                     return { wait: true, stateUpdates: { waitingFor: 'button' } };
@@ -240,14 +408,58 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
             if (node.type === 'chain') {
                 return { wait: false };
             }
+            if (node.type === 'subscription') {
+                const channel = node.data?.channel;
+                let isSubscribed = false;
+                if (channel) {
+                    try {
+                        let chatTarget = channel.trim();
+                        if (!chatTarget.startsWith('@') && !chatTarget.startsWith('-')) {
+                            chatTarget = '@' + chatTarget;
+                        }
+                        const userId = parseInt(contactId);
+                        if (!isNaN(userId)) {
+                            const member = await ctx.telegram.getChatMember(chatTarget, userId);
+                            const allowedStatuses = ['member', 'creator', 'administrator'];
+                            if (allowedStatuses.includes(member.status)) {
+                                isSubscribed = true;
+                            }
+                        }
+                    }
+                    catch (err) {
+                        this.logger.error(`Failed to check chat member in subscription node ${node.id} for user ${contactId}: ${err.message}`);
+                        isSubscribed = false;
+                    }
+                }
+                return { wait: false, stateUpdates: { lastSubscriptionCheck: isSubscribed } };
+            }
             if (node.type === 'timer') {
                 const amount = parseInt(node.data?.delayAmount) || 0;
                 const unit = node.data?.delayUnit || 'seconds';
-                let ms = amount * (unit === 'minutes' ? 60000 : 1000);
-                if (ms > 10000)
-                    ms = 10000;
-                if (ms > 0)
+                let ms = amount * 1000;
+                if (unit === 'minutes')
+                    ms = amount * 60000;
+                else if (unit === 'hours')
+                    ms = amount * 3600000;
+                else if (unit === 'days')
+                    ms = amount * 86400000;
+                if (ms > 5000) {
+                    const executeAt = Date.now() + ms;
+                    const nextNode = this.getNextNode(node, null, edges, [], {});
+                    const nextNodeId = nextNode?.id || null;
+                    await this.firebaseService.db.collection('bots').doc(botId).collection('timers').add({
+                        contactId,
+                        currentNodeId: node.id,
+                        nextNodeId,
+                        executeAt,
+                        createdAt: Date.now()
+                    });
+                    this.logger.log(`Scheduled timer for contact ${contactId} to run in ${amount} ${unit} (at ${new Date(executeAt).toISOString()})`);
+                    return { wait: true, stateUpdates: { waitingFor: 'timer' } };
+                }
+                if (ms > 0) {
                     await new Promise(res => setTimeout(res, ms));
+                }
                 return { wait: false };
             }
             if (node.type === 'question') {
@@ -255,15 +467,48 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 for (const [k, v] of Object.entries(variables)) {
                     text = text.replace(new RegExp(`{${k}}`, 'g'), v);
                 }
-                await ctx.reply(text);
+                const mediaUrl = node.data?.mediaUrl;
+                const buttons = node.data?.buttons || [];
+                const inlineKeyboard = buttons.map((btn, idx) => {
+                    return [{ text: btn, callback_data: `btn_${idx}` }];
+                });
+                const extra = inlineKeyboard.length > 0 ? {
+                    reply_markup: {
+                        inline_keyboard: inlineKeyboard
+                    }
+                } : undefined;
+                if (mediaUrl && (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://'))) {
+                    const isVideo = mediaUrl.toLowerCase().endsWith('.mp4') ||
+                        mediaUrl.toLowerCase().endsWith('.mov') ||
+                        mediaUrl.toLowerCase().endsWith('.avi');
+                    try {
+                        if (isVideo) {
+                            await ctx.replyWithVideo(mediaUrl, { caption: text, ...extra });
+                        }
+                        else {
+                            await ctx.replyWithPhoto(mediaUrl, { caption: text, ...extra });
+                        }
+                    }
+                    catch (mediaErr) {
+                        this.logger.error(`Failed to send media question for bot ${botId}: ${mediaErr.message}. Falling back to text.`);
+                        await ctx.reply(text, extra);
+                    }
+                }
+                else {
+                    await ctx.reply(text, extra);
+                }
                 await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
                 return { wait: true, stateUpdates: { waitingFor: 'question' } };
             }
             if (node.type === 'phone') {
                 let text = node.data?.text || 'Iltimos, telefon raqamingizni yuboring:';
+                const btnText = node.data?.buttonText || '📞 Raqamni yuborish';
+                for (const [k, v] of Object.entries(variables)) {
+                    text = text.replace(new RegExp(`{${k}}`, 'g'), v);
+                }
                 await ctx.reply(text, {
                     reply_markup: {
-                        keyboard: [[{ text: '📞 Raqamni yuborish', request_contact: true }]],
+                        keyboard: [[{ text: btnText, request_contact: true }]],
                         one_time_keyboard: true,
                         resize_keyboard: true
                     }
@@ -273,15 +518,22 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
             }
             if (node.type === 'email') {
                 let text = node.data?.text || 'Iltimos, email manzilingizni kiriting:';
+                for (const [k, v] of Object.entries(variables)) {
+                    text = text.replace(new RegExp(`{${k}}`, 'g'), v);
+                }
                 await ctx.reply(text);
                 await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
                 return { wait: true, stateUpdates: { waitingFor: 'email' } };
             }
             if (node.type === 'location') {
                 let text = node.data?.text || 'Iltimos, lokatsiyangizni ulashing:';
+                const btnText = node.data?.buttonText || '📍 Lokatsiyani yuborish';
+                for (const [k, v] of Object.entries(variables)) {
+                    text = text.replace(new RegExp(`{${k}}`, 'g'), v);
+                }
                 await ctx.reply(text, {
                     reply_markup: {
-                        keyboard: [[{ text: '📍 Lokatsiyani yuborish', request_location: true }]],
+                        keyboard: [[{ text: btnText, request_location: true }]],
                         one_time_keyboard: true,
                         resize_keyboard: true
                     }
@@ -293,21 +545,49 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 return { wait: false };
             }
             if (node.type === 'abTest') {
-                return { wait: false };
+                const data = node.data || {};
+                const ratioA = data.ratioA !== undefined && !isNaN(parseInt(data.ratioA)) ? parseInt(data.ratioA) : 50;
+                const rolledValue = Math.random() * 100;
+                const assigned = rolledValue < ratioA ? 'A' : 'B';
+                const varName = data.variable;
+                const stateUpdates = { lastAbResult: assigned };
+                if (varName) {
+                    stateUpdates.variables = { ...variables, [varName]: assigned };
+                }
+                return { wait: false, stateUpdates };
             }
             if (node.type === 'variable') {
                 const name = node.data?.variableName;
                 const val = node.data?.variableValue;
                 if (name) {
-                    return { wait: false, stateUpdates: { variables: { ...variables, [name]: val } } };
+                    let finalVal = val !== undefined && val !== null ? val.toString() : '';
+                    for (const [k, v] of Object.entries(variables)) {
+                        finalVal = finalVal.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                    }
+                    const isMathExpr = /^[0-9\s\+\-\*\/\(\)\.]+$/.test(finalVal.trim());
+                    if (isMathExpr && finalVal.trim() !== '') {
+                        try {
+                            const result = Function(`"use strict"; return (${finalVal})`)();
+                            if (typeof result === 'number' && !isNaN(result)) {
+                                finalVal = result.toString();
+                            }
+                        }
+                        catch (mathErr) {
+                            this.logger.warn(`Failed to evaluate math expression in variable block: ${finalVal}. Using raw string.`);
+                        }
+                    }
+                    return { wait: false, stateUpdates: { variables: { ...variables, [name]: finalVal } } };
                 }
                 return { wait: false };
             }
             if (node.type === 'deleteVariable') {
-                const name = node.data?.variableName;
-                if (name) {
+                const nameInput = node.data?.variableName;
+                if (nameInput) {
                     const newVars = { ...variables };
-                    delete newVars[name];
+                    const names = nameInput.split(',').map((n) => n.trim()).filter((n) => n !== '');
+                    for (const name of names) {
+                        delete newVars[name];
+                    }
                     return { wait: false, stateUpdates: { variables: newVars } };
                 }
                 return { wait: false };
@@ -317,49 +597,266 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 const target = node.data?.variable;
                 if (code && target) {
                     try {
-                        const func = new Function('variables', `return (${code})`);
-                        const result = func(variables);
+                        const isValidIdentifier = (key) => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key);
+                        const validKeys = Object.keys(variables).filter(isValidIdentifier);
+                        const validVals = validKeys.map(k => {
+                            const val = variables[k];
+                            if (typeof val === 'string') {
+                                const num = Number(val);
+                                if (!isNaN(num) && val.trim() !== '') {
+                                    return num;
+                                }
+                            }
+                            return val;
+                        });
+                        const func = new Function('variables', ...validKeys, `return (${code})`);
+                        const result = func(variables, ...validVals);
                         return { wait: false, stateUpdates: { variables: { ...variables, [target]: result } } };
                     }
                     catch (err) {
-                        this.logger.error(`JS Node error: ${err.message}`);
+                        this.logger.error(`JS Node error in node ${node.id} for bot ${botId}: ${err.message}`);
                     }
                 }
                 return { wait: false };
             }
-            if (['http', 'webhook', 'googleSheetsAdd', 'googleSheetsRead'].includes(node.type)) {
+            if (node.type === 'http') {
+                const url = node.data?.url;
+                const method = node.data?.method || 'GET';
+                const targetVar = node.data?.variable;
+                const jsonPath = node.data?.jsonPath;
+                if (url) {
+                    try {
+                        let finalUrl = url.trim();
+                        for (const [k, v] of Object.entries(variables)) {
+                            finalUrl = finalUrl.replace(new RegExp(`{${k}}`, 'g'), encodeURIComponent(v !== undefined && v !== null ? v.toString() : ''));
+                        }
+                        let body = undefined;
+                        if (method === 'POST') {
+                            let rawBody = node.data?.body || '';
+                            if (rawBody) {
+                                for (const [k, v] of Object.entries(variables)) {
+                                    rawBody = rawBody.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                                }
+                                body = rawBody;
+                            }
+                        }
+                        const res = await fetch(finalUrl, {
+                            method,
+                            headers: body ? { 'Content-Type': 'application/json' } : undefined,
+                            body
+                        });
+                        const rawData = await res.text();
+                        let savedVal = rawData;
+                        if (jsonPath && (rawData.trim().startsWith('{') || rawData.trim().startsWith('['))) {
+                            try {
+                                const parsed = JSON.parse(rawData);
+                                const parts = jsonPath.split('.');
+                                let current = parsed;
+                                for (const part of parts) {
+                                    current = current?.[part];
+                                }
+                                if (current !== undefined && current !== null) {
+                                    savedVal = typeof current === 'object' ? JSON.stringify(current) : current.toString();
+                                }
+                            }
+                            catch (jsonErr) {
+                                this.logger.error(`JSON path resolution failed for node ${node.id}: ${jsonErr.message}`);
+                            }
+                        }
+                        if (targetVar) {
+                            return { wait: false, stateUpdates: { variables: { ...variables, [targetVar]: savedVal.substring(0, 500) } } };
+                        }
+                    }
+                    catch (err) {
+                        this.logger.error(`HTTP Outbound API call failed for node ${node.id}: ${err.message}`);
+                    }
+                }
+                return { wait: false };
+            }
+            if (node.type === 'webhook') {
                 const url = node.data?.url;
                 const method = node.data?.method || 'POST';
                 const targetVar = node.data?.variable;
                 if (url) {
                     try {
-                        const body = node.type === 'webhook' || node.type === 'googleSheetsAdd'
-                            ? JSON.stringify({ variables, contactId })
-                            : undefined;
-                        const res = await fetch(url, {
+                        let finalUrl = url.trim();
+                        for (const [k, v] of Object.entries(variables)) {
+                            finalUrl = finalUrl.replace(new RegExp(`{${k}}`, 'g'), encodeURIComponent(v !== undefined && v !== null ? v.toString() : ''));
+                        }
+                        const body = method === 'POST' ? JSON.stringify({ variables, contactId }) : undefined;
+                        const res = await fetch(finalUrl, {
                             method,
                             headers: body ? { 'Content-Type': 'application/json' } : undefined,
                             body
                         });
                         const data = await res.text();
-                        if (targetVar && node.type !== 'googleSheetsAdd') {
+                        if (targetVar) {
                             return { wait: false, stateUpdates: { variables: { ...variables, [targetVar]: data.substring(0, 500) } } };
                         }
                     }
                     catch (err) {
-                        this.logger.error(`Outbound Integration API failed: ${err.message}`);
+                        this.logger.error(`Webhook send failed for node ${node.id}: ${err.message}`);
                     }
                 }
                 return { wait: false };
             }
-            if (['getCourse', 'yclients'].includes(node.type)) {
-                const domain = node.data?.domain || 'crm';
-                await ctx.reply(`[Integratsiya] ${node.type === 'getCourse' ? 'GetCourse' : 'Yclients'} orqali ${domain} bazasiga bog'lanildi.`);
+            if (node.type === 'googleSheetsAdd') {
+                const url = node.data?.url;
+                const method = node.data?.method || 'POST';
+                if (url) {
+                    try {
+                        let finalUrl = url.trim();
+                        for (const [k, v] of Object.entries(variables)) {
+                            finalUrl = finalUrl.replace(new RegExp(`{${k}}`, 'g'), encodeURIComponent(v !== undefined && v !== null ? v.toString() : ''));
+                        }
+                        const body = method === 'POST' ? JSON.stringify({ variables, contactId }) : undefined;
+                        await fetch(finalUrl, {
+                            method,
+                            headers: body ? { 'Content-Type': 'application/json' } : undefined,
+                            body
+                        });
+                    }
+                    catch (err) {
+                        this.logger.error(`Google Sheets Add failed for node ${node.id}: ${err.message}`);
+                    }
+                }
+                return { wait: false };
+            }
+            if (node.type === 'googleSheetsRead') {
+                const url = node.data?.url;
+                const method = 'GET';
+                const targetVar = node.data?.variable;
+                const jsonPath = node.data?.jsonPath;
+                if (url) {
+                    try {
+                        let finalUrl = url.trim();
+                        for (const [k, v] of Object.entries(variables)) {
+                            finalUrl = finalUrl.replace(new RegExp(`{${k}}`, 'g'), encodeURIComponent(v !== undefined && v !== null ? v.toString() : ''));
+                        }
+                        const res = await fetch(finalUrl, { method });
+                        const rawData = await res.text();
+                        let savedVal = rawData;
+                        if (jsonPath && (rawData.trim().startsWith('{') || rawData.trim().startsWith('['))) {
+                            try {
+                                const parsed = JSON.parse(rawData);
+                                const parts = jsonPath.split('.');
+                                let current = parsed;
+                                for (const part of parts) {
+                                    current = current?.[part];
+                                }
+                                if (current !== undefined && current !== null) {
+                                    savedVal = typeof current === 'object' ? JSON.stringify(current) : current.toString();
+                                }
+                            }
+                            catch (jsonErr) {
+                                this.logger.error(`JSON path resolution failed for Sheets Read node ${node.id}: ${jsonErr.message}`);
+                            }
+                        }
+                        if (targetVar) {
+                            return { wait: false, stateUpdates: { variables: { ...variables, [targetVar]: savedVal.substring(0, 500) } } };
+                        }
+                    }
+                    catch (err) {
+                        this.logger.error(`Google Sheets Read failed for node ${node.id}: ${err.message}`);
+                    }
+                }
+                return { wait: false };
+            }
+            if (node.type === 'getCourse') {
+                const domain = node.data?.domain;
+                const apiKey = node.data?.apiKey;
+                const action = node.data?.action || 'deal';
+                const nameVar = node.data?.nameVar || 'ism';
+                const phoneVar = node.data?.phoneVar || 'telefon';
+                const emailVar = node.data?.emailVar || 'email';
+                const nameVal = variables[nameVar];
+                const phoneVal = variables[phoneVar];
+                const emailVal = variables[emailVar];
+                if (domain && apiKey) {
+                    try {
+                        const endpoint = action === 'deal' ? 'deals' : 'users';
+                        const userPayload = {
+                            email: emailVal || `${contactId}@mazaika-bot.ru`,
+                            phone: phoneVal || '',
+                            first_name: nameVal || 'Mijoz'
+                        };
+                        const payload = { user: userPayload };
+                        if (action === 'deal') {
+                            let offerCode = node.data?.offerCode || '';
+                            for (const [k, v] of Object.entries(variables)) {
+                                offerCode = offerCode.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                            }
+                            payload.deal = {
+                                offer_code: offerCode,
+                                status: 'new'
+                            };
+                        }
+                        const formBody = new URLSearchParams();
+                        formBody.append('action', 'add');
+                        formBody.append('key', apiKey);
+                        formBody.append('params', Buffer.from(JSON.stringify(payload)).toString('base64'));
+                        const cleanDomain = domain.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '');
+                        const res = await fetch(`https://${cleanDomain}/pl/api/${endpoint}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: formBody.toString()
+                        });
+                        const data = await res.text();
+                        this.logger.log(`GetCourse integration result: ${data}`);
+                    }
+                    catch (err) {
+                        this.logger.error(`GetCourse integration failed for node ${node.id}: ${err.message}`);
+                    }
+                }
+                return { wait: false };
+            }
+            if (node.type === 'yclients') {
+                const companyId = node.data?.companyId;
+                const apiKey = node.data?.apiKey;
+                const userToken = node.data?.userToken;
+                const nameVar = node.data?.nameVar || 'ism';
+                const phoneVar = node.data?.phoneVar || 'telefon';
+                const emailVar = node.data?.emailVar || 'email';
+                const nameVal = variables[nameVar];
+                const phoneVal = variables[phoneVar];
+                const emailVal = variables[emailVar];
+                if (companyId && apiKey) {
+                    try {
+                        const authHeader = userToken
+                            ? `Bearer ${apiKey}, User ${userToken}`
+                            : `Bearer ${apiKey}`;
+                        const res = await fetch(`https://api.yclients.com/api/v1/clients/${companyId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': authHeader,
+                                'Accept': 'application/vnd.yclients.v2+json'
+                            },
+                            body: JSON.stringify({
+                                name: nameVal || 'Mijoz',
+                                phone: phoneVal || '',
+                                email: emailVal || ''
+                            })
+                        });
+                        const data = await res.text();
+                        this.logger.log(`YClients integration result: ${data}`);
+                    }
+                    catch (err) {
+                        this.logger.error(`YClients integration failed for node ${node.id}: ${err.message}`);
+                    }
+                }
                 return { wait: false };
             }
             if (['payme', 'click', 'yookassa', 'cryptopay'].includes(node.type)) {
-                const title = node.data?.title || 'To\'lov';
-                const price = parseInt(node.data?.price) || 0;
+                let title = node.data?.title || 'To\'lov';
+                for (const [k, v] of Object.entries(variables)) {
+                    title = title.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                let rawPrice = node.data?.price || '';
+                for (const [k, v] of Object.entries(variables)) {
+                    rawPrice = rawPrice.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                const price = parseInt(rawPrice) || 0;
                 const providerToken = node.data?.providerToken;
                 const currency = node.type === 'yookassa' ? 'RUB' : 'UZS';
                 if (providerToken && price > 0) {
@@ -373,51 +870,165 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                             prices: [{ label: title, amount: price * 100 }]
                         });
                         await this.firebaseService.addMessage(botId, contactId, `[Invoice sent: ${title} - ${price} ${currency}]`, 'outbound');
+                        return { wait: true, stateUpdates: { waitingFor: 'payment' } };
                     }
                     catch (err) {
                         this.logger.error(`Failed to send ${node.type} invoice: ${err.message}`);
-                        await ctx.reply(`To'lov xizmatini ishga tushirib bo'lmadi.`);
+                        await ctx.reply(`To'lov xizmatini ishga tushirib bo'lmadi. Iltimos keyinroq urinib ko'ring.`);
                     }
                 }
                 else {
-                    await ctx.reply(`[Hisob-faktura] To'lov sozlangan emas.`);
+                    await ctx.reply(`[Hisob-faktura] To'lov sozlangan emas yoki narxi xato kiritilgan.`);
                 }
                 return { wait: false };
             }
             if (node.type === 'dealStage') {
                 const stage = node.data?.stage || 'New';
+                await this.firebaseService.db.collection('bots').doc(botId).collection('contacts').doc(contactId).update({
+                    stage,
+                    updatedAt: new Date()
+                }).catch((err) => {
+                    this.logger.error(`Failed to update contact root stage: ${err.message}`);
+                });
                 return { wait: false, stateUpdates: { variables: { ...variables, deal_stage: stage } } };
             }
             if (node.type === 'assignee') {
                 const agent = node.data?.agent || 'None';
+                await this.firebaseService.db.collection('bots').doc(botId).collection('contacts').doc(contactId).update({
+                    assignee: agent,
+                    updatedAt: new Date()
+                }).catch((err) => {
+                    this.logger.error(`Failed to update contact root assignee: ${err.message}`);
+                });
                 return { wait: false, stateUpdates: { variables: { ...variables, deal_agent: agent } } };
             }
             if (node.type === 'cart') {
                 const action = node.data?.cartAction || 'add';
-                const item = node.data?.itemName || 'Item';
-                let cart = variables.cart ? JSON.parse(variables.cart) : [];
-                if (action === 'add') {
-                    cart.push(item);
+                const itemName = node.data?.itemName || 'Maxsulot';
+                let cart = [];
+                try {
+                    if (variables.cart) {
+                        cart = JSON.parse(variables.cart);
+                        if (!Array.isArray(cart))
+                            cart = [];
+                    }
                 }
-                else {
+                catch (e) {
                     cart = [];
                 }
-                return { wait: false, stateUpdates: { variables: { ...variables, cart: JSON.stringify(cart) } } };
+                if (action === 'add') {
+                    let rawPrice = node.data?.itemPrice || '0';
+                    for (const [k, v] of Object.entries(variables)) {
+                        rawPrice = rawPrice.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                    }
+                    const price = parseInt(rawPrice) || 0;
+                    let rawQty = node.data?.itemQty || '1';
+                    for (const [k, v] of Object.entries(variables)) {
+                        rawQty = rawQty.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                    }
+                    const qty = parseInt(rawQty) || 1;
+                    const existing = cart.find(i => i.name === itemName);
+                    if (existing) {
+                        existing.qty += qty;
+                    }
+                    else {
+                        cart.push({ name: itemName, price, qty });
+                    }
+                }
+                else if (action === 'remove') {
+                    cart = cart.filter(i => i.name !== itemName);
+                }
+                else if (action === 'clear') {
+                    cart = [];
+                }
+                let cartTotal = 0;
+                let cartItemsCount = 0;
+                let cartText = '';
+                if (cart.length === 0) {
+                    cartText = "Savatingiz bo'sh.";
+                }
+                else {
+                    cart.forEach((i, idx) => {
+                        const sum = i.price * i.qty;
+                        cartTotal += sum;
+                        cartItemsCount += i.qty;
+                        cartText += `${idx + 1}. ${i.name} (${i.price.toLocaleString()} UZS) x ${i.qty} = ${sum.toLocaleString()} UZS\n`;
+                    });
+                    cartText += `\nJami: ${cartTotal.toLocaleString()} UZS`;
+                }
+                return {
+                    wait: false,
+                    stateUpdates: {
+                        variables: {
+                            ...variables,
+                            cart: JSON.stringify(cart),
+                            cart_total: cartTotal.toString(),
+                            cart_items_count: cartItemsCount.toString(),
+                            cart_text: cartText
+                        }
+                    }
+                };
             }
             if (node.type === 'orderList') {
                 const cartStr = variables.cart || '[]';
-                const cart = JSON.parse(cartStr);
+                let cart = [];
+                try {
+                    cart = JSON.parse(cartStr);
+                    if (!Array.isArray(cart))
+                        cart = [];
+                }
+                catch (e) {
+                    cart = [];
+                }
                 if (cart.length === 0) {
-                    await ctx.reply("Sizning savatingiz hozircha bo'sh.");
+                    let emptyMsg = node.data?.emptyMessage || "Sizning savatingiz hozircha bo'sh.";
+                    for (const [k, v] of Object.entries(variables)) {
+                        emptyMsg = emptyMsg.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                    }
+                    await ctx.reply(emptyMsg);
                 }
                 else {
-                    await ctx.reply(`Sizning buyurtmalaringiz:\n${cart.map((c, idx) => `${idx + 1}. ${c}`).join('\n')}`);
+                    let header = node.data?.headerText || "Sizning buyurtmalaringiz:";
+                    for (const [k, v] of Object.entries(variables)) {
+                        header = header.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                    }
+                    let listText = header + "\n";
+                    let total = 0;
+                    cart.forEach((c, idx) => {
+                        if (typeof c === 'string') {
+                            listText += `${idx + 1}. ${c}\n`;
+                        }
+                        else {
+                            const sum = (c.price || 0) * (c.qty || 1);
+                            total += sum;
+                            listText += `${idx + 1}. ${c.name} (${c.price ? c.price.toLocaleString() : 0} UZS) x ${c.qty || 1} = ${sum.toLocaleString()} UZS\n`;
+                        }
+                    });
+                    if (total > 0) {
+                        listText += `\nJami: ${total.toLocaleString()} UZS`;
+                    }
+                    await ctx.reply(listText);
                 }
                 return { wait: false };
             }
             if (node.type === 'addTag') {
                 const tag = node.data?.tagName;
                 if (tag) {
+                    try {
+                        const contactRef = this.firebaseService.db.collection('bots').doc(botId).collection('contacts').doc(contactId);
+                        const contactSnap = await contactRef.get();
+                        if (contactSnap.exists) {
+                            const contactData = contactSnap.data();
+                            let currentTags = Array.isArray(contactData.tags) ? contactData.tags : [];
+                            if (!currentTags.includes(tag)) {
+                                currentTags.push(tag);
+                                await contactRef.update({ tags: currentTags, updatedAt: new Date() });
+                            }
+                        }
+                    }
+                    catch (err) {
+                        this.logger.error(`Failed to update root contact tag in addTag: ${err.message}`);
+                    }
                     const tags = variables.tags ? JSON.parse(variables.tags) : [];
                     if (!tags.includes(tag))
                         tags.push(tag);
@@ -428,6 +1039,21 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
             if (node.type === 'removeTag') {
                 const tag = node.data?.tagName;
                 if (tag) {
+                    try {
+                        const contactRef = this.firebaseService.db.collection('bots').doc(botId).collection('contacts').doc(contactId);
+                        const contactSnap = await contactRef.get();
+                        if (contactSnap.exists) {
+                            const contactData = contactSnap.data();
+                            let currentTags = Array.isArray(contactData.tags) ? contactData.tags : [];
+                            if (currentTags.includes(tag)) {
+                                currentTags = currentTags.filter((t) => t !== tag);
+                                await contactRef.update({ tags: currentTags, updatedAt: new Date() });
+                            }
+                        }
+                    }
+                    catch (err) {
+                        this.logger.error(`Failed to remove root contact tag in removeTag: ${err.message}`);
+                    }
                     let tags = variables.tags ? JSON.parse(variables.tags) : [];
                     tags = tags.filter((t) => t !== tag);
                     return { wait: false, stateUpdates: { variables: { ...variables, tags: JSON.stringify(tags) } } };
@@ -435,25 +1061,129 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 return { wait: false };
             }
             if (node.type === 'topUpBalance') {
-                const amount = parseInt(node.data?.amount) || 0;
+                let rawAmount = node.data?.amount || '0';
+                for (const [k, v] of Object.entries(variables)) {
+                    rawAmount = rawAmount.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                const amount = parseInt(rawAmount) || 0;
                 const currentBalance = parseInt(variables.balance || '0') || 0;
-                return { wait: false, stateUpdates: { variables: { ...variables, balance: (currentBalance + amount).toString() } } };
+                const newBalance = currentBalance + amount;
+                const contactRef = this.firebaseService.db.collection('bots').doc(botId).collection('contacts').doc(contactId);
+                await contactRef.update({ balance: newBalance, updatedAt: new Date() }).catch((err) => {
+                    this.logger.error(`Failed to update contact root balance in topUp: ${err.message}`);
+                });
+                return { wait: false, stateUpdates: { variables: { ...variables, balance: newBalance.toString() } } };
             }
             if (node.type === 'debitBalance') {
-                const amount = parseInt(node.data?.amount) || 0;
+                let rawAmount = node.data?.amount || '0';
+                for (const [k, v] of Object.entries(variables)) {
+                    rawAmount = rawAmount.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                const amount = parseInt(rawAmount) || 0;
                 const currentBalance = parseInt(variables.balance || '0') || 0;
-                return { wait: false, stateUpdates: { variables: { ...variables, balance: (currentBalance - amount).toString() } } };
+                const newBalance = Math.max(0, currentBalance - amount);
+                const contactRef = this.firebaseService.db.collection('bots').doc(botId).collection('contacts').doc(contactId);
+                await contactRef.update({ balance: newBalance, updatedAt: new Date() }).catch((err) => {
+                    this.logger.error(`Failed to update contact root balance in debit: ${err.message}`);
+                });
+                return { wait: false, stateUpdates: { variables: { ...variables, balance: newBalance.toString() } } };
             }
             if (node.type === 'deleteUser') {
-                return { wait: false, stateUpdates: { variables: {} } };
+                const deleteType = node.data?.deleteType || 'memory';
+                const contactRef = this.firebaseService.db.collection('bots').doc(botId).collection('contacts').doc(contactId);
+                if (deleteType === 'database') {
+                    try {
+                        const msgSnap = await contactRef.collection('messages').get();
+                        const batch = this.firebaseService.db.batch();
+                        msgSnap.docs.forEach(doc => batch.delete(doc.ref));
+                        await batch.commit();
+                        await contactRef.delete();
+                        this.logger.log(`Contact ${contactId} completely deleted from Firestore CRM.`);
+                    }
+                    catch (err) {
+                        this.logger.error(`Failed to delete contact from database in deleteUser: ${err.message}`);
+                    }
+                    return { wait: true, stateUpdates: { currentNodeId: null, waitingFor: null, variables: {} } };
+                }
+                else {
+                    try {
+                        await contactRef.update({
+                            stage: 'Yangi',
+                            assignee: 'None',
+                            balance: 0,
+                            tags: [],
+                            updatedAt: new Date()
+                        });
+                    }
+                    catch (err) {
+                        this.logger.error(`Failed to clear contact CRM metadata in deleteUser: ${err.message}`);
+                    }
+                    return { wait: false, stateUpdates: { variables: {}, waitingFor: null } };
+                }
             }
             if (node.type === 'voterRegister') {
-                const candidate = node.data?.candidate || 'Option';
-                await ctx.reply(`Siz muvaffaqiyatli "${candidate}" uchun ovoz berdingiz.`);
+                let candidate = node.data?.candidate || 'Option';
+                for (const [k, v] of Object.entries(variables)) {
+                    candidate = candidate.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                if (variables.voted_for) {
+                    await ctx.reply("Kechirasiz, siz allaqachon ovoz bergansiz.");
+                    return { wait: false };
+                }
+                try {
+                    const voteDocRef = this.firebaseService.db
+                        .collection('bots')
+                        .doc(botId)
+                        .collection('votes')
+                        .doc(candidate);
+                    await this.firebaseService.db.runTransaction(async (transaction) => {
+                        const sfDoc = await transaction.get(voteDocRef);
+                        if (!sfDoc.exists) {
+                            transaction.set(voteDocRef, { count: 1, voters: [contactId] });
+                        }
+                        else {
+                            const data = sfDoc.data();
+                            const newCount = (data?.count || 0) + 1;
+                            const voters = data?.voters || [];
+                            if (!voters.includes(contactId)) {
+                                voters.push(contactId);
+                                transaction.update(voteDocRef, { count: newCount, voters });
+                            }
+                        }
+                    });
+                    await ctx.reply(`Rahmat! Siz muvaffaqiyatli "${candidate}" uchun ovoz berdingiz.`);
+                }
+                catch (err) {
+                    this.logger.error(`Voting database update failed: ${err.message}`);
+                    await ctx.reply("Ovoz berish jarayonida xatolik yuz berdi. Iltimos keyinroq urinib ko'ring.");
+                    return { wait: false };
+                }
                 return { wait: false, stateUpdates: { variables: { ...variables, voted_for: candidate } } };
             }
             if (node.type === 'voteLeaders') {
-                await ctx.reply("🏆 Reyting yetakchilari:\n1. A Nomzod - 150 ovoz\n2. B Nomzod - 120 ovoz");
+                try {
+                    const votesSnap = await this.firebaseService.db
+                        .collection('bots')
+                        .doc(botId)
+                        .collection('votes')
+                        .orderBy('count', 'desc')
+                        .get();
+                    if (votesSnap.empty) {
+                        await ctx.reply("🏆 Hozircha ovozlar yo'q.");
+                    }
+                    else {
+                        let text = "🏆 Reyting yetakchilari (Real vaqtda):\n\n";
+                        votesSnap.docs.forEach((doc, idx) => {
+                            const data = doc.data();
+                            text += `${idx + 1}. ${doc.id} - ${data.count || 0} ta ovoz\n`;
+                        });
+                        await ctx.reply(text);
+                    }
+                }
+                catch (err) {
+                    this.logger.error(`Failed to load vote leaders: ${err.message}`);
+                    await ctx.reply("Reytingni yuklab bo'lmadi. Iltimos keyinroq urinib ko'ring.");
+                }
                 return { wait: false };
             }
             return { wait: false };

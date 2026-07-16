@@ -193,11 +193,42 @@ function SmartNode({ data, selected, type }: NodeProps) {
   )
 }
 
+function SubscriptionNode({ data, selected }: NodeProps) {
+  const d = data as Record<string, any>
+  return (
+    <div className={`custom-node ${selected ? 'selected' : ''}`} style={{ '--node-color': '#8b5cf6' } as React.CSSProperties}>
+      <Handle type="target" position={Position.Left} id="in" className="react-flow__handle-left" />
+      <div className="node-header">
+        <div className="node-icon">📢</div>
+        <div className="node-title">{d.label || 'Kanalga a\'zolik'}</div>
+      </div>
+      <div className="node-content">
+        <div className="node-text-preview" style={{ fontSize: 11 }}>
+          Kanal: {d.channel || 'Tanlanmagan'}
+        </div>
+      </div>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: 4 }}>
+        <div style={{ position: 'relative', background: 'rgba(16, 217, 116, 0.1)', color: '#10d974', padding: '4px', borderRadius: 4, fontSize: 11, textAlign: 'right', paddingRight: 10 }}>
+          A'zo bo'lgan (True)
+          <Handle type="source" position={Position.Right} id="true" style={{ top: '50%', right: -6, width: 8, height: 8, background: '#10d974' }} />
+        </div>
+        <div style={{ position: 'relative', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '4px', borderRadius: 4, fontSize: 11, textAlign: 'right', paddingRight: 10 }}>
+          A'zo bo'lmagan (False)
+          <Handle type="source" position={Position.Right} id="false" style={{ top: '50%', right: -6, width: 8, height: 8, background: '#ef4444' }} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export const nodeTypes = {
   start: StartNode,
   message: MessageNode,
   condition: ConditionNode,
   abTest: AbTestNode,
+  subscription: SubscriptionNode,
+
   
   // All other blocks styled dynamically using SmartNode
   chain: (props: NodeProps) => <SmartNode {...props} type="chain" />,

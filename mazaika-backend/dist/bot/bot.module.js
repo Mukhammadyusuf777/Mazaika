@@ -12,13 +12,14 @@ const bot_controller_1 = require("./bot.controller");
 const workflow_service_1 = require("./workflow.service");
 const workflow_controller_1 = require("./workflow.controller");
 const bot_manager_service_1 = require("./bot-manager.service");
+const timer_scheduler_service_1 = require("./timer-scheduler.service");
 let BotModule = class BotModule {
 };
 exports.BotModule = BotModule;
 exports.BotModule = BotModule = __decorate([
     (0, common_1.Module)({
         controllers: [bot_controller_1.BotController, workflow_controller_1.WorkflowController],
-        providers: [workflow_service_1.WorkflowService, bot_manager_service_1.BotManagerService],
+        providers: [workflow_service_1.WorkflowService, bot_manager_service_1.BotManagerService, timer_scheduler_service_1.TimerSchedulerService],
     })
 ], BotModule);
 //# sourceMappingURL=bot.module.js.map

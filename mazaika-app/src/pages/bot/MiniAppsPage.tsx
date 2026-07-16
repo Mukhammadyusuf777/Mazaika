@@ -159,8 +159,12 @@ export default function MiniAppsPage() {
           <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
             <Plus size={16} /> Mini ilova yaratish
           </button>
-
         </div>
+
+        <div style={{ background: 'rgba(30,144,255,0.08)', border: '1px solid var(--accent-blue)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-4)', marginBottom: 'var(--space-6)', fontSize: 13, lineHeight: 1.5 }}>
+          💡 <b>Birlashgan Tizim (Unified Platform):</b> Mazaika platformasida Telegram Mini Ilova (WebApp) va jamoat veb-sayti yagona blok-konstruktor orqali ishlaydi. <b>Konstruktor</b> bo'limida yaratgan bloklaringiz (katalog, so'rovnoma, hamyon, ovoz berish va h.k.) avtomatik ravishda mini ilovangizda ham aks etadi. Sozlash uchun Konstruktor bo'limiga o'ting!
+        </div>
+
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-4)' }}>
           {apps.map(app => (

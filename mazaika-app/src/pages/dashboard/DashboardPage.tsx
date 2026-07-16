@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const [newBotName, setNewBotName] = useState('')
   const [newBotToken, setNewBotToken] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState<string>('')
+  const [creationType, setCreationType] = useState<'bot_only' | 'bot_and_webapp'>('bot_and_webapp')
 
   // Settings tab state
   const [profileName, setProfileName] = useState(user?.name || '')
@@ -84,6 +85,7 @@ export default function DashboardPage() {
         name: newBotName,
         token: newBotToken,
         template: selectedTemplate || undefined,
+        creationType
       })
       setShowCreateModal(false)
       setNewBotName(''); setNewBotToken(''); setSelectedTemplate('')
@@ -108,6 +110,7 @@ export default function DashboardPage() {
     setSelectedTemplate(templateName)
     setNewBotName(templateName + ' Boti')
     setNewBotToken('')
+    setCreationType('bot_and_webapp')
     setShowCreateModal(true)
   }
 
@@ -430,10 +433,71 @@ export default function DashboardPage() {
                   <label className="input-label">Bot nomi</label>
                   <input type="text" className="input" placeholder="Mening Do'konim Boti" value={newBotName} onChange={e => setNewBotName(e.target.value)} required />
                 </div>
-                <div className="input-group" style={{ marginBottom: '24px' }}>
+                <div className="input-group" style={{ marginBottom: '16px' }}>
                   <label className="input-label">Telegram API Token</label>
                   <input type="text" className="input" placeholder="123456789:ABCdef..." value={newBotToken} onChange={e => setNewBotToken(e.target.value)} required />
                 </div>
+
+                <div className="input-group" style={{ marginBottom: '24px' }}>
+                  <label className="input-label">Yaratish turi</label>
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '6px' }}>
+                    <label style={{ 
+                      flex: 1,
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px', 
+                      background: creationType === 'bot_and_webapp' ? 'rgba(30,144,255,0.1)' : 'rgba(255,255,255,0.02)', 
+                      border: creationType === 'bot_and_webapp' ? '1.5px solid var(--accent-blue)' : '1.5px solid rgba(255,255,255,0.05)',
+                      padding: '10px 14px', 
+                      borderRadius: '8px', 
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      transition: 'all 0.2s'
+                    }}>
+                      <input 
+                        type="radio" 
+                        name="creationType" 
+                        value="bot_and_webapp" 
+                        checked={creationType === 'bot_and_webapp'} 
+                        onChange={() => setCreationType('bot_and_webapp')}
+                        style={{ accentColor: 'var(--accent-blue)' }}
+                      />
+                      <span>Bot + Mini App</span>
+                    </label>
+
+                    <label style={{ 
+                      flex: 1,
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px', 
+                      background: creationType === 'bot_only' ? 'rgba(30,144,255,0.1)' : 'rgba(255,255,255,0.02)', 
+                      border: creationType === 'bot_only' ? '1.5px solid var(--accent-blue)' : '1.5px solid rgba(255,255,255,0.05)',
+                      padding: '10px 14px', 
+                      borderRadius: '8px', 
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      transition: 'all 0.2s'
+                    }}>
+                      <input 
+                        type="radio" 
+                        name="creationType" 
+                        value="bot_only" 
+                        checked={creationType === 'bot_only'} 
+                        onChange={() => setCreationType('bot_only')}
+                        style={{ accentColor: 'var(--accent-blue)' }}
+                      />
+                      <span>Faqat Bot</span>
+                    </label>
+                  </div>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', display: 'block' }}>
+                    {creationType === 'bot_and_webapp' 
+                      ? '💡 Bot stsenariysi bilan birga vizual veb-ilova (katalog, buyurtma, forma, ovoz berish) ham tayyorlanadi.'
+                      : '💡 Faqat Telegram bot stsenariysi va matnli xabarlar yaratiladi (veb-ilova interfeysisiz).'}
+                  </span>
+                </div>
+
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <button type="button" className="btn btn-ghost flex-1" onClick={() => setShowCreateModal(false)}>Bekor qilish</button>
                   <button type="submit" className="btn btn-primary flex-1">Yaratish →</button>

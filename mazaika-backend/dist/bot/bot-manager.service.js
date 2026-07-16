@@ -15,10 +15,12 @@ const common_1 = require("@nestjs/common");
 const firebase_service_1 = require("../firebase/firebase.service");
 const workflow_service_1 = require("./workflow.service");
 const telegraf_1 = require("telegraf");
-let BotManagerService = BotManagerService_1 = class BotManagerService {
+let BotManagerService = class BotManagerService {
+    static { BotManagerService_1 = this; }
     firebaseService;
     workflowService;
     logger = new common_1.Logger(BotManagerService_1.name);
+    static activeBotsMap = new Map();
     activeBots = new Map();
     constructor(firebaseService, workflowService) {
         this.firebaseService = firebaseService;
@@ -58,6 +60,16 @@ let BotManagerService = BotManagerService_1 = class BotManagerService {
                     const data = ctx.message.web_app_data.data;
                     await this.workflowService.processIncomingMessage(botId, telegramId, `webapp:${data}`, ctx);
                 }
+                else if (ctx.message && 'successful_payment' in ctx.message && ctx.message.successful_payment) {
+                    const payload = ctx.message.successful_payment.invoice_payload;
+                    const amount = ctx.message.successful_payment.total_amount / 100;
+                    await this.workflowService.processIncomingMessage(botId, telegramId, `payment_success:${payload}:${amount}`, ctx);
+                }
+            });
+            telegrafBot.on('pre_checkout_query', async (ctx) => {
+                await ctx.answerPreCheckoutQuery(true).catch((err) => {
+                    this.logger.error(`Pre-checkout query failed for bot ${botId}: ${err.message}`);
+                });
             });
             telegrafBot.on('callback_query', async (ctx) => {
                 if ('data' in ctx.callbackQuery) {
@@ -70,9 +82,11 @@ let BotManagerService = BotManagerService_1 = class BotManagerService {
             telegrafBot.launch().catch(async (error) => {
                 this.logger.error(`Bot ${botId} crashed during polling: ${error.message}`);
                 this.activeBots.delete(botId);
+                BotManagerService_1.activeBotsMap.delete(botId);
                 await this.firebaseService.updateBotStatus(botId, 'error');
             });
             this.activeBots.set(botId, telegrafBot);
+            BotManagerService_1.activeBotsMap.set(botId, telegrafBot);
             this.logger.log(`Bot ${botId} started successfully.`);
             try {
                 const botDoc = await this.firebaseService.getBot(botId);
@@ -104,6 +118,7 @@ let BotManagerService = BotManagerService_1 = class BotManagerService {
         if (telegrafBot) {
             telegrafBot.stop('API request');
             this.activeBots.delete(botId);
+            BotManagerService_1.activeBotsMap.delete(botId);
             this.logger.log(`Bot ${botId} stopped.`);
             await this.firebaseService.updateBotStatus(botId, 'paused');
             return { success: true };

@@ -184,6 +184,7 @@ export default function EditorPage() {
         return (
           <PropertiesPanel
             node={currentNode as any}
+            nodes={nodes as any[]}
             onClose={() => setSelectedNode(null)}
             onUpdate={(data) => updateNodeData(selectedNode.id, data)}
             onDelete={() => {

@@ -55,7 +55,7 @@ export async function getBotById(botId: string): Promise<any> {
   return null
 }
 
-export async function createBot(userId: string, data: { name: string; token: string; template?: string }): Promise<any> {
+export async function createBot(userId: string, data: { name: string; token: string; template?: string; creationType?: 'bot_only' | 'bot_and_webapp' }): Promise<any> {
   const ref = await addDoc(collection(db, 'bots'), {
     name: data.name,
     token: data.token,
@@ -67,6 +67,8 @@ export async function createBot(userId: string, data: { name: string; token: str
     updatedAt: serverTimestamp(),
   })
 
+  const isWebappEnabled = data.creationType !== 'bot_only';
+
   // Create workflow template nodes and edges
   let nodes: any[] = [];
   let edges: any[] = [];
@@ -74,7 +76,22 @@ export async function createBot(userId: string, data: { name: string; token: str
   if (data.template === 'Internet do\'kon') {
     nodes = [
       { id: 'node-1', type: 'start', position: { x: 100, y: 200 }, data: { label: 'Boshlash', emoji: '▶', color: '#10d974' } },
-      { id: 'node-2', type: 'message', position: { x: 300, y: 200 }, data: { label: 'Salomlashish', emoji: '💬', color: '#1e90ff', text: 'Xush kelibsiz! Internet do\'konda mahsulotlarni sotib olishingiz mumkin.', buttons: ['Katalog', 'Savatcha', 'Aloqa'] } },
+      { 
+        id: 'node-2', 
+        type: 'message', 
+        position: { x: 300, y: 200 }, 
+        data: { 
+          label: 'Salomlashish', 
+          emoji: '💬', 
+          color: '#1e90ff', 
+          text: isWebappEnabled 
+            ? 'Xush kelibsiz! Bizning mini-do\'konda mahsulotlarni tanlash va buyurtma berish uchun pastdagi tugmani bosing:' 
+            : 'Xush kelibsiz! Internet do\'konda mahsulotlarni sotib olishingiz mumkin.', 
+          buttons: isWebappEnabled 
+            ? [`🛒 Do'konni ochish | webapp: https://mazaika.pages.dev/site/${ref.id}`, '📞 Aloqa'] 
+            : ['Katalog', 'Savatcha', 'Aloqa'] 
+        } 
+      },
       { id: 'node-3', type: 'cart', position: { x: 580, y: 100 }, data: { label: 'Savatga VIP qo\'shish', emoji: '🛒', color: '#ec4899', cartAction: 'add', itemName: 'VIP Kurs' } },
       { id: 'node-4', type: 'message', position: { x: 820, y: 100 }, data: { label: 'Xabar (VIP)', emoji: '💬', color: '#1e90ff', text: 'VIP Kurs savatga muvaffaqiyatli qo\'shildi!', buttons: ['To\'lov qilish'] } },
       { id: 'node-5', type: 'orderList', position: { x: 580, y: 250 }, data: { label: 'Buyurtmalar ro\'yxati', emoji: '📦', color: '#8b5cf6' } },
@@ -95,7 +112,22 @@ export async function createBot(userId: string, data: { name: string; token: str
   } else if (data.template === 'Yetkazib berish') {
     nodes = [
       { id: 'node-1', type: 'start', position: { x: 100, y: 200 }, data: { label: 'Boshlash', emoji: '▶', color: '#10d974' } },
-      { id: 'node-2', type: 'message', position: { x: 300, y: 200 }, data: { label: 'Salomlashish', emoji: '💬', color: '#1e90ff', text: 'Kuryerlik xizmatiga xush kelibsiz!', buttons: ['Buyurtma berish', 'Statusni tekshirish'] } },
+      { 
+        id: 'node-2', 
+        type: 'message', 
+        position: { x: 300, y: 200 }, 
+        data: { 
+          label: 'Salomlashish', 
+          emoji: '💬', 
+          color: '#1e90ff', 
+          text: isWebappEnabled 
+            ? 'Kuryerlik xizmatiga xush kelibsiz! Kuryer chaqirish uchun quyidagi tugmani bosing:' 
+            : 'Kuryerlik xizmatiga xush kelibsiz!', 
+          buttons: isWebappEnabled 
+            ? [`🚚 Kuryer chaqirish | webapp: https://mazaika.pages.dev/site/${ref.id}`] 
+            : ['Buyurtma berish', 'Statusni tekshirish'] 
+        } 
+      },
       { id: 'node-3', type: 'phone', position: { x: 580, y: 100 }, data: { label: 'Telefon raqam', emoji: '📱', color: '#a855f7', text: 'Iltimos, telefon raqamingizni yuboring:', variable: 'phone' } },
       { id: 'node-4', type: 'location', position: { x: 820, y: 100 }, data: { label: 'Lokatsiya', emoji: '📍', color: '#a855f7', text: 'Yetkazib berish manzilini ulashing:', variable: 'loc' } },
       { id: 'node-5', type: 'message', position: { x: 1060, y: 100 }, data: { label: 'Qabul', emoji: '💬', color: '#1e90ff', text: 'Rahmat! Kuryer tez orada yo\'lga chiqadi.' } },
@@ -111,7 +143,22 @@ export async function createBot(userId: string, data: { name: string; token: str
   } else if (data.template === 'Restoran') {
     nodes = [
       { id: 'node-1', type: 'start', position: { x: 100, y: 200 }, data: { label: 'Boshlash', emoji: '▶', color: '#10d974' } },
-      { id: 'node-2', type: 'message', position: { x: 300, y: 200 }, data: { label: 'Xabar', emoji: '💬', color: '#1e90ff', text: 'Restoranimizga xush kelibsiz! Stol bron qilishni xohlaysizmi?', buttons: ['Stol bron qilish', 'Menyu'] } },
+      { 
+        id: 'node-2', 
+        type: 'message', 
+        position: { x: 300, y: 200 }, 
+        data: { 
+          label: 'Xabar', 
+          emoji: '💬', 
+          color: '#1e90ff', 
+          text: isWebappEnabled 
+            ? 'Restoranimizga xush kelibsiz! Stol bron qilish va menyuni ko\'rish uchun quyidagi tugmani bosing:' 
+            : 'Restoranimizga xush kelibsiz! Stol bron qilishni xohlaysizmi?', 
+          buttons: isWebappEnabled 
+            ? [`🍽 Stol band qilish | webapp: https://mazaika.pages.dev/site/${ref.id}`] 
+            : ['Stol bron qilish', 'Menyu'] 
+        } 
+      },
       { id: 'node-3', type: 'question', position: { x: 580, y: 100 }, data: { label: 'Ism so\'rash', emoji: '❓', color: '#a855f7', text: 'Iltimos, ismingizni yozib yuboring:', variable: 'client_name' } },
       { id: 'node-4', type: 'phone', position: { x: 820, y: 100 }, data: { label: 'Telefon so\'rash', emoji: '📱', color: '#a855f7', text: 'Aloqa uchun telefon raqam:', variable: 'client_phone' } },
       { id: 'node-5', type: 'message', position: { x: 1060, y: 100 }, data: { label: 'Tasdiqlash', emoji: '💬', color: '#1e90ff', text: 'Rahmat, {client_name}! Stol muvaffaqiyatli bron qilindi. Telefoningiz: {client_phone}' } },
@@ -127,7 +174,22 @@ export async function createBot(userId: string, data: { name: string; token: str
   } else if (data.template === 'Kurs savdo') {
     nodes = [
       { id: 'node-1', type: 'start', position: { x: 100, y: 200 }, data: { label: 'Boshlash', emoji: '▶', color: '#10d974' } },
-      { id: 'node-2', type: 'message', position: { x: 300, y: 200 }, data: { label: 'Kurslar', emoji: '💬', color: '#1e90ff', text: 'Dasturlash kurslarimizga ro\'yxatdan o\'ting!', buttons: ['Python Kursi', 'VIP Statusini tekshirish'] } },
+      { 
+        id: 'node-2', 
+        type: 'message', 
+        position: { x: 300, y: 200 }, 
+        data: { 
+          label: 'Kurslar', 
+          emoji: '💬', 
+          color: '#1e90ff', 
+          text: isWebappEnabled 
+            ? 'Dasturlash akademiyamizga xush kelibsiz! Kurslarni tanlash va cashback balansingizni tekshirish uchun pastdagi tugmani bosing:' 
+            : 'Dasturlash kurslarimizga ro\'yxatdan o\'ting!', 
+          buttons: isWebappEnabled 
+            ? [`🎓 Kurslar ro'yxati | webapp: https://mazaika.pages.dev/site/${ref.id}`] 
+            : ['Python Kursi', 'VIP Statusini tekshirish'] 
+        } 
+      },
       { id: 'node-3', type: 'click', position: { x: 580, y: 100 }, data: { label: 'Click Invoys', emoji: '💳', color: '#00aaff', title: 'Python Kursi', price: 150000, providerToken: 'TEST_PROVIDER_TOKEN' } },
       { id: 'node-4', type: 'condition', position: { x: 580, y: 300 }, data: { label: 'Teg tekshirish', emoji: '🔀', color: '#ffb830', variable: 'tags', operator: 'contains', value: 'VIP' } },
       { id: 'node-5', type: 'message', position: { x: 850, y: 250 }, data: { label: 'VIP Xabar', emoji: '💬', color: '#1e90ff', text: 'Siz VIP a\'zosisiz!' } },
@@ -143,7 +205,22 @@ export async function createBot(userId: string, data: { name: string; token: str
   } else if (data.template === 'Xizmatlar') {
     nodes = [
       { id: 'node-1', type: 'start', position: { x: 100, y: 200 }, data: { label: 'Boshlash', emoji: '▶', color: '#10d974' } },
-      { id: 'node-2', type: 'message', position: { x: 300, y: 200 }, data: { label: 'Murojaat', emoji: '💬', color: '#1e90ff', text: 'Markazimiz xizmatlari ro\'yxati. Bizga ariza yuborasizmi?', buttons: ['Ariza qoldirish', 'Xizmatlar ro\'yxati'] } },
+      { 
+        id: 'node-2', 
+        type: 'message', 
+        position: { x: 300, y: 200 }, 
+        data: { 
+          label: 'Murojaat', 
+          emoji: '💬', 
+          color: '#1e90ff', 
+          text: isWebappEnabled 
+            ? 'Professional xizmatlar arizasini to\'ldirish uchun pastdagi tugmani bosing:' 
+            : 'Markazimiz xizmatlari ro\'yxati. Bizga ariza yuborasizmi?', 
+          buttons: isWebappEnabled 
+            ? [`⚙️ Arizani yuborish | webapp: https://mazaika.pages.dev/site/${ref.id}`] 
+            : ['Ariza qoldirish', 'Xizmatlar ro\'yxati'] 
+        } 
+      },
       { id: 'node-3', type: 'question', position: { x: 580, y: 100 }, data: { label: 'Xizmat turi', emoji: '❓', color: '#a855f7', text: 'Qanday xizmat kerak? (yozing):', variable: 'service_type' } },
       { id: 'node-4', type: 'email', position: { x: 820, y: 100 }, data: { label: 'Email', emoji: '📧', color: '#a855f7', text: 'Siz bilan bog\'lanish uchun Email:', variable: 'client_email' } },
       { id: 'node-5', type: 'message', position: { x: 1060, y: 100 }, data: { label: 'Tasdiqlash', emoji: '💬', color: '#1e90ff', text: 'Rahmat! Ariza qabul qilindi. Xizmat: {service_type}, Email: {client_email}' } },
@@ -159,7 +236,22 @@ export async function createBot(userId: string, data: { name: string; token: str
   } else if (data.template === 'Referral') {
     nodes = [
       { id: 'node-1', type: 'start', position: { x: 100, y: 200 }, data: { label: 'Boshlash', emoji: '▶', color: '#10d974' } },
-      { id: 'node-2', type: 'message', position: { x: 300, y: 200 }, data: { label: 'Referal', emoji: '💬', color: '#1e90ff', text: 'Hamkorlik dasturimizga xush kelibsiz!', buttons: ['Mening Balansim', 'Taklif qilish'] } },
+      { 
+        id: 'node-2', 
+        type: 'message', 
+        position: { x: 300, y: 200 }, 
+        data: { 
+          label: 'Referal', 
+          emoji: '💬', 
+          color: '#1e90ff', 
+          text: isWebappEnabled 
+            ? 'Hamkorlik dasturi va so\'rovnomaga xush kelibsiz! Ovoz berish uchun quyidagi tugmani bosing:' 
+            : 'Hamkorlik dasturimizga xush kelibsiz!', 
+          buttons: isWebappEnabled 
+            ? [`🗳 So'rovnomada qatnashish | webapp: https://mazaika.pages.dev/site/${ref.id}`] 
+            : ['Mening Balansim', 'Taklif qilish'] 
+        } 
+      },
       { id: 'node-3', type: 'message', position: { x: 580, y: 100 }, data: { label: 'Balans', emoji: '💬', color: '#1e90ff', text: 'Sizning virtual balansingiz: {balance} UZS' } },
       { id: 'node-4', type: 'topUpBalance', position: { x: 580, y: 250 }, data: { label: 'Balans to\'ldirish', emoji: '💰', color: '#10d974', amount: 5000 } },
       { id: 'node-5', type: 'message', position: { x: 820, y: 250 }, data: { label: 'Yutuq xabari', emoji: '💬', color: '#1e90ff', text: 'Hamkor chaqirildi! Balansingizga 5 000 UZS qo\'shildi!' } }
@@ -186,8 +278,93 @@ export async function createBot(userId: string, data: { name: string; token: str
     updatedAt: serverTimestamp(),
   })
 
+  // Pre-configure WebApp Blocks layout if requested
+  if (isWebappEnabled) {
+    let blocks: any[] = [];
+    if (data.template === 'Internet do\'kon') {
+      blocks = [
+        { id: '1', type: 'hero', title: 'Smart Internet Do\'kon', subtitle: 'Bizning katalogdan eng shirin taomlarni topishingiz mumkin. Buyurtma bering va uyingizga yetkazib beramiz!', ctaText: 'Katalogga o\'tish', img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800' },
+        { id: '2', type: 'about', title: 'Biz haqimizda', text: 'Bizning pitsareyamiz 10 yildan ortiq vaqtdan beri mijozlarga faqat yangi va eng sifatli masalliqlardan pitsa tayyorlab yetkazib beradi.' },
+        { id: '3', type: 'catalog', title: 'Pitsalar Menyusi', items: [
+          { id: 'item_1', name: 'Pizza Margherita', price: 45000, desc: 'Pomidor sousi, motsarella, rayhon va zaytun moyi.', img: 'https://images.unsplash.com/photo-1604068549290-dea0e4a305ca?w=150' },
+          { id: 'item_2', name: 'Pizza Pepperoni', price: 55000, desc: 'Pomidor sousi, achchiq pepperoni, motsarella.', img: 'https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=150' },
+          { id: 'item_3', name: 'Coca-Cola 1.5L', price: 12000, desc: 'Muzdek tetiklantiruvchi ichimlik.', img: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=150' }
+        ] },
+        { id: '4', type: 'contacts', title: 'Biz bilan bog\'lanish', phone: '+998 90 123 45 67', telegram: 'MazaikaSupportBot' }
+      ];
+    } else if (data.template === 'Yetkazib berish') {
+      blocks = [
+        { id: '1', type: 'hero', title: 'Kuryer Yetkazib berish xizmati', subtitle: 'Hujjatlar, buyumlar yoki oziq-ovqatlarni shaharning istalgan nuqtasiga tezkor kuryerlarimiz orqali yetkazamiz!', ctaText: 'Kuryer chaqirish', img: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=800' },
+        { id: '2', type: 'form', title: 'Tezkor kuryer chaqirish', fields: [
+          { name: 'name', label: 'Ismingiz', type: 'text', required: true },
+          { name: 'phone', label: 'Telefon raqamingiz', type: 'tel', required: true },
+          { name: 'pickup_address', label: 'Yukni olish manzili', type: 'text', required: true },
+          { name: 'delivery_address', label: 'Yetkazish manzili', type: 'text', required: true },
+          { name: 'comment', label: 'Kuryer uchun izoh', type: 'textarea', required: false }
+        ] },
+        { id: '3', type: 'contacts', title: 'Murojaat uchun', phone: '+998 90 999 88 77', telegram: 'DeliverySupport' }
+      ];
+    } else if (data.template === 'Restoran') {
+      blocks = [
+        { id: '1', type: 'hero', title: 'Premium Milliy Taomlar', subtitle: 'Sharqona shinamlik va lazzatli taomlar maskaniga xush kelibsiz! Stollar va kabinalarni bron qilishingiz mumkin.', ctaText: 'Stol band qilish', img: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800' },
+        { id: '2', type: 'catalog', title: 'Bizning shohona menyu', items: [
+          { id: 'item_r1', name: 'Shohona Palov', price: 35000, desc: 'Dombira guruch, barra go\'sht va bedana tuxumi bilan.', img: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=150' },
+          { id: 'item_r2', name: 'Tandir Kebab', price: 75000, desc: 'Tandirda pishgan yumshoq qo\'y go\'shti.', img: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=150' }
+        ] },
+        { id: '3', type: 'form', title: 'Stol yoki kabina bron qilish', fields: [
+          { name: 'name', label: 'Ismingiz', type: 'text', required: true },
+          { name: 'phone', label: 'Telefoningiz', type: 'tel', required: true },
+          { name: 'guests', label: 'Mehmonlar soni', type: 'number', required: true },
+          { name: 'datetime', label: 'Sana va vaqt', type: 'text', required: true }
+        ] }
+      ];
+    } else if (data.template === 'Kurs savdo') {
+      blocks = [
+        { id: '1', type: 'hero', title: 'Mazaika IT Akademiyasi', subtitle: 'Noldan boshlab dasturchi kasbini egallang! Darslar oson va qiziqarli tilda o\'rgatiladi.', ctaText: 'Kurslar ro\'yxati', img: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800' },
+        { id: '2', type: 'catalog', title: 'Akademiya kurslari', items: [
+          { id: 'item_c1', name: 'Python Boshlang\'ich', price: 150000, desc: 'Python tili asoslari va Telegram botlar yaratish.', img: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=150' },
+          { id: 'item_c2', name: 'Frontend React.js', price: 250000, desc: 'Veb-saytlar yaratish va React frameworki.', img: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=150' }
+        ] },
+        { id: '3', type: 'loyalty', title: 'Sizning cashback hisobingiz' },
+        { id: '4', type: 'contacts', title: 'Sertifikat va savollar', phone: '+998 71 200 00 20', telegram: 'AcademySupport' }
+      ];
+    } else if (data.template === 'Xizmatlar') {
+      blocks = [
+        { id: '1', type: 'hero', title: 'Professional Konsalting va Saytlar', subtitle: 'Kompaniyangiz uchun saytlar yaratish, SMM va logotiplarni noldan sifatli tayyorlaymiz!', ctaText: 'Ariza qoldirish', img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800' },
+        { id: '2', type: 'form', title: 'Xizmat turi va arizalar', fields: [
+          { name: 'name', label: 'Kompaniya nomi', type: 'text', required: true },
+          { name: 'phone', label: 'Bog\'lanish telefoni', type: 'tel', required: true },
+          { name: 'service', label: 'Kerakli xizmat (SMM, Sayt, Dizayn)', type: 'text', required: true }
+        ] }
+      ];
+    } else if (data.template === 'Referral') {
+      blocks = [
+        { id: '1', type: 'hero', title: 'Smart Ovoz Berish Tizimi', subtitle: 'Jamoatchilik tanlovi yoki eng faol loyihani aniqlash so\'rovnomasi.', ctaText: 'Nomzodlar ro\'yxati', img: 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?w=800' },
+        { id: '2', type: 'voting', title: 'Mazaika Eng Faol Nomzodi', candidates: ['Nomzod A', 'Nomzod B', 'Nomzod C'] },
+        { id: '3', type: 'loyalty', title: 'Sizning bonus hisobingiz' }
+      ];
+    }
+
+    if (blocks.length > 0) {
+      await setDoc(doc(db, 'bots', ref.id, 'site', 'config'), {
+        theme: 'glassmorphism',
+        themeColor: '#1e90ff',
+        blocks,
+        updatedAt: serverTimestamp()
+      });
+
+      // Enable WebApp button on bot document by default!
+      await updateDoc(doc(db, 'bots', ref.id), {
+        menuButtonEnabled: true,
+        menuButtonText: 'Mini App',
+        menuButtonUrl: `https://mazaika.pages.dev/site/${ref.id}`
+      });
+    }
+  }
+
   return { id: ref.id, ...data, userId, status: 'active' }
 }
+
 
 
 export async function updateBot(

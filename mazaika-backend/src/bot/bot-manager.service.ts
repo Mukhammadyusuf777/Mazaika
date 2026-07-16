@@ -7,13 +7,15 @@ import { Telegraf } from 'telegraf';
 export class BotManagerService implements OnModuleInit {
   private readonly logger = new Logger(BotManagerService.name);
   
-  // Store active Telegraf instances by botId
+  // Store active Telegraf instances statically to make it accessible to schedulers
+  public static activeBotsMap: Map<string, Telegraf> = new Map();
   private activeBots: Map<string, Telegraf> = new Map();
 
   constructor(
     private firebaseService: FirebaseService,
     private workflowService: WorkflowService
   ) {}
+
 
   async onModuleInit() {
     this.logger.log('Initializing Bot Manager...');
@@ -39,7 +41,7 @@ export class BotManagerService implements OnModuleInit {
       // Pre-flight check: validate token before launching
       await telegrafBot.telegram.getMe();
 
-      // Handle all incoming messages (text, contact, location)
+      // Handle all incoming messages (text, contact, location, successful_payment)
       telegrafBot.on('message', async (ctx) => {
         const telegramId = ctx.from.id.toString();
         
@@ -54,9 +56,18 @@ export class BotManagerService implements OnModuleInit {
         } else if (ctx.message && 'web_app_data' in ctx.message && ctx.message.web_app_data) {
           const data = ctx.message.web_app_data.data;
           await this.workflowService.processIncomingMessage(botId, telegramId, `webapp:${data}`, ctx);
+        } else if (ctx.message && 'successful_payment' in ctx.message && ctx.message.successful_payment) {
+          const payload = ctx.message.successful_payment.invoice_payload;
+          const amount = ctx.message.successful_payment.total_amount / 100;
+          await this.workflowService.processIncomingMessage(botId, telegramId, `payment_success:${payload}:${amount}`, ctx);
         }
       });
 
+      telegrafBot.on('pre_checkout_query', async (ctx) => {
+        await ctx.answerPreCheckoutQuery(true).catch((err) => {
+          this.logger.error(`Pre-checkout query failed for bot ${botId}: ${err.message}`);
+        });
+      });
 
       telegrafBot.on('callback_query', async (ctx) => {
         if ('data' in ctx.callbackQuery) {
@@ -71,10 +82,12 @@ export class BotManagerService implements OnModuleInit {
       telegrafBot.launch().catch(async (error) => {
         this.logger.error(`Bot ${botId} crashed during polling: ${error.message}`);
         this.activeBots.delete(botId);
+        BotManagerService.activeBotsMap.delete(botId);
         await this.firebaseService.updateBotStatus(botId, 'error');
       });
       
       this.activeBots.set(botId, telegrafBot);
+      BotManagerService.activeBotsMap.set(botId, telegrafBot);
       this.logger.log(`Bot ${botId} started successfully.`);
 
       // Auto-set chat menu button if enabled in Firestore
@@ -114,6 +127,7 @@ export class BotManagerService implements OnModuleInit {
     if (telegrafBot) {
       telegrafBot.stop('API request');
       this.activeBots.delete(botId);
+      BotManagerService.activeBotsMap.delete(botId);
       this.logger.log(`Bot ${botId} stopped.`);
 
       await this.firebaseService.updateBotStatus(botId, 'paused');
@@ -123,6 +137,7 @@ export class BotManagerService implements OnModuleInit {
 
     return { success: false, message: 'Bot not running' };
   }
+
 
   async setMenuButton(botId: string, text: string, url: string) {
     const telegrafBot = this.activeBots.get(botId);
