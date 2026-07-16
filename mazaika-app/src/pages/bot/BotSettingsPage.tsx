@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Save, Copy, RefreshCw, AlertTriangle, Globe } from 'lucide-react'
-import { getBotById, updateBot, deleteBot } from '../../api/firestore'
+import { getBotById, updateBot, deleteBot, getMiniApps } from '../../api/firestore'
 import { apiClient } from '../../api/apiClient'
 
 export default function BotSettingsPage() {
@@ -20,6 +20,9 @@ export default function BotSettingsPage() {
   const [menuButtonEnabled, setMenuButtonEnabled] = useState(false)
   const [menuButtonText, setMenuButtonText] = useState('🌐 Saytimiz')
   const [menuButtonUrl, setMenuButtonUrl] = useState('')
+  const [miniApps, setMiniApps] = useState<any[]>([])
+  const [selectedAppId, setSelectedAppId] = useState<string>('site')
+
 
 
   // Fetch bot details
@@ -33,11 +36,26 @@ export default function BotSettingsPage() {
         setToken(data.token || '')
         setMenuButtonEnabled(data.menuButtonEnabled || false)
         setMenuButtonText(data.menuButtonText || '🌐 Saytimiz')
-        setMenuButtonUrl(data.menuButtonUrl || `https://mazaika.pages.dev/site/${botId}`)
+        const url = data.menuButtonUrl || `https://mazaika.pages.dev/site/${botId}`
+        setMenuButtonUrl(url)
+        
         // Parse token to extract mock username or use username field
         const botToken = data.token || ''
         const idPart = botToken.split(':')[0] || '12345678'
         setUsername(`@Mazaika_${idPart}_bot`)
+
+        // Fetch mini apps for the dropdown
+        const apps = await getMiniApps(botId)
+        setMiniApps(apps)
+
+        // Calculate selectedAppId
+        if (url.includes('/webapp/')) {
+          const parts = url.split('/')
+          const appId = parts[parts.length - 1]
+          setSelectedAppId(appId)
+        } else {
+          setSelectedAppId('site')
+        }
       }
     } catch (e) {
       console.error(e)
@@ -45,6 +63,7 @@ export default function BotSettingsPage() {
       setIsLoading(false)
     }
   }
+
 
   useEffect(() => {
     fetchBotDetails()
@@ -217,19 +236,42 @@ export default function BotSettingsPage() {
                     required
                   />
                 </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                  <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Ochiladigan sahifa yoki ilova</label>
+                  <select 
+                    className="input"
+                    value={selectedAppId}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setSelectedAppId(val)
+                      if (val === 'site') {
+                        setMenuButtonUrl(`https://mazaika.pages.dev/site/${botId}`)
+                      } else {
+                        setMenuButtonUrl(`https://mazaika.pages.dev/webapp/${botId}/${val}`)
+                      }
+                    }}
+                  >
+                    <option value="site">Konstruktorda yaratilgan sayt (Lending)</option>
+                    {miniApps.map(app => (
+                      <option key={app.id} value={app.id}>
+                        Mini Ilova: {app.name} ({app.type === 'store' ? 'Do\'kon' : app.type === 'form' ? 'So\'rovnoma' : 'G\'ildirak'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                  <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Tugma bosilganda ochiladigan Web App havolasi (URL)</label>
+                  <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Telegram Web App havolasi (URL)</label>
                   <input
                     type="url"
                     className="input"
                     value={menuButtonUrl}
-                    onChange={(e) => setMenuButtonUrl(e.target.value)}
-                    placeholder={`https://mazaika.pages.dev/site/${botId}`}
-                    required
+                    disabled
+                    style={{ opacity: 0.6, cursor: 'not-allowed' }}
                   />
                   <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                    Konstruktorda yaratilgan shaxsiy saytingiz havolasidan foydalanishingiz mumkin.
+                    Ushbu havola avtomatik ravishda botingizning «Menu» tugmasiga o'rnatiladi.
                   </span>
                 </div>
               </>
