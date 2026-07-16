@@ -31,10 +31,17 @@ export function PropertiesPanel({ node, onClose, onUpdate, onDelete }: Propertie
         
         {/* === START NODE === */}
         {node.type === 'start' && (
-          <div className="form-group">
-            <p style={{ color: 'var(--text-muted)' }}>Bu blok foydalanuvchi /start buyrug'ini yuborganda ishga tushadi. Uning qo'shimcha sozlamalari yo'q.</p>
+          <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.5 }}>
+              Bu blok foydalanuvchi botni ilk bor ishga tushirganda (<strong>/start</strong> buyrug'ini yuborganda) faollashadi.
+            </p>
+            <div style={{ background: 'rgba(30,144,255,0.06)', borderLeft: '3px solid #1e90ff', padding: '10px 12px', borderRadius: 6, fontSize: 12, color: 'var(--text-secondary)' }}>
+              💡 <strong>Referal havola / Kampaniyalar:</strong><br />
+              Agar foydalanuvchi botga referal havola orqali kirgan bo'lsa, havola parametri avtomatik ravishda <code>{"{start_payload}"}</code> o'zgaruvchisiga yoziladi. Uni boshqa bloklarda ishlatishingiz mumkin!
+            </div>
           </div>
         )}
+
 
         {/* === MESSAGE NODE === */}
         {node.type === 'message' && (

@@ -63,7 +63,7 @@ export class WorkflowService {
     }
 
     // Save user message unless it's /start or structured share triggers
-    if (text !== '/start' && !text.startsWith('btn_') && !text.startsWith('contact:') && !text.startsWith('location:')) {
+    if (!text.startsWith('/start') && !text.startsWith('btn_') && !text.startsWith('contact:') && !text.startsWith('location:')) {
       await this.firebaseService.addMessage(botId, contact.id, text, 'inbound');
     }
 
@@ -76,8 +76,12 @@ export class WorkflowService {
     let currentNode = nodes.find(n => n.id === state.currentNodeId);
     let nextNode = null;
 
-    if (text === '/start') {
+    if (text.startsWith('/start')) {
       state = { variables: {}, waitingFor: null };
+      const parts = text.trim().split(/\s+/);
+      if (parts.length > 1) {
+        state.variables['start_payload'] = parts[1];
+      }
       currentNode = nodes.find(n => n.type === 'start');
       nextNode = currentNode;
     } else if (state.waitingFor === 'question') {
