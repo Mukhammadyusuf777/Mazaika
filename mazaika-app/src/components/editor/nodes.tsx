@@ -12,7 +12,7 @@ function StartNode({ data, selected }: NodeProps) {
       <div className="node-content">
         <div className="node-text-preview" style={{ fontSize: 11, color: 'var(--text-muted)' }}>Bot ishga tushganda</div>
       </div>
-      <Handle type="source" position={Position.Right} id="out" className="react-flow__handle-right" />
+      <Handle type="source" position={Position.Right} className="react-flow__handle-right" />
     </div>
   )
 }
@@ -23,7 +23,7 @@ function MessageNode({ data, selected }: NodeProps) {
 
   return (
     <div className={`custom-node ${selected ? 'selected' : ''}`} style={{ '--node-color': '#1e90ff' } as React.CSSProperties}>
-      <Handle type="target" position={Position.Left} id="in" className="react-flow__handle-left" />
+      <Handle type="target" position={Position.Left} className="react-flow__handle-left" />
       <div className="node-header">
         <div className="node-icon">💬</div>
         <div className="node-title">{d.label || 'Xabar'}</div>
@@ -33,7 +33,7 @@ function MessageNode({ data, selected }: NodeProps) {
       </div>
       
       {buttons.length === 0 && (
-        <Handle type="source" position={Position.Right} id="out" className="react-flow__handle-right" />
+        <Handle type="source" position={Position.Right} className="react-flow__handle-right" />
       )}
 
       {buttons.length > 0 && (
@@ -54,7 +54,7 @@ function ConditionNode({ data, selected }: NodeProps) {
   const d = data as Record<string, any>
   return (
     <div className={`custom-node ${selected ? 'selected' : ''}`} style={{ '--node-color': '#ffb830' } as React.CSSProperties}>
-      <Handle type="target" position={Position.Left} id="in" className="react-flow__handle-left" />
+      <Handle type="target" position={Position.Left} className="react-flow__handle-left" />
       <div className="node-header">
         <div className="node-icon">🔀</div>
         <div className="node-title">{d.label || 'Shart'}</div>
@@ -82,7 +82,7 @@ function ConditionNode({ data, selected }: NodeProps) {
 function AbTestNode({ selected }: NodeProps) {
   return (
     <div className={`custom-node ${selected ? 'selected' : ''}`} style={{ '--node-color': '#ec4899' } as React.CSSProperties}>
-      <Handle type="target" position={Position.Left} id="in" className="react-flow__handle-left" />
+      <Handle type="target" position={Position.Left} className="react-flow__handle-left" />
       <div className="node-header">
         <div className="node-icon">⚗</div>
         <div className="node-title">A/B Test</div>
@@ -180,7 +180,7 @@ function SmartNode({ data, selected, type }: NodeProps) {
 
   return (
     <div className={`custom-node ${selected ? 'selected' : ''}`} style={{ '--node-color': color } as React.CSSProperties}>
-      <Handle type="target" position={Position.Left} id="in" className="react-flow__handle-left" />
+      <Handle type="target" position={Position.Left} className="react-flow__handle-left" />
       <div className="node-header">
         <div className="node-icon">{d.emoji || '⚙'}</div>
         <div className="node-title">{d.label}</div>
@@ -188,7 +188,7 @@ function SmartNode({ data, selected, type }: NodeProps) {
       <div className="node-content">
         {renderContent()}
       </div>
-      <Handle type="source" position={Position.Right} id="out" className="react-flow__handle-right" />
+      <Handle type="source" position={Position.Right} className="react-flow__handle-right" />
     </div>
   )
 }
@@ -197,7 +197,7 @@ function SubscriptionNode({ data, selected }: NodeProps) {
   const d = data as Record<string, any>
   return (
     <div className={`custom-node ${selected ? 'selected' : ''}`} style={{ '--node-color': '#8b5cf6' } as React.CSSProperties}>
-      <Handle type="target" position={Position.Left} id="in" className="react-flow__handle-left" />
+      <Handle type="target" position={Position.Left} className="react-flow__handle-left" />
       <div className="node-header">
         <div className="node-icon">📢</div>
         <div className="node-title">{d.label || 'Kanalga a\'zolik'}</div>
