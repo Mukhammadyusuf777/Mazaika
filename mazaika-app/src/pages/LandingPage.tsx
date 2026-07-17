@@ -82,8 +82,19 @@ function ParticleCanvas() {
 // Mini flow preview node
 function MiniNode({ title, color, x, y, delay = 0 }: { title: string; color: string; x: number; y: number; delay?: number }) {
   const isStart = title.includes('Boshlash')
+  const leftPct = (x / 720) * 100
+  const widthPct = (130 / 720) * 100
   return (
-    <div className="mini-node" style={{ left: x, top: y, animationDelay: `${delay}ms`, '--node-color': color } as React.CSSProperties}>
+    <div 
+      className="mini-node" 
+      style={{ 
+        left: `${leftPct}%`, 
+        width: `${widthPct}%`, 
+        top: y, 
+        animationDelay: `${delay}ms`, 
+        '--node-color': color 
+      } as React.CSSProperties}
+    >
       <div className="mini-node-bar" style={{ background: color }} />
       <div className="mini-node-title">{title}</div>
       {!isStart && <div className="mini-node-port-left" />}
