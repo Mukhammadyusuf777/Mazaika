@@ -81,10 +81,12 @@ function ParticleCanvas() {
 
 // Mini flow preview node
 function MiniNode({ title, color, x, y, delay = 0 }: { title: string; color: string; x: number; y: number; delay?: number }) {
+  const isStart = title.includes('Boshlash')
   return (
     <div className="mini-node" style={{ left: x, top: y, animationDelay: `${delay}ms`, '--node-color': color } as React.CSSProperties}>
       <div className="mini-node-bar" style={{ background: color }} />
       <div className="mini-node-title">{title}</div>
+      {!isStart && <div className="mini-node-port-left" />}
       <div className="mini-node-port" />
     </div>
   )
@@ -274,12 +276,12 @@ export default function LandingPage() {
                   <path d="M0,0 L6,3 L0,6 Z" fill="#1e90ff" opacity="0.6" />
                 </marker>
               </defs>
-              <path d="M 130 80 C 165 80 165 60 200 60" stroke="#1e90ff" strokeWidth="1.5" fill="none" opacity="0.5" strokeDasharray="4 3" />
-              <path d="M 130 80 C 165 80 165 150 200 150" stroke="#a855f7" strokeWidth="1.5" fill="none" opacity="0.5" strokeDasharray="4 3" />
-              <path d="M 320 55 C 350 55 350 100 380 100" stroke="#ffb830" strokeWidth="1.5" fill="none" opacity="0.5" strokeDasharray="4 3" />
-              <path d="M 320 145 C 350 145 350 100 380 100" stroke="#ffb830" strokeWidth="1.5" fill="none" opacity="0.5" strokeDasharray="4 3" />
-              <path d="M 500 100 C 525 100 525 70 550 70" stroke="#10d974" strokeWidth="1.5" fill="none" opacity="0.5" strokeDasharray="4 3" />
-              <path d="M 500 100 C 525 100 525 160 550 160" stroke="#34a853" strokeWidth="1.5" fill="none" opacity="0.5" strokeDasharray="4 3" />
+              <path d="M 170 77 C 185 77 185 57 200 57" stroke="#1e90ff" strokeWidth="1.5" fill="none" opacity="0.5" strokeDasharray="4 3" />
+              <path d="M 170 77 C 185 77 185 147 200 147" stroke="#a855f7" strokeWidth="1.5" fill="none" opacity="0.5" strokeDasharray="4 3" />
+              <path d="M 330 57 C 355 57 355 102 380 102" stroke="#ffb830" strokeWidth="1.5" fill="none" opacity="0.5" strokeDasharray="4 3" />
+              <path d="M 330 147 C 355 147 355 102 380 102" stroke="#ffb830" strokeWidth="1.5" fill="none" opacity="0.5" strokeDasharray="4 3" />
+              <path d="M 510 102 C 530 102 530 67 550 67" stroke="#10d974" strokeWidth="1.5" fill="none" opacity="0.5" strokeDasharray="4 3" />
+              <path d="M 510 102 C 530 102 530 157 550 157" stroke="#34a853" strokeWidth="1.5" fill="none" opacity="0.5" strokeDasharray="4 3" />
             </svg>
           </div>
         </div>

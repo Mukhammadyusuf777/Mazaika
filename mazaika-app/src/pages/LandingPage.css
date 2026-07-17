@@ -252,6 +252,20 @@
   box-shadow: 0 0 6px var(--node-color, #1e90ff);
 }
 
+.mini-node-port-left {
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--node-color, #1e90ff);
+  border: 2px solid var(--bg-secondary);
+  box-shadow: 0 0 6px var(--node-color, #1e90ff);
+  z-index: 10;
+}
+
 /* ===== MARQUEE ===== */
 .marquee-section {
   position: relative;
