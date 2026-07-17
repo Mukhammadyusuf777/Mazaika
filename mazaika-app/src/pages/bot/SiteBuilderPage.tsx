@@ -80,6 +80,12 @@ export default function SiteBuilderPage() {
   const [activeTab, setActiveTab] = useState<'insert' | 'properties'>('insert')
   const [saveSuccess, setSaveSuccess] = useState(false)
 
+  // Interactive smartphone preview states
+  const [previewCart, setPreviewCart] = useState<Array<{ id: string; name: string; price: number; qty: number }>>([])
+  const [showPreviewOrderSheet, setShowPreviewOrderSheet] = useState(false)
+  const [previewName, setPreviewName] = useState('')
+  const [previewPhone, setPreviewPhone] = useState('')
+
   useEffect(() => {
     const fetchConfig = async () => {
       if (!botId) return
@@ -588,7 +594,7 @@ export default function SiteBuilderPage() {
                 </div>
 
                 {/* Inner Scroll container */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px 40px 12px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px 60px 12px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
                   {config.blocks.map((block) => (
                     <div 
                       key={block.id}
@@ -608,9 +614,9 @@ export default function SiteBuilderPage() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                           {block.img && <img src={block.img} alt="Hero" style={{ width: '100%', height: 110, borderRadius: 8, objectFit: 'cover' }} />}
                           <div>
-                            <h4 style={{ fontSize: 15, fontWeight: 800, margin: '0 0 4px 0' }}>{block.title}</h4>
-                            <p style={{ fontSize: 11, opacity: 0.8, margin: '0 0 10px 0', lineHeight: 1.4 }}>{block.subtitle}</p>
-                            <button style={{ background: config.themeColor, color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>
+                            <h4 style={{ fontSize: 13, fontWeight: 800, margin: '0 0 4px 0' }}>{block.title}</h4>
+                            <p style={{ fontSize: 10, opacity: 0.8, margin: '0 0 10px 0', lineHeight: 1.4 }}>{block.subtitle}</p>
+                            <button style={{ background: config.themeColor, color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>
                               {block.ctaText}
                             </button>
                           </div>
@@ -620,22 +626,40 @@ export default function SiteBuilderPage() {
                       {/* About inside mobile */}
                       {block.type === 'about' && (
                         <div>
-                          <h5 style={{ fontSize: 13, fontWeight: 800, margin: '0 0 6px 0', color: config.themeColor }}>{block.title}</h5>
-                          <p style={{ fontSize: 11, lineHeight: 1.5, opacity: 0.8, margin: 0 }}>{block.text}</p>
+                          <h5 style={{ fontSize: 12, fontWeight: 800, margin: '0 0 6px 0', color: config.themeColor }}>{block.title}</h5>
+                          <p style={{ fontSize: 10, lineHeight: 1.5, opacity: 0.8, margin: 0 }}>{block.text}</p>
                         </div>
                       )}
 
                       {/* Catalog inside mobile */}
                       {block.type === 'catalog' && (
                         <div>
-                          <h5 style={{ fontSize: 13, fontWeight: 800, margin: '0 0 10px 0', color: config.themeColor }}>{block.title}</h5>
+                          <h5 style={{ fontSize: 12, fontWeight: 800, margin: '0 0 10px 0', color: config.themeColor, textAlign: 'center' }}>{block.title || 'Bizning Katalog'}</h5>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                             {(block.items || []).map(item => (
-                              <div key={item.id} style={{ display: 'flex', gap: 10, alignItems: 'center', background: 'rgba(0,0,0,0.1)', padding: 8, borderRadius: 8 }}>
+                              <div key={item.id} style={{ display: 'flex', gap: 10, alignItems: 'center', background: config.theme === 'minimalist' ? '#fff' : 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 8, border: '1px solid rgba(255,255,255,0.03)' }}>
                                 {item.img && <img src={item.img} alt={item.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6 }} />}
                                 <div style={{ flex: 1 }}>
                                   <h6 style={{ margin: 0, fontSize: 11, fontWeight: 700 }}>{item.name}</h6>
-                                  <span style={{ fontSize: 10, color: config.themeColor }}>{item.price.toLocaleString()} UZS</span>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
+                                    <span style={{ fontSize: 10, color: config.themeColor, fontWeight: 700 }}>{item.price.toLocaleString()} UZS</span>
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const existing = previewCart.find(i => i.id === item.id);
+                                        if (existing) {
+                                          setPreviewCart(previewCart.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i));
+                                        } else {
+                                          setPreviewCart([...previewCart, { id: item.id, name: item.name, price: item.price, qty: 1 }]);
+                                        }
+                                      }}
+                                      style={{
+                                        background: config.themeColor, color: '#fff', border: 'none', borderRadius: 4, padding: '2px 8px', fontSize: 9, fontWeight: 700, cursor: 'pointer'
+                                      }}
+                                    >
+                                      + Savatga
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             ))}
@@ -643,28 +667,231 @@ export default function SiteBuilderPage() {
                         </div>
                       )}
 
-                      {/* Form inside mobile */}
-                      {block.type === 'form' && (
+                      {/* Blog inside mobile */}
+                      {block.type === 'blog' && (
                         <div>
-                          <h5 style={{ fontSize: 13, fontWeight: 800, margin: '0 0 8px 0', color: config.themeColor }}>{block.title}</h5>
+                          <h5 style={{ fontSize: 12, fontWeight: 800, margin: '0 0 8px 0', color: config.themeColor }}>{block.title || 'Yangiliklar'}</h5>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            {(block.fields || []).slice(0, 2).map(f => (
-                              <input key={f.name} type={f.type} placeholder={f.label} disabled className="input" style={{ padding: '4px 8px', fontSize: 10 }} />
+                            {(block.posts || []).map(post => (
+                              <div key={post.id} style={{ padding: 8, borderLeft: `2.5px solid ${config.themeColor}`, background: 'rgba(255,255,255,0.02)', borderRadius: '0 4px 4px 0' }}>
+                                <h6 style={{ margin: '0 0 2px 0', fontSize: 11, fontWeight: 700 }}>{post.title}</h6>
+                                <p style={{ margin: 0, fontSize: 9, opacity: 0.8, lineHeight: 1.3 }}>{post.text}</p>
+                              </div>
                             ))}
-                            <button style={{ background: config.themeColor, color: '#fff', border: 'none', padding: '4px 8px', borderRadius: 4, fontSize: 10 }}>Submit</button>
                           </div>
                         </div>
                       )}
 
-                      {/* Fallback simple view */}
-                      {!['hero', 'about', 'catalog', 'form'].includes(block.type) && (
-                        <div style={{ fontSize: 11, textAlign: 'center', color: config.themeColor }}>
-                          ⚙️ {block.title || block.type.toUpperCase()}
+                      {/* Contacts inside mobile */}
+                      {block.type === 'contacts' && (
+                        <div style={{ textAlign: 'center', padding: '4px 0' }}>
+                          <h5 style={{ fontSize: 11, fontWeight: 800, margin: '0 0 6px 0', color: config.themeColor }}>{block.title || 'Aloqa'}</h5>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 10 }}>
+                            {block.phone && <div>📞 {block.phone}</div>}
+                            {block.telegram && <div>✈ @{block.telegram}</div>}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Form inside mobile */}
+                      {block.type === 'form' && (
+                        <div>
+                          <h5 style={{ fontSize: 12, fontWeight: 800, margin: '0 0 8px 0', color: config.themeColor }}>{block.title || 'So\'rovnoma'}</h5>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {(block.fields || []).map(f => (
+                              <div key={f.name}>
+                                <label style={{ display: 'block', fontSize: 9, marginBottom: 2, opacity: 0.7 }}>{f.label}</label>
+                                <input type={f.type} placeholder={f.label} disabled className="input" style={{ width: '100%', padding: '5px 8px', fontSize: 10 }} />
+                              </div>
+                            ))}
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                alert(`[Mazaika Sandbox] So'rovnoma test rejimida yuborildi!\n(Haqiqiy Telegram botda bu ariza sizga chat orqali yoziladi)`);
+                              }}
+                              style={{ background: config.themeColor, color: '#fff', border: 'none', padding: '6px 10px', borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: 'pointer', marginTop: 4 }}
+                            >
+                              Yuborish (Submit)
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Loyalty inside mobile */}
+                      {block.type === 'loyalty' && (
+                        <div style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12,
+                          background: 'rgba(16,217,116,0.06)', border: '1px solid #10d974', borderRadius: 10
+                        }}>
+                          <div>
+                            <h6 style={{ margin: 0, fontSize: 11, color: '#10d974', fontWeight: 800 }}>{block.title || 'Cashback Balans'}</h6>
+                            <p style={{ margin: 0, fontSize: 8, opacity: 0.6 }}>Telegram ID orqali</p>
+                          </div>
+                          <span style={{ fontSize: 13, fontWeight: 900, color: '#10d974' }}>75,000 ball</span>
+                        </div>
+                      )}
+
+                      {/* Voting inside mobile */}
+                      {block.type === 'voting' && (
+                        <div>
+                          <h5 style={{ fontSize: 12, fontWeight: 800, margin: '0 0 6px 0', color: config.themeColor }}>{block.title || 'Ovoz berish'}</h5>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                            {(block.candidates || []).map((cand, cidx) => (
+                              <label key={cidx} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, background: 'rgba(255,255,255,0.02)', padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.03)' }}>
+                                <input type="radio" disabled />
+                                <span>{cand}</span>
+                              </label>
+                            ))}
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                alert(`[Mazaika Sandbox] Ovoz yozildi! (Preview rejimi)`);
+                              }}
+                              style={{ background: config.themeColor, color: '#fff', border: 'none', padding: '5px 10px', borderRadius: 4, fontSize: 10, fontWeight: 700, cursor: 'pointer', marginTop: 4 }}
+                            >
+                              Ovoz berish
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
                   ))}
                 </div>
+
+                {/* Cart Bottom Sheet in Mobile Preview */}
+                {previewCart.length > 0 && !showPreviewOrderSheet && (
+                  <div style={{
+                    position: 'absolute', bottom: 16, left: 12, right: 12, zIndex: 100,
+                    background: 'rgba(30, 41, 59, 0.95)', border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: 12, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    boxShadow: '0 -10px 25px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)'
+                  }}>
+                    <div>
+                      <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#fff' }}>🛒 Savatda: {previewCart.reduce((acc, i) => acc + i.qty, 0)} ta</span>
+                      <span style={{ fontSize: 10, color: config.themeColor, fontWeight: 700 }}>
+                        Jami: {previewCart.reduce((acc, i) => acc + (i.price * i.qty), 0).toLocaleString()} UZS
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewCart([]);
+                        }}
+                        style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '4px 8px', borderRadius: 6, fontSize: 10, cursor: 'pointer' }}
+                      >
+                        Tozalash
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowPreviewOrderSheet(true);
+                        }}
+                        style={{ background: config.themeColor, color: '#fff', border: 'none', padding: '4px 12px', borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
+                      >
+                        Buyurtma
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Checkout Modal in Mobile Preview */}
+                {showPreviewOrderSheet && (
+                  <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 110,
+                    background: 'rgba(15, 23, 42, 0.95)', padding: '24px 16px', display: 'flex', flexDirection: 'column',
+                    color: '#fff', fontFamily: 'system-ui, sans-serif'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                      <h4 style={{ fontSize: 13, fontWeight: 800, margin: 0 }}>🛒 Buyurtmani Rasmiylashtirish</h4>
+                      <button 
+                        onClick={() => setShowPreviewOrderSheet(false)}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: 12, cursor: 'pointer' }}
+                      >
+                        Yopish
+                      </button>
+                    </div>
+
+                    {/* Cart Summary */}
+                    <div style={{ 
+                      flex: 1, overflowY: 'auto', background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 10, marginBottom: 16,
+                      display: 'flex', flexDirection: 'column', gap: 6
+                    }}>
+                      {previewCart.map(item => (
+                        <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 4 }}>
+                          <span>{item.name} (x{item.qty})</span>
+                          <span style={{ fontWeight: 700 }}>{(item.price * item.qty).toLocaleString()} UZS</span>
+                        </div>
+                      ))}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 800, marginTop: 'auto', paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.1)', color: config.themeColor }}>
+                        <span>Jami summasi:</span>
+                        <span>{previewCart.reduce((acc, i) => acc + (i.price * i.qty), 0).toLocaleString()} UZS</span>
+                      </div>
+                    </div>
+
+                    {/* Delivery details form */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 10, color: '#94a3b8', marginBottom: 2 }}>Ismingiz</label>
+                        <input 
+                          type="text" 
+                          className="input" 
+                          value={previewName} 
+                          onChange={e => setPreviewName(e.target.value)} 
+                          placeholder="Ismingizni kiriting"
+                          style={{ width: '100%', padding: '6px 8px', fontSize: 11 }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 10, color: '#94a3b8', marginBottom: 2 }}>Telefon raqamingiz</label>
+                        <input 
+                          type="text" 
+                          className="input" 
+                          value={previewPhone} 
+                          onChange={e => setPreviewPhone(e.target.value)} 
+                          placeholder="+998 90 123 45 67"
+                          style={{ width: '100%', padding: '6px 8px', fontSize: 11 }}
+                        />
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => {
+                        if (!previewName || !previewPhone) {
+                          alert("Iltimos, ism va telefon raqamini kiriting!");
+                          return;
+                        }
+                        const orderJSON = {
+                          action: 'order',
+                          items: previewCart.map(i => ({ name: i.name, price: i.price, qty: i.qty })),
+                          total: previewCart.reduce((acc, i) => acc + (i.price * i.qty), 0),
+                          customer: { name: previewName, phone: previewPhone }
+                        };
+                        
+                        alert(
+                          `🚀 [Mazaika WebApp] Buyurtma muvaffaqiyatli jo'natildi!\n\n` + 
+                          `Bu ma'lumot botga quyidagi formatda uzatiladi:\n` +
+                          `-----------------------------------\n` +
+                          `🛍 Mahsulotlar: ${orderJSON.items.map(i => `${i.name} (x${i.qty})`).join(', ')}\n` +
+                          `💰 Jami: ${orderJSON.total.toLocaleString()} UZS\n` +
+                          `👤 Mijoz: ${orderJSON.customer.name}\n` +
+                          `📞 Tel: ${orderJSON.customer.phone}\n` +
+                          `-----------------------------------\n` +
+                          `Telegram bot ushbu buyurtmani qabul qilib, foydalanuvchiga tasdiqlash xabari yuboradi va buyurtma Mazaika boshqaruv panelining "Chatlar" bo'limida zudlik bilan paydo bo'ladi!`
+                        );
+
+                        setPreviewCart([]);
+                        setShowPreviewOrderSheet(false);
+                      }}
+                      style={{ 
+                        background: '#10d974', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: 8, 
+                        fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+                      }}
+                    >
+                      <CheckCircle size={14} /> Botga yuborish
+                    </button>
+                  </div>
+                )}
 
                 {/* Home Indicator */}
                 <div style={{ position: 'absolute', bottom: '6px', left: '50%', transform: 'translateX(-50%)', width: '110px', height: '4px', background: '#334155', borderRadius: '2px' }} />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Send, User, CheckCheck, Loader2 } from 'lucide-react'
+import { Send, User, CheckCheck, Loader2, ShoppingCart } from 'lucide-react'
 import { useParams } from 'react-router-dom'
 import { apiClient } from '../../api/apiClient'
 import { getContacts, getMessages } from '../../api/firestore'
@@ -11,6 +11,7 @@ interface Contact {
   firstName: string | null
   lastName: string | null
   createdAt: any
+  state?: string
 }
 
 interface Message {
@@ -92,25 +93,44 @@ export default function ChatsPage() {
           <span className="badge badge-aqua">{contacts.length} ta faol</span>
         </div>
         <div className="chats-list">
-          {contacts.map(contact => (
-            <div 
-              key={contact.id} 
-              className={`chat-item ${activeContactId === contact.id ? 'active' : ''}`}
-              onClick={() => setActiveContactId(contact.id)}
-            >
-              <div className="chat-avatar">
-                <User size={20} />
-              </div>
-              <div className="chat-info">
-                <div className="chat-name-row">
-                  <span className="chat-name">{contact.firstName} {contact.lastName}</span>
+          {contacts.map(contact => {
+            let lastOrderTotal = ''
+            try {
+              const parsedState = contact.state ? JSON.parse(contact.state) : null
+              lastOrderTotal = parsedState?.variables?.last_order_total || ''
+            } catch (e) {}
+
+            return (
+              <div 
+                key={contact.id} 
+                className={`chat-item ${activeContactId === contact.id ? 'active' : ''}`}
+                onClick={() => setActiveContactId(contact.id)}
+              >
+                <div className="chat-avatar">
+                  <User size={20} />
                 </div>
-                <div className="chat-msg-row">
-                  <span className="chat-msg" style={{fontSize: 12}}>{contact.telegramId}</span>
+                <div className="chat-info" style={{ flex: 1, minWidth: 0 }}>
+                  <div className="chat-name-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span className="chat-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {contact.firstName} {contact.lastName}
+                    </span>
+                  </div>
+                  <div className="chat-msg-row" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span className="chat-msg" style={{ fontSize: 11, color: 'var(--text-muted)' }}>ID: {contact.telegramId}</span>
+                    {lastOrderTotal && (
+                      <span style={{ 
+                        display: 'inline-flex', alignItems: 'center', gap: 4, 
+                        fontSize: 10, background: 'rgba(16, 217, 116, 0.1)', color: '#10d974', 
+                        padding: '2px 6px', borderRadius: 4, width: 'fit-content', fontWeight: 700, marginTop: 2
+                      }}>
+                        <ShoppingCart size={10} /> Buyurtma: {Number(lastOrderTotal).toLocaleString()} UZS
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
           {contacts.length === 0 && (
             <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>
               Kontaktlar topilmadi
