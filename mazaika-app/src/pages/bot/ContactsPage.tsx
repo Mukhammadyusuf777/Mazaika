@@ -33,13 +33,13 @@ export default function ContactsPage() {
 
 
   return (
-    <div style={{ padding: 'var(--space-8)', height: '100%', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-6)' }}>
+    <div className="settings-container" style={{ maxWidth: '100%' }}>
+      <div className="page-header">
         <div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)' }}>Kontaktlar</h2>
           <p style={{ color: 'var(--text-muted)' }}>Barcha obunachilar ro'yxati</p>
         </div>
-        <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+        <div className="page-header-actions">
           <button className="btn btn-ghost"><Filter size={16} /> Filtrlar</button>
           <button className="btn btn-ghost"><Download size={16} /> Eksport</button>
         </div>

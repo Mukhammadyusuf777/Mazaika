@@ -86,15 +86,17 @@ export default function WebhooksPage() {
   }
 
   return (
-    <div style={{ padding: 'var(--space-8)', height: '100%', overflowY: 'auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-6)' }}>
+    <div className="settings-container" style={{ maxWidth: '100%' }}>
+      <div className="page-header">
         <div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 700 }}>Webhooks</h2>
           <p style={{ color: 'var(--text-muted)' }}>Tashqi xizmatlardan ma'lumot qabul qilish uchun webhooklar ro'yxati</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-          <Plus size={16} /> Webhook yaratish
-        </button>
+        <div className="page-header-actions">
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+            <Plus size={16} /> Webhook yaratish
+          </button>
+        </div>
       </div>
 
       <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-primary)', overflow: 'hidden' }}>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Save, Copy, RefreshCw, AlertTriangle, Globe, Zap, CheckCircle, XCircle, Info } from 'lucide-react'
-import { getBotById, updateBot, deleteBot, getMiniApps } from '../../api/firestore'
+import { getBotById, updateBot, deleteBot } from '../../api/firestore'
 import { apiClient } from '../../api/apiClient'
 
 export default function BotSettingsPage() {
@@ -20,8 +20,7 @@ export default function BotSettingsPage() {
   const [menuButtonEnabled, setMenuButtonEnabled] = useState(false)
   const [menuButtonText, setMenuButtonText] = useState('🌐 Saytimiz')
   const [menuButtonUrl, setMenuButtonUrl] = useState('')
-  const [miniApps, setMiniApps] = useState<any[]>([])
-  const [selectedAppId, setSelectedAppId] = useState<string>('site')
+
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
   const [testMessage, setTestMessage] = useState('')
 
@@ -46,18 +45,7 @@ export default function BotSettingsPage() {
         const idPart = botToken.split(':')[0] || '12345678'
         setUsername(`@Mazaika_${idPart}_bot`)
 
-        // Fetch mini apps for the dropdown
-        const apps = await getMiniApps(botId)
-        setMiniApps(apps)
 
-        // Calculate selectedAppId
-        if (url.includes('/webapp/')) {
-          const parts = url.split('/')
-          const appId = parts[parts.length - 1]
-          setSelectedAppId(appId)
-        } else {
-          setSelectedAppId('site')
-        }
       }
     } catch (e) {
       console.error(e)
@@ -333,27 +321,14 @@ export default function BotSettingsPage() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                  <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Ochiladigan sahifa yoki ilova</label>
-                  <select 
+                  <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Ochiladigan sahifa</label>
+                  <input
+                    type="text"
                     className="input"
-                    value={selectedAppId}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      setSelectedAppId(val)
-                      if (val === 'site') {
-                        setMenuButtonUrl(`https://mazaika.pages.dev/site/${botId}`)
-                      } else {
-                        setMenuButtonUrl(`https://mazaika.pages.dev/webapp/${botId}/${val}`)
-                      }
-                    }}
-                  >
-                    <option value="site">Konstruktorda yaratilgan sayt (Lending)</option>
-                    {miniApps.map(app => (
-                      <option key={app.id} value={app.id}>
-                        Mini Ilova: {app.name} ({app.type === 'store' ? 'Do\'kon' : app.type === 'form' ? 'So\'rovnoma' : 'G\'ildirak'})
-                      </option>
-                    ))}
-                  </select>
+                    value="Birlashgan Sayt & Mini Ilova (Konstruktor)"
+                    disabled
+                    style={{ opacity: 0.6, cursor: 'not-allowed' }}
+                  />
                 </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>

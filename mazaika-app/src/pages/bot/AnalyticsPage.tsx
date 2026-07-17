@@ -53,7 +53,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div style={{ padding: 'var(--space-8)', height: '100%', overflowY: 'auto' }}>
+    <div className="settings-container" style={{ maxWidth: '100%' }}>
       <div style={{ marginBottom: 'var(--space-8)' }}>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)' }}>Analitika</h2>
         <p style={{ color: 'var(--text-muted)' }}>Bot statistikasi va foydalanuvchilar faolligi</p>
@@ -78,7 +78,7 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-6)' }}>
+      <div className="analytics-grid-charts">
         <div style={{ background: 'var(--bg-card)', padding: 'var(--space-5)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)' }}>
           <h3 style={{ marginBottom: 'var(--space-4)', fontWeight: 600 }}>Obunachilar o'sishi</h3>
           <div style={{ height: 300 }}>
