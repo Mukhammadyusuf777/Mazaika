@@ -635,14 +635,54 @@ export default function SiteBuilderPage() {
                       {block.type === 'catalog' && (
                         <div>
                           <h5 style={{ fontSize: 12, fontWeight: 800, margin: '0 0 10px 0', color: config.themeColor, textAlign: 'center' }}>{block.title || 'Bizning Katalog'}</h5>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                             {(block.items || []).map(item => (
-                              <div key={item.id} style={{ display: 'flex', gap: 10, alignItems: 'center', background: config.theme === 'minimalist' ? '#fff' : 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 8, border: '1px solid rgba(255,255,255,0.03)' }}>
-                                {item.img && <img src={item.img} alt={item.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6 }} />}
-                                <div style={{ flex: 1 }}>
-                                  <h6 style={{ margin: 0, fontSize: 11, fontWeight: 700 }}>{item.name}</h6>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
-                                    <span style={{ fontSize: 10, color: config.themeColor, fontWeight: 700 }}>{item.price.toLocaleString()} UZS</span>
+                              <div key={item.id} style={{ 
+                                background: config.theme === 'minimalist' ? '#fff' : 'rgba(0,0,0,0.2)', 
+                                borderRadius: 12, 
+                                border: '1px solid rgba(255,255,255,0.03)',
+                                overflow: 'hidden',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                height: '100%',
+                                justifyContent: 'space-between'
+                              }}>
+                                {/* Product Image */}
+                                <div style={{ position: 'relative', width: '100%', paddingTop: '100%', background: 'rgba(255,255,255,0.02)' }}>
+                                  {item.img ? (
+                                    <img 
+                                      src={item.img} 
+                                      alt={item.name} 
+                                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
+                                    />
+                                  ) : (
+                                    <div style={{ 
+                                      position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                      color: 'var(--text-muted)', fontSize: 9, background: 'rgba(255,255,255,0.01)'
+                                    }}>
+                                      Rasm yo'q
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Product Info */}
+                                <div style={{ padding: 8, display: 'flex', flexDirection: 'column', gap: 4, flex: 1, justifyContent: 'space-between' }}>
+                                  <div>
+                                    <h6 style={{ margin: 0, fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: '14px', height: '28px' }}>
+                                      {item.name}
+                                    </h6>
+                                    {item.desc && (
+                                      <p style={{ margin: 0, fontSize: 9, opacity: 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.desc}>
+                                        {item.desc}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+                                    <span style={{ fontSize: 10, color: config.themeColor, fontWeight: 800 }}>
+                                      {item.price.toLocaleString()} UZS
+                                    </span>
                                     <button 
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -654,7 +694,8 @@ export default function SiteBuilderPage() {
                                         }
                                       }}
                                       style={{
-                                        background: config.themeColor, color: '#fff', border: 'none', borderRadius: 4, padding: '2px 8px', fontSize: 9, fontWeight: 700, cursor: 'pointer'
+                                        background: config.themeColor, color: '#fff', border: 'none', borderRadius: 6, 
+                                        padding: '4px 8px', fontSize: 9, fontWeight: 700, cursor: 'pointer', width: '100%', textAlign: 'center'
                                       }}
                                     >
                                       + Savatga

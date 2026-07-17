@@ -274,18 +274,55 @@ export default function WebAppViewer() {
             {block.type === 'catalog' && (
               <div>
                 <h4 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 16px 0', color: themeColor, textAlign: 'center' }}>{block.title}</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   {(block.items || []).map(item => (
-                    <div key={item.id} style={{ background: '#111827', borderRadius: 12, padding: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
-                      {item.img && <img src={item.img} alt={item.name} style={{ width: 60, height: 60, borderRadius: 8, objectFit: 'cover' }} />}
-                      <div style={{ flex: 1 }}>
-                        <h5 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>{item.name}</h5>
-                        <p style={{ margin: '2px 0 6px 0', fontSize: 11, opacity: 0.6 }}>{item.desc}</p>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: 13, fontWeight: 800, color: themeColor }}>{item.price.toLocaleString()} UZS</span>
+                    <div key={item.id} style={{ 
+                      background: '#111827', 
+                      borderRadius: 12, 
+                      overflow: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      height: '100%',
+                      justifyContent: 'space-between',
+                      border: '1px solid rgba(255,255,255,0.03)'
+                    }}>
+                      {/* Product Image */}
+                      <div style={{ position: 'relative', width: '100%', paddingTop: '100%', background: 'rgba(255,255,255,0.02)' }}>
+                        {item.img ? (
+                          <img 
+                            src={item.img} 
+                            alt={item.name} 
+                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
+                          />
+                        ) : (
+                          <div style={{ 
+                            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                            color: '#4b5563', fontSize: 11, background: 'rgba(255,255,255,0.01)'
+                          }}>
+                            Rasm yo'q
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Product Details */}
+                      <div style={{ padding: 10, display: 'flex', flexDirection: 'column', gap: 6, flex: 1, justifyContent: 'space-between' }}>
+                        <div>
+                          <h5 style={{ margin: 0, fontSize: 12, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: '15px', height: '30px', color: '#fff' }}>
+                            {item.name}
+                          </h5>
+                          {item.desc && (
+                            <p style={{ margin: '2px 0 0 0', fontSize: 10, opacity: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {item.desc}
+                            </p>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: themeColor }}>{item.price.toLocaleString()} UZS</span>
                           <button 
                             onClick={() => handleAddToCart(item)}
-                            style={{ background: themeColor, border: 'none', color: '#fff', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 700 }}
+                            style={{ background: themeColor, border: 'none', color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', width: '100%' }}
                           >
                             + Qo'shish
                           </button>
