@@ -359,6 +359,99 @@ export async function createBot(userId: string, data: { name: string; token: str
         menuButtonText: 'Mini App',
         menuButtonUrl: `https://mazaika.pages.dev/site/${ref.id}`
       });
+
+      // Create matching Mini App so it appears under 'Mini Ilovalar' tab
+      let appName = 'Mini Ilova';
+      let appType: 'store' | 'form' | 'wheel' = 'store';
+      let appConfig: any = {};
+
+      if (data.template === 'Internet do\'kon') {
+        appName = 'Pitsa Do\'koni';
+        appType = 'store';
+        appConfig = {
+          themeColor: '#1e90ff',
+          items: [
+            { id: 'item_1', name: 'Pizza Margherita', desc: 'Pomidor sousi, motsarella, rayhon va zaytun moyi.', price: 45000, img: 'https://images.unsplash.com/photo-1604068549290-dea0e4a305ca?w=150' },
+            { id: 'item_2', name: 'Pizza Pepperoni', desc: 'Pomidor sousi, achchiq pepperoni, motsarella.', price: 55000, img: 'https://images.unsplash.com/photo-1534308983496-4fabb1a015ee?w=150' },
+            { id: 'item_3', name: 'Coca-Cola 1.5L', desc: 'Muzdek tetiklantiruvchi ichimlik.', price: 12000, img: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=150' }
+          ]
+        };
+      } else if (data.template === 'Yetkazib berish') {
+        appName = 'Tezkor Kuryer';
+        appType = 'form';
+        appConfig = {
+          themeColor: '#1e90ff',
+          title: 'Tezkor kuryer chaqirish',
+          desc: 'Buyurtmani to\'ldiring va kuryer tezda manzilga yetib boradi',
+          fields: [
+            { name: 'name', label: 'Ismingiz', type: 'text', required: true },
+            { name: 'phone', label: 'Telefon raqamingiz', type: 'tel', required: true },
+            { name: 'pickup_address', label: 'Yukni olish manzili', type: 'text', required: true },
+            { name: 'delivery_address', label: 'Yetkazish manzili', type: 'text', required: true },
+            { name: 'comment', label: 'Kuryer uchun izoh', type: 'textarea', required: false }
+          ]
+        };
+      } else if (data.template === 'Restoran') {
+        appName = 'Stol Bron Qilish';
+        appType = 'form';
+        appConfig = {
+          themeColor: '#1e90ff',
+          title: 'Stol yoki kabina bron qilish',
+          desc: 'Tashrif buyurish uchun stol band qiling',
+          fields: [
+            { name: 'name', label: 'Ismingiz', type: 'text', required: true },
+            { name: 'phone', label: 'Telefoningiz', type: 'tel', required: true },
+            { name: 'guests', label: 'Mehmonlar soni', type: 'number', required: true },
+            { name: 'datetime', label: 'Sana va vaqt', type: 'text', required: true }
+          ]
+        };
+      } else if (data.template === 'Kurs savdo') {
+        appName = 'IT Kurslar';
+        appType = 'store';
+        appConfig = {
+          themeColor: '#1e90ff',
+          items: [
+            { id: 'item_c1', name: 'Python Boshlang\'ich', desc: 'Python tili asoslari va Telegram botlar yaratish.', price: 150000, img: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=150' },
+            { id: 'item_c2', name: 'Frontend React.js', desc: 'Veb-saytlar yaratish va React frameworki.', price: 250000, img: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=150' }
+          ]
+        };
+      } else if (data.template === 'Xizmatlar') {
+        appName = 'Ariza Qoldirish';
+        appType = 'form';
+        appConfig = {
+          themeColor: '#1e90ff',
+          title: 'Xizmat turi va arizalar',
+          desc: 'Biznesingiz uchun eng yaxshi xizmatlar arizasi',
+          fields: [
+            { name: 'name', label: 'Kompaniya nomi', type: 'text', required: true },
+            { name: 'phone', label: 'Bog\'lanish telefoni', type: 'tel', required: true },
+            { name: 'service', label: 'Kerakli xizmat (SMM, Sayt, Dizayn)', type: 'text', required: true }
+          ]
+        };
+      } else if (data.template === 'Referral') {
+        appName = 'Omad G\'ildiragi';
+        appType = 'wheel';
+        appConfig = {
+          themeColor: '#1e90ff',
+          title: 'Omad G\'ildiragi',
+          desc: 'G\'ildirakni aylantiring va kafolatlangan sovg\'alardan birini yutib oling!',
+          prizes: [
+            { id: '1', label: '10% Chegirma', color: '#1e90ff' },
+            { id: '2', label: 'Bepul Pitsa', color: '#ec4899' },
+            { id: '3', label: 'Sovg\'a quti', color: '#8b5cf6' },
+            { id: '4', label: 'Keshbek 5000 UZS', color: '#10d974' },
+            { id: '5', label: 'Yana bir bor', color: '#ffb830' },
+            { id: '6', label: 'Kupon 20%', color: '#f43f5e' }
+          ]
+        };
+      }
+
+      await addDoc(collection(db, 'bots', ref.id, 'miniapps'), {
+        name: appName,
+        type: appType,
+        config: appConfig,
+        createdAt: serverTimestamp()
+      });
     }
   }
 
@@ -497,6 +590,53 @@ export async function updateMiniApp(botId: string, appId: string, data: any) {
     ...data,
     updatedAt: serverTimestamp(),
   })
+
+  // Bidirectional Synchronization: Sync Mini App settings back to Site Config blocks!
+  try {
+    const siteConfigRef = doc(db, 'bots', botId, 'site', 'config')
+    const siteSnap = await getDoc(siteConfigRef)
+    if (siteSnap.exists()) {
+      const siteData = siteSnap.data()
+      let blocks = siteData.blocks || []
+      
+      const appSnap = await getDoc(doc(db, 'bots', botId, 'miniapps', appId))
+      if (appSnap.exists()) {
+        const appData = appSnap.data()
+        const appType = appData.type
+        
+        let updated = false
+        blocks = blocks.map((block: any) => {
+          if (appType === 'store' && block.type === 'catalog') {
+            updated = true
+            return {
+              ...block,
+              title: data.name || block.title,
+              items: data.config?.items || block.items || []
+            }
+          }
+          if (appType === 'form' && block.type === 'form') {
+            updated = true
+            return {
+              ...block,
+              title: data.name || block.title,
+              fields: data.config?.fields || block.fields || []
+            }
+          }
+          return block
+        })
+
+        if (updated) {
+          await setDoc(siteConfigRef, {
+            ...siteData,
+            blocks,
+            updatedAt: serverTimestamp()
+          }, { merge: true })
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Failed to sync mini-app to site config:", e)
+  }
 }
 
 export async function deleteMiniApp(botId: string, appId: string) {
@@ -517,6 +657,45 @@ export async function saveSiteConfig(botId: string, config: any): Promise<void> 
     ...config,
     updatedAt: serverTimestamp(),
   }, { merge: true })
+
+  // Bidirectional Synchronization: Sync Site Config blocks back to Mini Apps!
+  try {
+    const miniappsRef = collection(db, 'bots', botId, 'miniapps')
+    const snap = await getDocs(miniappsRef)
+    
+    for (const d of snap.docs) {
+      const appData = d.data()
+      const appType = appData.type
+      
+      if (appType === 'store') {
+        const catalogBlock = config.blocks?.find((b: any) => b.type === 'catalog')
+        if (catalogBlock) {
+          await updateDoc(doc(db, 'bots', botId, 'miniapps', d.id), {
+            name: catalogBlock.title || appData.name,
+            config: {
+              ...appData.config,
+              items: catalogBlock.items || []
+            },
+            updatedAt: serverTimestamp()
+          })
+        }
+      } else if (appType === 'form') {
+        const formBlock = config.blocks?.find((b: any) => b.type === 'form')
+        if (formBlock) {
+          await updateDoc(doc(db, 'bots', botId, 'miniapps', d.id), {
+            name: formBlock.title || appData.name,
+            config: {
+              ...appData.config,
+              fields: formBlock.fields || []
+            },
+            updatedAt: serverTimestamp()
+          })
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Failed to sync site config back to mini-apps:", e)
+  }
 }
 
 
