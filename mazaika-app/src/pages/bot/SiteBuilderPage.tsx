@@ -241,10 +241,10 @@ export default function SiteBuilderPage() {
   const liveUrl = `https://mazaika.pages.dev/site/${botId}`
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', height: '100%', overflow: 'hidden', background: '#090d16' }}>
+    <div className="builder-container" style={{ background: '#090d16' }}>
       
       {/* 1. LEFT & CENTER AREA: Canvas and Layout Switcher */}
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', borderRight: '1px solid var(--border-primary)' }}>
+      <div className="builder-canvas-panel">
         
         {/* Top Control Bar */}
         <div style={{ 
@@ -944,13 +944,10 @@ export default function SiteBuilderPage() {
       </div>
 
       {/* 2. RIGHT SIDEBAR: Google Sites style Widget Drawer */}
-      <div style={{ 
-        width: 380, 
-        height: '100%', 
+      <div className="builder-settings-sidebar" style={{ 
         background: 'var(--bg-secondary)', 
         display: 'flex', 
-        flexDirection: 'column',
-        overflow: 'hidden'
+        flexDirection: 'column'
       }}>
         
         {/* Tab Buttons (Вставка / Свойства) */}

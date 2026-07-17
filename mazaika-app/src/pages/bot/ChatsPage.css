@@ -191,3 +191,25 @@
   display: flex;
   gap: var(--space-3);
 }
+
+/* RESPONSIVENESS */
+@media (max-width: 768px) {
+  .chats-container.has-active .chats-sidebar {
+    display: none !important;
+  }
+  .chats-container:not(.has-active) .chat-main {
+    display: none !important;
+  }
+  .chats-sidebar {
+    width: 100% !important;
+  }
+  .chat-main {
+    width: 100% !important;
+  }
+  .mobile-back-btn {
+    display: flex !important;
+  }
+  .message {
+    max-width: 85% !important;
+  }
+}

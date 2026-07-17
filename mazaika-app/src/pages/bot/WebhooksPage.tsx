@@ -98,73 +98,75 @@ export default function WebhooksPage() {
       </div>
 
       <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-primary)', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-secondary)' }}>
-              <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>Nomi</th>
-              <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>Metod</th>
-              <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>URL Manzil</th>
-              <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>Holati</th>
-              <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>Amallar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {webhooks.length === 0 ? (
-              <tr>
-                <td colSpan={5} style={{ padding: 'var(--space-8)', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  <Globe size={32} style={{ margin: '0 auto var(--space-2)', opacity: 0.5 }} />
-                  Haligacha webhooklar yaratilmagan. O'zingizning birinchi webhookingizni yarating!
-                </td>
+        <div style={{ overflowX: 'auto', width: '100%' }}>
+          <table style={{ width: '100%', minWidth: 800, borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-secondary)' }}>
+                <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>Nomi</th>
+                <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>Metod</th>
+                <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>URL Manzil</th>
+                <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>Holati</th>
+                <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>Amallar</th>
               </tr>
-            ) : (
-              webhooks.map(item => (
-                <tr key={item.id} style={{ borderBottom: '1px solid var(--border-primary)' }}>
-                  <td style={{ padding: 'var(--space-4)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 8, background: 'color-mix(in srgb, #f97316 15%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f97316' }}>
-                        <Webhook size={16} />
-                      </div>
-                      <span style={{ fontWeight: 600 }}>{item.name}</span>
-                    </div>
-                  </td>
-                  <td style={{ padding: 'var(--space-4)' }}>
-                    <span style={{ padding: '2px 8px', background: 'var(--bg-secondary)', borderRadius: 4, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-primary)', fontWeight: 600 }}>
-                      {item.method}
-                    </span>
-                  </td>
-                  <td style={{ padding: 'var(--space-4)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-muted)' }}>{item.url}</span>
-                      <button
-                        type="button"
-                        className={`btn ${copiedId === item.id ? 'btn-success' : 'btn-ghost'} btn-icon`}
-                        style={{ width: 24, height: 24 }}
-                        onClick={() => handleCopyUrl(item.url, item.id)}
-                        title="URL nusxalash"
-                      >
-                        <Copy size={12}/>
-                      </button>
-                    </div>
-                  </td>
-                  <td style={{ padding: 'var(--space-4)' }}>
-                    <span className={`badge ${item.active ? 'badge-aqua' : ''}`}>{item.active ? 'Faol' : 'O\'chiq'}</span>
-                  </td>
-                  <td style={{ padding: 'var(--space-4)' }}>
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-icon"
-                      style={{ color: '#ef4444' }}
-                      onClick={() => handleDeleteWebhook(item.id)}
-                      title="Webhookni o'chirish"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+            </thead>
+            <tbody>
+              {webhooks.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: 'var(--space-8)', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <Globe size={32} style={{ margin: '0 auto var(--space-2)', opacity: 0.5 }} />
+                    Haligacha webhooklar yaratilmagan. O'zingizning birinchi webhookingizni yarating!
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                webhooks.map(item => (
+                  <tr key={item.id} style={{ borderBottom: '1px solid var(--border-primary)' }}>
+                    <td style={{ padding: 'var(--space-4)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 8, background: 'color-mix(in srgb, #f97316 15%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f97316' }}>
+                          <Webhook size={16} />
+                        </div>
+                        <span style={{ fontWeight: 600 }}>{item.name}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: 'var(--space-4)' }}>
+                      <span style={{ padding: '2px 8px', background: 'var(--bg-secondary)', borderRadius: 4, fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-primary)', fontWeight: 600 }}>
+                        {item.method}
+                      </span>
+                    </td>
+                    <td style={{ padding: 'var(--space-4)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-muted)' }}>{item.url}</span>
+                        <button
+                          type="button"
+                          className={`btn ${copiedId === item.id ? 'btn-success' : 'btn-ghost'} btn-icon`}
+                          style={{ width: 24, height: 24 }}
+                          onClick={() => handleCopyUrl(item.url, item.id)}
+                          title="URL nusxalash"
+                        >
+                          <Copy size={12}/>
+                        </button>
+                      </div>
+                    </td>
+                    <td style={{ padding: 'var(--space-4)' }}>
+                      <span className={`badge ${item.active ? 'badge-aqua' : ''}`}>{item.active ? 'Faol' : 'O\'chiq'}</span>
+                    </td>
+                    <td style={{ padding: 'var(--space-4)' }}>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-icon"
+                        style={{ color: '#ef4444' }}
+                        onClick={() => handleDeleteWebhook(item.id)}
+                        title="Webhookni o'chirish"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* CREATE MODAL */}

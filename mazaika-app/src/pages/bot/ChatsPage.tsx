@@ -37,7 +37,7 @@ export default function ChatsPage() {
       getContacts(botId)
         .then(data => {
           setContacts(data as Contact[])
-          if (data.length > 0) {
+          if (data.length > 0 && window.innerWidth > 768) {
             setActiveContactId(data[0].id)
           }
         })
@@ -85,7 +85,7 @@ export default function ChatsPage() {
   const activeContact = contacts.find(c => c.id === activeContactId)
 
   return (
-    <div className="chats-container">
+    <div className={`chats-container ${activeContactId ? 'has-active' : ''}`}>
       {/* Sidebar */}
       <div className="chats-sidebar">
         <div className="chats-header">
@@ -143,6 +143,14 @@ export default function ChatsPage() {
       {activeContact ? (
         <div className="chat-main">
           <div className="chat-main-header">
+            {/* Back button visible only on mobile */}
+            <button 
+              className="btn btn-ghost btn-sm mobile-back-btn" 
+              onClick={() => setActiveContactId(null)}
+              style={{ display: 'none', alignItems: 'center', gap: 4, marginRight: 8, padding: '4px 8px' }}
+            >
+              ← Orqaga
+            </button>
             <div className="chat-avatar">
               <User size={20} />
             </div>

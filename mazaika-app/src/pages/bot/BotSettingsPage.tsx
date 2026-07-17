@@ -209,8 +209,8 @@ export default function BotSettingsPage() {
 
 
   return (
-    <div style={{ padding: 'var(--space-8)', maxWidth: 800, margin: '0 auto', height: '100%', overflowY: 'auto' }}>
-      <div style={{ marginBottom: 'var(--space-8)' }}>
+    <div className="settings-container">
+      <div style={{ marginBottom: 'var(--space-6)' }}>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 700 }}>Bot Sozlamalari</h2>
         <p style={{ color: 'var(--text-muted)' }}>Asosiy ma'lumotlar va API ulanishlar</p>
       </div>

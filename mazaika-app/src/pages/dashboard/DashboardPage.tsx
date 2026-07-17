@@ -318,7 +318,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginTop: '24px' }}>
+            <div className="analytics-grid">
               <div className="analytics-card" style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-primary)' }}>
                 <h3 style={{ marginBottom: '16px', fontWeight: 600 }}>Umumiy o'sish dinamikasi</h3>
                 <div style={{ height: 320 }}>

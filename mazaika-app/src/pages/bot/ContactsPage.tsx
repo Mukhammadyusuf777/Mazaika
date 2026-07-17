@@ -56,37 +56,39 @@ export default function ContactsPage() {
         {loading ? (
           <div style={{ padding: 'var(--space-8)', textAlign: 'center', color: 'var(--text-muted)' }}>Yuklanmoqda...</div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-secondary)' }}>
-                <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>Telegram ID</th>
-                <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>Ism / Username</th>
-                <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>Obuna sanasi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {contacts.length === 0 ? (
-                <tr>
-                  <td colSpan={3} style={{ padding: 'var(--space-8)', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    Hali obunachilar yo'q
-                  </td>
+          <div style={{ overflowX: 'auto', width: '100%' }}>
+            <table style={{ width: '100%', minWidth: 600, borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-primary)', background: 'var(--bg-secondary)' }}>
+                  <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>Telegram ID</th>
+                  <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>Ism / Username</th>
+                  <th style={{ padding: 'var(--space-4)', color: 'var(--text-muted)', fontWeight: 500 }}>Obuna sanasi</th>
                 </tr>
-              ) : (
-                contacts.map(item => (
-                  <tr key={item.id} style={{ borderBottom: '1px solid var(--border-primary)' }}>
-                    <td style={{ padding: 'var(--space-4)', color: 'var(--text-secondary)' }}>{item.telegramId}</td>
-                    <td style={{ padding: 'var(--space-4)' }}>
-                      <div style={{ fontWeight: 600 }}>{item.firstName} {item.lastName}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{item.username ? `@${item.username}` : '-'}</div>
-                    </td>
-                    <td style={{ padding: 'var(--space-4)', color: 'var(--text-secondary)' }}>
-                      {new Date(item.createdAt).toLocaleDateString()}
+              </thead>
+              <tbody>
+                {contacts.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} style={{ padding: 'var(--space-8)', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      Hali obunachilar yo'q
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  contacts.map(item => (
+                    <tr key={item.id} style={{ borderBottom: '1px solid var(--border-primary)' }}>
+                      <td style={{ padding: 'var(--space-4)', color: 'var(--text-secondary)' }}>{item.telegramId}</td>
+                      <td style={{ padding: 'var(--space-4)' }}>
+                        <div style={{ fontWeight: 600 }}>{item.firstName} {item.lastName}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{item.username ? `@${item.username}` : '-'}</div>
+                      </td>
+                      <td style={{ padding: 'var(--space-4)', color: 'var(--text-secondary)' }}>
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

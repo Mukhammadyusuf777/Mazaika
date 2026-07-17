@@ -1,9 +1,9 @@
+import { useState } from 'react'
 import { Outlet, useNavigate, useParams, useLocation } from 'react-router-dom'
 import {
   LayoutGrid, MessageSquare, Megaphone, Users, BarChart2,
-
   Webhook, Settings, ChevronLeft, Play, AlertCircle, Bot,
-  AppWindow, Globe
+  AppWindow, Globe, Menu, X
 } from 'lucide-react'
 import './AppLayout.css'
 
@@ -25,15 +25,32 @@ export default function AppLayout() {
   const navigate = useNavigate()
   const { botId } = useParams()
   const location = useLocation()
+  
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
 
   const currentPath = location.pathname.split('/').pop()
 
   return (
     <div className="app-layout">
+      {/* Mobile Sidebar Toggle Backdrop */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="sidebar-backdrop" 
+          onClick={() => setIsMobileSidebarOpen(false)} 
+        />
+      )}
+
       {/* Narrow icon sidebar — like LeadTex */}
-      <aside className="app-sidebar">
+      <aside className={`app-sidebar ${isMobileSidebarOpen ? 'open' : ''}`}>
         {/* Logo */}
-        <div className="sidebar-logo" onClick={() => navigate('/dashboard')} data-tooltip="Dashboard">
+        <div 
+          className="sidebar-logo" 
+          onClick={() => {
+            navigate('/dashboard')
+            setIsMobileSidebarOpen(false)
+          }} 
+          data-tooltip="Dashboard"
+        >
           <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
             <rect x="2" y="2" width="10" height="10" rx="3" fill="#1e90ff"/>
             <rect x="16" y="2" width="10" height="10" rx="3" fill="#00f5c4" opacity="0.8"/>
@@ -53,7 +70,10 @@ export default function AppLayout() {
               <button
                 key={item.path}
                 className={`sidebar-item ${active ? 'active' : ''}`}
-                onClick={() => navigate(`/bot/${botId}/${item.path}`)}
+                onClick={() => {
+                  navigate(`/bot/${botId}/${item.path}`)
+                  setIsMobileSidebarOpen(false)
+                }}
                 data-tooltip={item.tooltip}
               >
                 <Icon size={20} />
@@ -71,14 +91,23 @@ export default function AppLayout() {
       <div className="app-content">
         {/* Top bar */}
         <header className="app-topbar">
-          <div className="topbar-left">
-            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/dashboard')}>
+          <div className="topbar-left" style={{ gap: 8 }}>
+            {/* Hamburger menu button for mobile screens */}
+            <button 
+              className="btn btn-ghost btn-sm btn-icon mobile-menu-toggle"
+              onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+              style={{ display: 'none', alignItems: 'center', justifyContent: 'center' }}
+            >
+              {isMobileSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+
+            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/dashboard')} style={{ padding: '4px 8px' }}>
               <ChevronLeft size={14} /> Loyiha
             </button>
             <div className="topbar-bot-name">
               <Bot size={14} />
-              <span>Do'kon Boti</span>
-              <span className="badge badge-aqua" style={{ fontSize: '10px', padding: '1px 8px' }}>Faol</span>
+              <span className="bot-name-text">Do'kon Boti</span>
+              <span className="badge badge-aqua" style={{ fontSize: '9px', padding: '1px 6px' }}>Faol</span>
             </div>
           </div>
 
@@ -90,10 +119,10 @@ export default function AppLayout() {
           </div>
 
           <div className="topbar-right">
-            <button className="btn btn-ghost btn-sm">
+            <button className="btn btn-ghost btn-sm mobile-hide">
               <AlertCircle size={14} /> Tekshirish
             </button>
-            <button className="btn btn-primary btn-sm">
+            <button className="btn btn-primary btn-sm" style={{ padding: '6px 12px', fontSize: 12 }}>
               <Play size={14} /> Ishga tushirish
             </button>
           </div>
