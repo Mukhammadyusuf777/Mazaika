@@ -33,7 +33,7 @@ export default function ContactsPage() {
 
 
   return (
-    <div style={{ padding: 'var(--space-8)' }}>
+    <div style={{ padding: 'var(--space-8)', height: '100%', overflowY: 'auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-6)' }}>
         <div>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)' }}>Kontaktlar</h2>
