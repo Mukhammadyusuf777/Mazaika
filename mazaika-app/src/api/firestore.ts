@@ -343,6 +343,12 @@ export async function createBot(userId: string, data: { name: string; token: str
         { id: '2', type: 'voting', title: 'Mazaika Eng Faol Nomzodi', candidates: ['Nomzod A', 'Nomzod B', 'Nomzod C'] },
         { id: '3', type: 'loyalty', title: 'Sizning bonus hisobingiz' }
       ];
+    } else {
+      blocks = [
+        { id: '1', type: 'hero', title: 'Mening yangi loyiham', subtitle: 'Konstruktor yordamida ushbu saytni o\'zingizga moslashtiring!', ctaText: 'Aloqa', img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800' },
+        { id: '2', type: 'about', title: 'Biz haqimizda', text: 'Bu yerga o\'zingiz yoki jamoangiz haqida batafsil ma\'lumot yozishingiz mumkin.' },
+        { id: '3', type: 'contacts', title: 'Bog\'lanish', phone: '+998 90 123 45 67', telegram: 'MazaikaSupportBot' }
+      ];
     }
 
     if (blocks.length > 0) {
@@ -442,6 +448,15 @@ export async function createBot(userId: string, data: { name: string; token: str
             { id: '4', label: 'Keshbek 5000 UZS', color: '#10d974' },
             { id: '5', label: 'Yana bir bor', color: '#ffb830' },
             { id: '6', label: 'Kupon 20%', color: '#f43f5e' }
+          ]
+        };
+      } else {
+        appName = 'Mini Ilova';
+        appType = 'store';
+        appConfig = {
+          themeColor: '#1e90ff',
+          items: [
+            { id: 'item_1', name: 'Birinchi mahsulot', desc: 'Tavsif', price: 10000, img: '' }
           ]
         };
       }

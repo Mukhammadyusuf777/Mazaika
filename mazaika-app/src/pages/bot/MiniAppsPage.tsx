@@ -147,7 +147,7 @@ export default function MiniAppsPage() {
   }
 
   return (
-    <div style={{ padding: 'var(--space-8)', display: 'grid', gridTemplateColumns: editingApp ? '1.2fr 1fr' : '1fr', gap: 'var(--space-8)', height: '100%', overflowY: 'auto' }}>
+    <div className="miniapps-container" style={{ gridTemplateColumns: editingApp ? undefined : '1fr' }}>
       
       {/* Left side: List of Apps */}
       <div>
