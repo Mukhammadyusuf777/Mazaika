@@ -504,6 +504,8 @@
   .dash-topbar button {
     width: 100% !important;
   }
+}
+
 .analytics-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;

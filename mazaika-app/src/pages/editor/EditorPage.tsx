@@ -123,7 +123,7 @@ export default function EditorPage() {
 
   return (
     <div className="editor-wrapper">
-      <BlockSidebar open={sidebarOpen} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+      <BlockSidebar open={sidebarOpen} searchQuery={searchQuery} onSearchChange={setSearchQuery} onClose={() => setSidebarOpen(false)} />
 
       <div className="editor-canvas" onDrop={onDrop} onDragOver={onDragOver}>
         <ReactFlow

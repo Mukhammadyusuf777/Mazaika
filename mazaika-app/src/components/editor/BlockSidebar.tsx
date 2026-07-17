@@ -90,9 +90,10 @@ interface BlockSidebarProps {
   open: boolean
   searchQuery: string
   onSearchChange: (q: string) => void
+  onClose?: () => void
 }
 
-export function BlockSidebar({ open, searchQuery, onSearchChange }: BlockSidebarProps) {
+export function BlockSidebar({ open, searchQuery, onSearchChange, onClose }: BlockSidebarProps) {
   const onDragStart = (
     event: React.DragEvent,
     nodeType: string,
@@ -109,8 +110,22 @@ export function BlockSidebar({ open, searchQuery, onSearchChange }: BlockSidebar
 
   return (
     <aside className={`block-sidebar ${open ? '' : 'closed'}`}>
-      <div className="sidebar-header">
+      <div className="sidebar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span className="sidebar-title">Bloklar</span>
+        {onClose && (
+          <button 
+            onClick={onClose} 
+            className="btn btn-ghost btn-icon" 
+            style={{ 
+              width: 28, height: 28, borderRadius: '50%', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center', 
+              color: 'var(--text-muted)', border: 'none', background: 'transparent', 
+              cursor: 'pointer', fontSize: 14 
+            }}
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       <div className="sidebar-search">
