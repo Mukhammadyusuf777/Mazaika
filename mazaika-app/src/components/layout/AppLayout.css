@@ -327,3 +327,101 @@
     justify-content: center !important;
   }
 }
+
+.builder-header {
+  height: 60px;
+  padding: 0 var(--space-6);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.builder-header-switcher {
+  display: flex;
+  background: var(--bg-primary);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+}
+
+.builder-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .builder-header {
+    height: auto !important;
+    padding: var(--space-3) !important;
+    flex-direction: column !important;
+    gap: var(--space-3) !important;
+    align-items: stretch !important;
+  }
+  
+  .builder-header-switcher {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+  
+  .builder-header-switcher button {
+    flex: 1 !important;
+    justify-content: center !important;
+    font-size: 11px !important;
+    padding: var(--space-2) !important;
+  }
+
+  .builder-header-actions {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+  
+  .builder-header-actions button,
+  .builder-header-actions a {
+    flex: 1 !important;
+    justify-content: center !important;
+  }
+}
+
+.builder-canvas-workspace {
+  flex: 1;
+  overflow-y: auto;
+  background: #090d16;
+  background-image: radial-gradient(rgba(255,255,255,0.02) 1px, transparent 0);
+  background-size: 20px 20px;
+  display: flex;
+  justify-content: center;
+  padding: 40px 24px;
+}
+
+@media (max-width: 768px) {
+  .builder-canvas-workspace {
+    padding: 16px 8px !important;
+  }
+}
+
+.builder-mobile-shell {
+  position: relative;
+  width: 360px;
+  height: 720px;
+  background: #1e293b;
+  border-radius: 44px;
+  padding: 10px;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.1), 0 0 0 1px rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  border: 1.5px solid rgba(255,255,255,0.08);
+}
+
+@media (max-width: 768px) {
+  .builder-mobile-shell {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 500px !important;
+    border-radius: 20px !important;
+    padding: 6px !important;
+  }
+}

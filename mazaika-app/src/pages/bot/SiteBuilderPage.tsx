@@ -247,16 +247,7 @@ export default function SiteBuilderPage() {
       <div className="builder-canvas-panel">
         
         {/* Top Control Bar */}
-        <div style={{ 
-          height: 60, 
-          padding: '0 24px', 
-          background: 'var(--bg-secondary)', 
-          borderBottom: '1px solid var(--border-primary)', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          flexShrink: 0
-        }}>
+        <div className="builder-header">
           {/* Logo/Title */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Globe size={18} style={{ color: 'var(--accent-blue)' }} />
@@ -267,7 +258,7 @@ export default function SiteBuilderPage() {
           </div>
 
           {/* View Switcher Controls (Desktop / Mobile) */}
-          <div style={{ display: 'flex', background: 'var(--bg-primary)', padding: 4, borderRadius: 8, border: '1px solid var(--border-primary)' }}>
+          <div className="builder-header-switcher">
             <button 
               onClick={() => setViewMode('desktop')}
               style={{
@@ -293,7 +284,7 @@ export default function SiteBuilderPage() {
           </div>
 
           {/* Save & Live Links */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="builder-header-actions">
             {saveSuccess && (
               <span style={{ fontSize: 12, color: '#10d974', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <CheckCircle size={14} /> Saqlandi!
@@ -320,17 +311,7 @@ export default function SiteBuilderPage() {
         </div>
 
         {/* Dynamic Canvas Workspace */}
-        <div style={{ 
-          flex: 1, 
-          overflowY: 'auto', 
-          background: '#090d16', 
-          backgroundImage: 'radial-gradient(rgba(255,255,255,0.02) 1px, transparent 0)',
-          backgroundSize: '20px 20px',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: viewMode === 'mobile' ? 'center' : 'flex-start',
-          padding: '40px 24px'
-        }}>
+        <div className="builder-canvas-workspace" style={{ alignItems: viewMode === 'mobile' ? 'center' : 'flex-start' }}>
           
           {/* DESKTOP CANVAS VIEW */}
           {viewMode === 'desktop' && (
@@ -548,18 +529,7 @@ export default function SiteBuilderPage() {
 
           {/* MOBILE PREVIEW VIEW (Smartphone Shell) */}
           {viewMode === 'mobile' && (
-            <div style={{
-              position: 'relative',
-              width: '360px',
-              height: '720px',
-              background: '#1e293b', 
-              borderRadius: '44px',
-              padding: '10px', 
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.1), 0 0 0 1px rgba(255,255,255,0.05)',
-              display: 'flex',
-              flexDirection: 'column',
-              border: '1.5px solid rgba(255,255,255,0.08)'
-            }}>
+            <div className="builder-mobile-shell">
               {/* Dynamic Island */}
               <div style={{
                 position: 'absolute', top: '18px', left: '50%', transform: 'translateX(-50%)',

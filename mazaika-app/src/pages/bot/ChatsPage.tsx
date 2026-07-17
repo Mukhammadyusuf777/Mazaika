@@ -194,7 +194,7 @@ export default function ChatsPage() {
           </div>
         </div>
       ) : (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+        <div className="chat-main placeholder" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
           Suhbatni tanlang
         </div>
       )}
