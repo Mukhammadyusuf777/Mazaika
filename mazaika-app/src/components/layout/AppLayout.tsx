@@ -5,7 +5,7 @@ import {
   Webhook, Settings, ChevronLeft, Play, AlertCircle, Bot,
   AppWindow, Globe, Menu, Sparkles
 } from 'lucide-react'
-import FloatingAgentWidget from '../ai/FloatingAgentWidget'
+import FloatingAICopilot from '../ai/FloatingAICopilot'
 import './AppLayout.css'
 
 const NAV_ITEMS = [
@@ -149,7 +149,7 @@ export default function AppLayout() {
       </div>
 
       {/* Global Floating AI Contextual Widget */}
-      <FloatingAgentWidget />
+      <FloatingAICopilot />
     </div>
   )
 }

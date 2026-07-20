@@ -32,17 +32,42 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isWidgetOpen, setWidgetOpen] = useState(false)
   const [activeElementId, setActiveElementId] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [activeConfig, setActiveConfig] = useState<any>(null)
+  const [activeConfig, setActiveConfig] = useState<any>(() => {
+    const savedConfig = localStorage.getItem('mazaika_ai_config')
+    return savedConfig ? JSON.parse(savedConfig) : null
+  })
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome_1',
-      sender: 'agent',
-      text: 'Salom! Men sizning Antigravity AI Агентингизман 🤖. Istalgan g\'oyangizni yozing va men uni lahzalarda tayyor Mini App, bot yoki saytga aylantirib beraman!',
-      explanation: 'Готов генерировать новые проекты или редактировать текущий интерфейс по вашему запросу.',
-      timestamp: new Date()
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const savedMessages = localStorage.getItem('mazaika_ai_messages')
+    if (savedMessages) {
+      const parsed = JSON.parse(savedMessages)
+      // Restore Date objects
+      return parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }))
     }
-  ])
+    return [
+      {
+        id: 'welcome_1',
+        sender: 'agent',
+        text: 'Salom! Men sizning Antigravity AI Агентингизман 🤖. Istalgan g\'oyangizni yozing va men uni lahzalarda tayyor Mini App, bot yoki saytga aylantirib beraman!',
+        explanation: 'Готов генерировать новые проекты или редактировать текущий интерфейс по вашему запросу.',
+        timestamp: new Date()
+      }
+    ]
+  })
+
+  // Persist messages whenever they change
+  React.useEffect(() => {
+    localStorage.setItem('mazaika_ai_messages', JSON.stringify(messages))
+  }, [messages])
+
+  // Persist config whenever it changes
+  React.useEffect(() => {
+    if (activeConfig) {
+      localStorage.setItem('mazaika_ai_config', JSON.stringify(activeConfig))
+    } else {
+      localStorage.removeItem('mazaika_ai_config')
+    }
+  }, [activeConfig])
 
   const toggleWidget = () => setWidgetOpen(prev => !prev)
 

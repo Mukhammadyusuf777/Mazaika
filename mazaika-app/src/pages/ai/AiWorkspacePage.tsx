@@ -46,18 +46,75 @@ export default function AiWorkspacePage() {
 
     setSavingBot(true)
     try {
+      const isBot = activeConfig.target_entity === 'bot'
+      
+      let customNodes = undefined;
+      let customEdges = undefined;
+
+      if (isBot) {
+        // Translate AI flat blocks into React Flow Nodes and Edges
+        customNodes = [];
+        customEdges = [];
+        
+        let yOffset = 100;
+        activeConfig.blocks.forEach((block: any, index: number) => {
+          let nodeType = 'message';
+          if (block.type === 'boshlash') nodeType = 'start';
+          if (block.type === 'xabar') nodeType = 'message';
+          if (block.type === 'matnli_savol') nodeType = 'question';
+          if (block.type === 'shart') nodeType = 'condition';
+
+          const node = {
+            id: block.id || `node-${index}`,
+            type: nodeType,
+            position: { x: 300, y: yOffset },
+            data: {
+              label: block.title || block.type,
+              text: block.text || '',
+              buttons: block.buttons || [],
+              variable: block.variable || '',
+              condition: block.condition || '',
+            }
+          }
+          customNodes.push(node)
+
+          // Connect sequential nodes
+          if (index > 0) {
+            const prevBlock = activeConfig.blocks[index - 1]
+            customEdges.push({
+              id: `e-${index}`,
+              source: prevBlock.id || `node-${index - 1}`,
+              target: node.id,
+              type: 'buttonEdge',
+              animated: true
+            })
+          }
+          yOffset += 150;
+        })
+      }
+
       // 1. Create Bot in Firestore
       const newBot = await createBot(user.id, {
-        name: activeConfig.appName || 'AI Generated Bot',
+        name: activeConfig.appName || 'AI Generated Project',
         token: 'TEST_TOKEN_' + Date.now().toString().slice(-6),
-        creationType: 'bot_and_webapp'
+        creationType: isBot ? 'bot_only' : 'bot_and_webapp',
+        customNodes,
+        customEdges
       })
 
-      // 2. Save Generated SiteConfig to Firestore
-      await saveSiteConfig(newBot.id, activeConfig)
+      // 2. Save Generated SiteConfig to Firestore (if it's a site/mini app)
+      if (!isBot) {
+        await saveSiteConfig(newBot.id, activeConfig)
+      }
 
-      alert(`🎉 "${activeConfig.appName || 'AI Bot'}" muvaffaqiyatli saqlandi! Builder sahifasiga o'tilmoqda...`)
-      navigate(`/bot/${newBot.id}/sitebuilder`)
+      alert(`🎉 "${activeConfig.appName || 'AI Loyiha'}" muvaffaqiyatli saqlandi!`)
+      
+      // 3. Navigate depending on target_entity
+      if (isBot) {
+        navigate(`/bot/${newBot.id}/editor`)
+      } else {
+        navigate(`/bot/${newBot.id}/sitebuilder`)
+      }
     } catch (e: any) {
       alert("Saqlashda xatolik yuz berdi: " + e.message)
     } finally {

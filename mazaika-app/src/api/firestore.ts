@@ -55,7 +55,7 @@ export async function getBotById(botId: string): Promise<any> {
   return null
 }
 
-export async function createBot(userId: string, data: { name: string; token: string; template?: string; creationType?: 'bot_only' | 'bot_and_webapp' }): Promise<any> {
+export async function createBot(userId: string, data: { name: string; token: string; template?: string; creationType?: 'bot_only' | 'bot_and_webapp', customNodes?: any[], customEdges?: any[] }): Promise<any> {
   const ref = await addDoc(collection(db, 'bots'), {
     name: data.name,
     token: data.token,
@@ -73,7 +73,10 @@ export async function createBot(userId: string, data: { name: string; token: str
   let nodes: any[] = [];
   let edges: any[] = [];
 
-  if (data.template === 'Internet do\'kon') {
+  if (data.customNodes && data.customEdges) {
+    nodes = data.customNodes;
+    edges = data.customEdges;
+  } else if (data.template === 'Internet do\'kon') {
     nodes = [
       { id: 'node-1', type: 'start', position: { x: 100, y: 200 }, data: { label: 'Boshlash', emoji: '▶', color: '#10d974' } },
       { 
