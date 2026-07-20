@@ -491,6 +491,46 @@ export async function updateBot(
 
 
 export async function deleteBot(botId: string) {
+  try {
+    // 1. Delete site config document
+    await deleteDoc(doc(db, 'bots', botId, 'site', 'config')).catch(() => {})
+
+    // 2. Delete all docs in workflows subcollection
+    const wfSnap = await getDocs(collection(db, 'bots', botId, 'workflows')).catch(() => null)
+    if (wfSnap) {
+      for (const d of wfSnap.docs) {
+        await deleteDoc(d.ref).catch(() => {})
+      }
+    }
+
+    // 3. Delete all docs in miniapps subcollection
+    const appSnap = await getDocs(collection(db, 'bots', botId, 'miniapps')).catch(() => null)
+    if (appSnap) {
+      for (const d of appSnap.docs) {
+        await deleteDoc(d.ref).catch(() => {})
+      }
+    }
+
+    // 4. Delete all docs in contacts subcollection
+    const cSnap = await getDocs(collection(db, 'bots', botId, 'contacts')).catch(() => null)
+    if (cSnap) {
+      for (const d of cSnap.docs) {
+        await deleteDoc(d.ref).catch(() => {})
+      }
+    }
+
+    // 5. Delete all docs in webhooks subcollection
+    const wSnap = await getDocs(collection(db, 'bots', botId, 'webhooks')).catch(() => null)
+    if (wSnap) {
+      for (const d of wSnap.docs) {
+        await deleteDoc(d.ref).catch(() => {})
+      }
+    }
+  } catch (e) {
+    console.error("Error wiping subcollections for bot:", e)
+  }
+
+  // 6. Delete main bot document
   await deleteDoc(doc(db, 'bots', botId))
 }
 

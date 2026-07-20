@@ -27,6 +27,7 @@ interface Block {
 }
 
 interface SiteConfig {
+  appName?: string
   theme: string
   themeColor: string
   blocks: Block[]
@@ -35,6 +36,7 @@ interface SiteConfig {
 export default function SiteRendererPage() {
   const { botId } = useParams<{ botId: string }>()
   const [config, setConfig] = useState<SiteConfig | null>(null)
+  const [botName, setBotName] = useState<string>('')
   const [loading, setLoading] = useState(true)
 
   // Interactive app states
@@ -59,10 +61,21 @@ export default function SiteRendererPage() {
     const fetchConfig = async () => {
       if (!botId) return
       try {
+        // Fetch Bot Name
+        const botSnap = await getDoc(doc(db, 'bots', botId))
+        if (botSnap.exists()) {
+          setBotName(botSnap.data().name || '')
+        }
+
+        // Fetch Site Config
         const docRef = doc(db, 'bots', botId, 'site', 'config')
         const snap = await getDoc(docRef)
         if (snap.exists()) {
-          setConfig(snap.data() as SiteConfig)
+          const data = snap.data() as SiteConfig
+          setConfig(data)
+          if (data.appName || botSnap.data()?.name) {
+            document.title = data.appName || botSnap.data()?.name || 'Mini App'
+          }
         }
       } catch (e) {
         console.error(e)
@@ -254,7 +267,7 @@ export default function SiteRendererPage() {
         alignItems: 'center'
       }}>
         <h1 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: themeColor, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Award size={20} /> sayt
+          <Award size={20} /> {config.appName || botName || 'Mini App'}
         </h1>
         <div style={{ display: 'flex', gap: 16 }}>
           {cart.length > 0 && (

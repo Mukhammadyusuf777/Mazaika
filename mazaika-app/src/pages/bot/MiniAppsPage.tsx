@@ -11,6 +11,9 @@ export default function MiniAppsPage() {
   const [savingDesign, setSavingDesign] = useState(false)
   const [copied, setCopied] = useState(false)
 
+  // Bot & App Title State
+  const [appName, setAppName] = useState('Mini App')
+
   // Bot Settings State
   const [menuButtonEnabled, setMenuButtonEnabled] = useState(false)
   const [menuButtonText, setMenuButtonText] = useState('Mini App')
@@ -28,16 +31,19 @@ export default function MiniAppsPage() {
       setLoading(true)
       try {
         const botData = await getBotById(botId)
+        const siteData = await getSiteConfig(botId)
+
         if (botData) {
           setMenuButtonEnabled(botData.menuButtonEnabled || false)
           setMenuButtonText(botData.menuButtonText || 'Mini App')
         }
 
-        const siteData = await getSiteConfig(botId)
         if (siteData) {
           setTheme(siteData.theme || 'glassmorphism')
           setThemeColor(siteData.themeColor || '#1e90ff')
         }
+
+        setAppName(siteData?.appName || botData?.name || 'Mini App')
       } catch (err) {
         console.error(err)
       } finally {
@@ -59,11 +65,18 @@ export default function MiniAppsPage() {
     setSavingBot(true)
     try {
       await updateBot(botId, {
+        name: appName,
         menuButtonEnabled,
         menuButtonText,
         menuButtonUrl: `https://mazaika.pages.dev/site/${botId}`
       })
-      alert("Telegram sozlamalari muvaffaqiyatli saqlandi!")
+      const currentConfig = await getSiteConfig(botId) || { blocks: [] }
+      await saveSiteConfig(botId, {
+        ...currentConfig,
+        appName
+      })
+      setSimKey(prev => prev + 1)
+      alert("Telegram va Mini App ma'lumotlari muvaffaqiyatli saqlandi!")
     } catch (e) {
       alert("Xatolik yuz berdi!")
     } finally {
@@ -78,8 +91,12 @@ export default function MiniAppsPage() {
       const currentConfig = await getSiteConfig(botId) || { blocks: [] }
       await saveSiteConfig(botId, {
         ...currentConfig,
+        appName,
         theme,
         themeColor
+      })
+      await updateBot(botId, {
+        name: appName
       })
       // Force reload simulator iframe
       setSimKey(prev => prev + 1)
@@ -158,7 +175,7 @@ export default function MiniAppsPage() {
             <p style={{ color: 'var(--text-muted)' }}>Telegram bot ichida ochiladigan smart interfeysni (WebApp) sozlang.</p>
           </div>
           <div className="page-header-actions">
-            <button className="btn btn-primary" onClick={() => navigate(`/bot/${botId}/builder`)} style={{ gap: 8 }}>
+            <button className="btn btn-primary" onClick={() => navigate(`/bot/${botId}/sitebuilder`)} style={{ gap: 8 }}>
               <Layout size={16} /> Konstruktorga o'tish
             </button>
           </div>
@@ -205,12 +222,28 @@ export default function MiniAppsPage() {
           </div>
         </div>
 
-        {/* Card 2: Telegram Menu Button */}
+        {/* Card 2: Telegram Menu Button & App Name */}
         <div style={{ background: 'var(--bg-card)', padding: 'var(--space-6)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)' }}>
-          <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 'var(--space-1)' }}>Telegram Bot integratsiyasi</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 'var(--space-4)' }}>Botning pastki chap burchagidagi asosiy tugma orqali Mini App-ni ochish sozlamalari.</p>
+          <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 'var(--space-1)' }}>Telegram Bot & Mini App sozlamalari</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 'var(--space-4)' }}>Mini Ilova nomi va Telegram bot menyusidagi tugma sozlamalari.</p>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              <label style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Mini App va Bot Nomi (App Title)</label>
+              <input 
+                type="text" 
+                className="input" 
+                value={appName} 
+                onChange={e => setAppName(e.target.value)} 
+                placeholder="Masalan: Mazaika Store, Express Delivery"
+                style={{ maxWidth: 400 }}
+              />
+              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Ushbu nom Telegram Mini App yuqori qismida va veb-sayt sarlavhasida ko'rinadi.</span>
+            </div>
+
+            <hr style={{ borderColor: 'var(--border-primary)', margin: '4px 0' }} />
+
             <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', cursor: 'pointer', userSelect: 'none' }}>
               <input 
                 type="checkbox" 
@@ -226,7 +259,7 @@ export default function MiniAppsPage() {
 
             {menuButtonEnabled && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', borderLeft: '3px solid var(--border-primary)', paddingLeft: 'var(--space-4)', marginTop: 'var(--space-2)' }}>
-                <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Tugma matni (Label)</label>
+                <label style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Telegram Menyu tugmasi matni (Label)</label>
                 <input 
                   type="text" 
                   className="input" 

@@ -6,7 +6,7 @@ import {
   UserCheck, Laptop, Smartphone, Plus, Info, CheckCircle
 } from 'lucide-react'
 
-import { getSiteConfig, saveSiteConfig } from '../../api/firestore'
+import { getSiteConfig, saveSiteConfig, updateBot } from '../../api/firestore'
 
 export interface Block {
   id: string
@@ -25,6 +25,7 @@ export interface Block {
 }
 
 interface SiteConfig {
+  appName?: string
   theme: string
   themeColor: string
   blocks: Block[]
@@ -48,10 +49,10 @@ const DEFAULT_BLOCKS: Block[] = [
   {
     id: '3',
     type: 'catalog',
-    title: 'Katalog va Do\'kon',
+    title: 'Do\'kon / Katalog',
     items: [
-      { id: 'c1', name: 'Pizza Margherita', price: 45000, desc: 'Pomidor, pishloq va rayhon barglari.', img: 'https://images.unsplash.com/photo-1604068549290-dea0e4a305ca?w=150' },
-      { id: 'c2', name: 'Premium Telegram Bot', price: 990000, desc: 'Tizimingiz uchun to\'liq avtomatlashtirilgan bot.', img: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=150' }
+      { id: 'item_1', name: 'VIP A\'zolar paketi', price: 99000, desc: 'Barcha imkoniyatlarga cheksiz kirish.', img: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=150' },
+      { id: 'item_2', name: 'Konsultatsiya 1 soat', price: 150000, desc: 'Mutaxassis bilan yakkama-yakka suhbat.', img: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=150' }
     ]
   },
   {
@@ -64,6 +65,7 @@ const DEFAULT_BLOCKS: Block[] = [
 ]
 
 const DEFAULT_CONFIG: SiteConfig = {
+  appName: 'Mini App',
   theme: 'glassmorphism',
   themeColor: '#1e90ff',
   blocks: DEFAULT_BLOCKS
@@ -73,7 +75,7 @@ export default function SiteBuilderPage() {
   const { botId } = useParams<{ botId: string }>()
   const [config, setConfig] = useState<SiteConfig>(DEFAULT_CONFIG)
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>('1')
   
   // Google Sites layout states
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop')
@@ -115,6 +117,9 @@ export default function SiteBuilderPage() {
     setIsLoading(true)
     try {
       await saveSiteConfig(botId, config)
+      if (config.appName) {
+        await updateBot(botId, { name: config.appName })
+      }
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 3000)
     } catch (e) {
@@ -962,6 +967,19 @@ export default function SiteBuilderPage() {
               {/* Theme selection quick widget */}
               <div style={{ background: 'var(--bg-card)', padding: 14, borderRadius: 12, border: '1px solid var(--border-primary)' }}>
                 <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 10 }}>MAVZU & SOZLAMA</h4>
+                
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Mini App / Bot Nomi</label>
+                  <input 
+                    type="text" 
+                    className="input" 
+                    value={config.appName || ''} 
+                    onChange={e => setConfig({ ...config, appName: e.target.value })} 
+                    placeholder="Masalan: Mazaika Store" 
+                    style={{ width: '100%', fontSize: 12 }}
+                  />
+                </div>
+
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                   <div style={{ flex: 1 }}>
                     <select 
