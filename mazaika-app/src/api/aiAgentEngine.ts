@@ -75,11 +75,13 @@ export async function queryAntigravityAgent(
       }
     } else {
       const projectData = data.project_data || {};
+      const targetEntity = data.target_entity || 'mini_app';
       return {
         explanation: data.explanation || 'Проект сгенерирован с помощью AI!',
         execution_mode: 'FULL_GENERATION',
-        target_entity: data.target_entity || 'mini_app',
+        target_entity: targetEntity,
         project_data: {
+          target_entity: targetEntity,
           appName: projectData.appName || prompt,
           theme: projectData.theme || 'glassmorphism',
           themeColor: projectData.themeColor || '#1e90ff',
