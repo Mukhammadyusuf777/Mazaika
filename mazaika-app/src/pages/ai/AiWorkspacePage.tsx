@@ -244,6 +244,19 @@ export default function AiWorkspacePage() {
                         </div>
                       )}
 
+                      {b.type === 'voting' && (
+                        <div>
+                          <h4 style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 700 }}>{b.title}</h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {(b.candidates || []).map((cand: string, idx: number) => (
+                              <button key={idx} style={{ textAlign: 'left', padding: '6px 10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#fff', fontSize: 11, cursor: 'pointer' }}>
+                                {cand}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {b.type === 'loyalty' && (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                           <span style={{ fontSize: 11, fontWeight: 700 }}>{b.title}</span>
