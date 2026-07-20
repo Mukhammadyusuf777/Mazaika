@@ -102,8 +102,11 @@ Choose the correct entity schema based on the user's intent. Output ONLY the JSO
             return JSON.parse(cleanedJson);
         }
         catch (error) {
-            this.logger.error(`Gemini API Error in generateFullProject: ${error.message}`);
-            throw new common_1.InternalServerErrorException('Не удалось сгенерировать проект через ИИ. Пожалуйста, проверьте настройки API.');
+            this.logger.error(`AI Generation Failed: ${error.message}`);
+            if (error.message.includes('SERVICE_DISABLED') || error.message.includes('disabled')) {
+                throw new common_1.InternalServerErrorException(`Google Cloud Error: ${error.message}`);
+            }
+            throw new common_1.InternalServerErrorException(`Не удалось сгенерировать проект через ИИ. Ошибка от Google: ${error.message}`);
         }
     }
     async generatePatch(userPrompt, currentPageUrl, selectedBlockId, currentConfig) {
@@ -141,8 +144,11 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
             return JSON.parse(cleanedJson);
         }
         catch (error) {
-            this.logger.error(`Gemini API Error in generatePatch: ${error.message}`);
-            throw new common_1.InternalServerErrorException('Не удалось сгенерировать обновление через ИИ. Пожалуйста, проверьте настройки API.');
+            this.logger.error(`AI Generation Failed: ${error.message}`);
+            if (error.message.includes('SERVICE_DISABLED') || error.message.includes('disabled')) {
+                throw new common_1.InternalServerErrorException(`Google Cloud Error: ${error.message}`);
+            }
+            throw new common_1.InternalServerErrorException(`Не удалось обновить проект через ИИ. Ошибка от Google: ${error.message}`);
         }
     }
     cleanJsonResponse(text) {
