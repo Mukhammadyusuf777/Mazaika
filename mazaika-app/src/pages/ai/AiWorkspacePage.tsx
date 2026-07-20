@@ -252,8 +252,8 @@ export default function AiWorkspacePage() {
                   </div>
 
                   {/* Render Generated Blocks */}
-                  {(activeConfig.blocks || []).map((b: any) => (
-                    <div key={b.id} style={{ marginBottom: 16, padding: 12, borderRadius: 12, background: activeConfig.theme === 'minimalist' ? '#fff' : 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  {(Array.isArray(activeConfig.blocks) ? activeConfig.blocks : []).map((b: any, bIdx: number) => (
+                    <div key={b.id || bIdx} style={{ marginBottom: 16, padding: 12, borderRadius: 12, background: activeConfig.theme === 'minimalist' ? '#fff' : 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
                       {b.type === 'hero' && (
                         <div>
                           {b.img && <img src={b.img} alt="" style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />}
@@ -274,8 +274,8 @@ export default function AiWorkspacePage() {
                         <div>
                           <h4 style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 700 }}>{b.title}</h4>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            {(b.items || []).map((item: any) => (
-                              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 6, borderRadius: 6, background: 'rgba(255,255,255,0.02)' }}>
+                            {(Array.isArray(b.items) ? b.items : []).map((item: any, iIdx: number) => (
+                              <div key={item.id || iIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 6, borderRadius: 6, background: 'rgba(255,255,255,0.02)' }}>
                                 <div>
                                   <span style={{ fontSize: 11, fontWeight: 700, display: 'block' }}>{item.name}</span>
                                   <span style={{ fontSize: 10, color: activeConfig.themeColor || '#1e90ff' }}>{item.price?.toLocaleString()} so'm</span>
@@ -291,7 +291,7 @@ export default function AiWorkspacePage() {
                         <div>
                           <h4 style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 700 }}>{b.title}</h4>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            {(b.fields || []).map((f: any, idx: number) => (
+                            {(Array.isArray(b.fields) ? b.fields : []).map((f: any, idx: number) => (
                               <div key={idx}>
                                 <label style={{ display: 'block', fontSize: 10, color: '#94a3b8', marginBottom: 2 }}>{f.label}</label>
                                 <input type="text" disabled placeholder={f.label} style={{ width: '100%', padding: 4, fontSize: 10, borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#fff' }} />
@@ -305,9 +305,9 @@ export default function AiWorkspacePage() {
                         <div>
                           <h4 style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 700 }}>{b.title}</h4>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            {(b.candidates || []).map((cand: string, idx: number) => (
+                            {(Array.isArray(b.candidates) ? b.candidates : []).map((cand: any, idx: number) => (
                               <button key={idx} style={{ textAlign: 'left', padding: '6px 10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, color: '#fff', fontSize: 11, cursor: 'pointer' }}>
-                                {cand}
+                                {typeof cand === 'string' ? cand : cand.name || 'Nomzod'}
                               </button>
                             ))}
                           </div>
@@ -337,10 +337,10 @@ export default function AiWorkspacePage() {
                           {b.condition && <p style={{ fontSize: 10, color: '#fbbf24', margin: '4px 0 0 0', fontFamily: 'monospace' }}>if ({b.condition})</p>}
                           {b.variable && <p style={{ fontSize: 10, color: '#38bdf8', margin: '4px 0 0 0', fontFamily: 'monospace' }}>-{'>'} {b.variable}</p>}
                           
-                          {b.buttons && b.buttons.length > 0 && (
+                          {Array.isArray(b.buttons) && b.buttons.length > 0 && (
                             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 8 }}>
-                              {b.buttons.map((btn: string, i: number) => (
-                                <span key={i} style={{ fontSize: 9, padding: '2px 6px', background: 'rgba(255,255,255,0.1)', borderRadius: 12, color: '#e2e8f0' }}>{btn}</span>
+                              {b.buttons.map((btn: any, i: number) => (
+                                <span key={i} style={{ fontSize: 9, padding: '2px 6px', background: 'rgba(255,255,255,0.1)', borderRadius: 12, color: '#e2e8f0' }}>{typeof btn === 'string' ? btn : btn.text || 'Tugma'}</span>
                               ))}
                             </div>
                           )}
@@ -352,12 +352,12 @@ export default function AiWorkspacePage() {
                         <div>
                           <h4 style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 700 }}>{b.title || 'Testing / Quiz'}</h4>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {(b.questions || []).map((q: any, idx: number) => (
+                            {(Array.isArray(b.questions) ? b.questions : []).map((q: any, idx: number) => (
                               <div key={idx} style={{ background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 8 }}>
                                 <p style={{ fontSize: 11, margin: '0 0 6px 0', color: '#e2e8f0' }}>{idx + 1}. {q.q || q.question}</p>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                  {(q.options || []).map((opt: string, oIdx: number) => (
-                                    <span key={oIdx} style={{ fontSize: 10, padding: '4px 8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, color: '#94a3b8', cursor: 'pointer' }}>{opt}</span>
+                                  {(Array.isArray(q.options) ? q.options : []).map((opt: any, oIdx: number) => (
+                                    <span key={oIdx} style={{ fontSize: 10, padding: '4px 8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, color: '#94a3b8', cursor: 'pointer' }}>{typeof opt === 'string' ? opt : opt.text || opt.label || 'Variant'}</span>
                                   ))}
                                 </div>
                               </div>
