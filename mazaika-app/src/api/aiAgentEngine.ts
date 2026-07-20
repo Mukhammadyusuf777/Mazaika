@@ -55,7 +55,14 @@ export async function queryAntigravityAgent(
     })
 
     if (!res.ok) {
-      throw new Error(`Server responded with status: ${res.status} ${res.statusText}`)
+      let errBody = ''
+      try {
+        const errJson = await res.json()
+        errBody = errJson.message || errJson.error || res.statusText
+      } catch (e) {
+        errBody = res.statusText
+      }
+      throw new Error(`[Status ${res.status}] ${errBody}`)
     }
 
     const data = await res.json()
@@ -79,24 +86,26 @@ export async function queryAntigravityAgent(
         }
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to fetch from NestJS AI API:", error)
+    
+    const errMsg = error.message || 'Неизвестная ошибка сети'
     
     // Return a clean connection error state instead of fake hardcoded components
     return {
-      explanation: "Ошибка соединения с ИИ-сервером. Пожалуйста, убедитесь, что бэкенд запущен на порту 3000.",
+      explanation: `Ошибка API: ${errMsg}. Убедитесь, что бэкенд запущен и ключи API (Gemini) настроены верно.`,
       execution_mode: 'FULL_GENERATION',
       target_entity: 'mini_app',
       project_data: {
-        appName: 'Connection Error',
+        appName: 'API Error',
         theme: 'minimalist',
         themeColor: '#ef4444',
         blocks: [
           {
             id: 'err1',
             type: 'hero',
-            title: 'Сервер недоступен',
-            subtitle: 'Не удалось подключиться к ИИ-генератору (NestJS).',
+            title: 'Ошибка сервера',
+            subtitle: errMsg,
             img: 'https://images.unsplash.com/photo-1594322436404-5a0526db4d13?w=800'
           }
         ]
