@@ -74,15 +74,16 @@ export async function queryAntigravityAgent(
         patch_operations: data.patch_operations || []
       }
     } else {
+      const projectData = data.project_data || {};
       return {
         explanation: data.explanation || 'Проект сгенерирован с помощью AI!',
         execution_mode: 'FULL_GENERATION',
-        target_entity: 'mini_app',
+        target_entity: data.target_entity || 'mini_app',
         project_data: {
-          appName: data.appName || prompt,
-          theme: data.theme || 'glassmorphism',
-          themeColor: data.themeColor || '#1e90ff',
-          blocks: data.blocks || []
+          appName: projectData.appName || prompt,
+          theme: projectData.theme || 'glassmorphism',
+          themeColor: projectData.themeColor || '#1e90ff',
+          blocks: projectData.blocks || []
         }
       }
     }
