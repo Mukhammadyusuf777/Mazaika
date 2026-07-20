@@ -6,19 +6,18 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AppModule = void 0;
+exports.AiModule = void 0;
 const common_1 = require("@nestjs/common");
-const firebase_module_1 = require("./firebase/firebase.module");
-const bot_module_1 = require("./bot/bot.module");
-const ai_module_1 = require("./ai/ai.module");
-let AppModule = class AppModule {
+const ai_controller_1 = require("./ai.controller");
+const antigravity_service_1 = require("./antigravity.service");
+let AiModule = class AiModule {
 };
-exports.AppModule = AppModule;
-exports.AppModule = AppModule = __decorate([
+exports.AiModule = AiModule;
+exports.AiModule = AiModule = __decorate([
     (0, common_1.Module)({
-        imports: [firebase_module_1.FirebaseModule, bot_module_1.BotModule, ai_module_1.AiModule],
-        controllers: [],
-        providers: [],
+        controllers: [ai_controller_1.AiController],
+        providers: [antigravity_service_1.AntigravityService],
+        exports: [antigravity_service_1.AntigravityService],
     })
-], AppModule);
-//# sourceMappingURL=app.module.js.map
+], AiModule);
+//# sourceMappingURL=ai.module.js.map

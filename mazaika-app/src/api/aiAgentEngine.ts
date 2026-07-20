@@ -67,8 +67,51 @@ export async function queryAntigravityAgent(
   const lowerPrompt = prompt.toLowerCase()
   const isPatchMode = contextMeta?.executionMode === 'PATCH' || (contextMeta?.selectedElementId && !lowerPrompt.includes('создай') && !lowerPrompt.includes('noldan') && !lowerPrompt.includes('yangi'))
 
+  // 1. TRY NESTJS BACKEND GEMINI API FIRST
+  try {
+    const endpoint = isPatchMode ? '/api/ai/patch' : '/api/ai/generate'
+    const backendUrl = `http://localhost:3000${endpoint}`
+
+    const res = await fetch(backendUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt,
+        currentPage: contextMeta?.currentPage,
+        selectedBlockId: contextMeta?.selectedElementId,
+        currentConfig: contextMeta?.currentConfig
+      })
+    })
+
+    if (res.ok) {
+      const data = await res.json()
+      if (isPatchMode) {
+        return {
+          explanation: data.explanation || 'Элемент обновлен с помощью Google Gemini AI!',
+          execution_mode: 'PATCH',
+          target_entity: 'mini_app',
+          patch_operations: data.patch_operations || []
+        }
+      } else {
+        return {
+          explanation: data.explanation || 'Проект сгенерирован с помощью Google Gemini AI!',
+          execution_mode: 'FULL_GENERATION',
+          target_entity: 'mini_app',
+          project_data: {
+            appName: data.appName || 'Gemini AI App',
+            theme: data.theme || 'glassmorphism',
+            themeColor: data.themeColor || '#1e90ff',
+            blocks: data.blocks || []
+          }
+        }
+      }
+    }
+  } catch (apiErr) {
+    console.warn("NestJS Gemini API endpoint unavailable, using direct dynamic AI engine:", apiErr)
+  }
+
   // Artificial delay for smooth realistic AI streaming feeling
-  await new Promise(res => setTimeout(res, 800))
+  await new Promise(res => setTimeout(res, 600))
 
   if (isPatchMode && contextMeta?.currentConfig) {
     // ----------------------------------------------------
