@@ -38,7 +38,9 @@ export async function queryAntigravityAgent(
   const isPatchMode = isExplicitFullGen ? false : (contextMeta?.executionMode === 'PATCH' || (!!contextMeta?.selectedElementId && !lowerPrompt.includes('yarat') && !lowerPrompt.includes('создай') && !lowerPrompt.includes('noldan') && !lowerPrompt.includes('yangi')))
 
   const endpoint = isPatchMode ? '/api/ai/patch' : '/api/ai/generate'
-  const backendUrl = `http://localhost:3000${endpoint}`
+  // Use VITE_API_URL for production (Render backend), fallback to localhost for local dev
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+  const backendUrl = `${baseUrl}${endpoint}`
 
   try {
     const res = await fetch(backendUrl, {
