@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Bot, Settings, BarChart2, Zap, MessageSquare, TrendingUp, Users, Activity, Globe, Mail, Trash2 } from 'lucide-react'
+import { Plus, Bot, Settings, BarChart2, Zap, MessageSquare, TrendingUp, Users, Activity, Globe, Mail, Trash2, Sparkles } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAuthStore } from '../../store/useAuthStore'
 import { auth } from '../../api/firebase'
@@ -178,9 +178,18 @@ export default function DashboardPage() {
                 <h1 className="dash-title">Mening botlarim</h1>
                 <p className="dash-subtitle">Barcha Telegram botlaringizni boshqaring</p>
               </div>
-              <button className="btn btn-aqua" onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setShowCreateModal(true); }}>
-                <Plus size={16} /> Yangi bot
-              </button>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={() => navigate('/dashboard/ai-workspace')} 
+                  style={{ gap: 8, background: 'linear-gradient(135deg, #a855f7, #1e90ff)', border: 'none' }}
+                >
+                  <Sparkles size={16} /> ✨ AI Copilot (1 Daqiqada Yaratish)
+                </button>
+                <button className="btn btn-aqua" onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setShowCreateModal(true); }}>
+                  <Plus size={16} /> Yangi bot
+                </button>
+              </div>
             </div>
 
             <div className="dash-stats">

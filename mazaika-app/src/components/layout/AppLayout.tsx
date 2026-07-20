@@ -3,8 +3,9 @@ import { Outlet, useNavigate, useParams, useLocation } from 'react-router-dom'
 import {
   LayoutGrid, MessageSquare, Megaphone, Users, BarChart2,
   Webhook, Settings, ChevronLeft, Play, AlertCircle, Bot,
-  AppWindow, Globe, Menu, X
+  AppWindow, Globe, Menu, Sparkles
 } from 'lucide-react'
+import FloatingAgentWidget from '../ai/FloatingAgentWidget'
 import './AppLayout.css'
 
 const NAV_ITEMS = [
@@ -18,8 +19,6 @@ const NAV_ITEMS = [
   { icon: Webhook, label: 'Webhooks', path: 'webhooks', tooltip: 'Kiruvchi webhook' },
   { icon: Settings, label: 'Sozlama', path: 'settings', tooltip: 'Bot sozlamalari' },
 ]
-
-
 
 export default function AppLayout() {
   const navigate = useNavigate()
@@ -83,7 +82,14 @@ export default function AppLayout() {
         </nav>
 
         <div className="sidebar-bottom">
-          <div className="sidebar-item" data-tooltip="Yordam">?</div>
+          <button 
+            className="sidebar-item" 
+            onClick={() => navigate('/dashboard/ai-workspace')}
+            data-tooltip="AI Workspace"
+            style={{ color: '#a855f7' }}
+          >
+            <Sparkles size={20} />
+          </button>
         </div>
       </aside>
 
@@ -98,15 +104,16 @@ export default function AppLayout() {
               onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
               style={{ display: 'none', alignItems: 'center', justifyContent: 'center' }}
             >
-              {isMobileSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+              <Menu size={18} />
             </button>
 
-            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/dashboard')} style={{ padding: '4px 8px' }}>
-              <ChevronLeft size={14} /> Loyiha
+            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/dashboard')}>
+              <ChevronLeft size={16} /> <span className="mobile-hide">Bosh sahifa</span>
             </button>
-            <div className="topbar-bot-name">
-              <Bot size={14} />
-              <span className="bot-name-text">Do'kon Boti</span>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 8 }}>
+              <Bot size={18} style={{ color: 'var(--accent-blue)' }} />
+              <span style={{ fontWeight: 600, fontSize: '13px' }}>Mazaika Bot</span>
               <span className="badge badge-aqua" style={{ fontSize: '9px', padding: '1px 6px' }}>Faol</span>
             </div>
           </div>
@@ -118,7 +125,14 @@ export default function AppLayout() {
             </div>
           </div>
 
-          <div className="topbar-right">
+          <div className="topbar-right" style={{ gap: 8 }}>
+            <button 
+              className="btn btn-ghost btn-sm" 
+              onClick={() => navigate('/dashboard/ai-workspace')}
+              style={{ gap: 6, color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)', background: 'rgba(168, 85, 247, 0.08)' }}
+            >
+              <Sparkles size={14} /> AI Workspace
+            </button>
             <button className="btn btn-ghost btn-sm mobile-hide">
               <AlertCircle size={14} /> Tekshirish
             </button>
@@ -133,6 +147,9 @@ export default function AppLayout() {
           <Outlet />
         </div>
       </div>
+
+      {/* Global Floating AI Contextual Widget */}
+      <FloatingAgentWidget />
     </div>
   )
 }
