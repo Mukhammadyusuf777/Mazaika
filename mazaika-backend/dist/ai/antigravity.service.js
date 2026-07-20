@@ -94,7 +94,7 @@ Generate ONLY raw valid JSON. DO NOT include markdown backticks like \`\`\`json.
 Choose the correct entity schema based on the user's intent. Output ONLY the JSON object.
 `;
         try {
-            const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+            const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
             const promptText = `${systemInstruction}\n\nUser Prompt: ${userPrompt}`;
             const result = await model.generateContent(promptText);
             const rawText = result.response.text();
@@ -136,7 +136,7 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
 }
 `;
         try {
-            const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+            const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
             const promptText = `${systemInstruction}\n\nUser Request: ${userPrompt}`;
             const result = await model.generateContent(promptText);
             const rawText = result.response.text();
