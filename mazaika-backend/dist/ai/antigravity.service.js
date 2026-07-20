@@ -16,9 +16,12 @@ const generative_ai_1 = require("@google/generative-ai");
 let AntigravityService = AntigravityService_1 = class AntigravityService {
     logger = new common_1.Logger(AntigravityService_1.name);
     genAI;
-    apiKey = process.env.GEMINI_API_KEY || ['AQ.', 'Ab8RN6ILTZktWc8rRm0hPoecdqlqbmR5JfO1xGXJx6oduhKpLQ'].join('');
     constructor() {
-        this.genAI = new generative_ai_1.GoogleGenerativeAI(this.apiKey);
+        const apiKey = process.env.GOOGLE_VERTEX_AI_KEY;
+        if (!apiKey) {
+            this.logger.warn("GOOGLE_VERTEX_AI_KEY is not set in environment variables. Gemini API calls will fail.");
+        }
+        this.genAI = new generative_ai_1.GoogleGenerativeAI(apiKey || 'missing-key');
     }
     async generateFullProject(userPrompt) {
         this.logger.log(`Generating full project layout for prompt: "${userPrompt}"`);
@@ -37,7 +40,7 @@ DO NOT include markdown backticks like \`\`\`json or any conversational preamble
   "blocks": [
     {
       "id": "1",
-      "type": "hero" | "about" | "catalog" | "form" | "contacts" | "loyalty" | "blog" | "voting",
+      "type": "hero" | "about" | "catalog" | "form" | "contacts" | "loyalty" | "blog" | "voting" | "quiz",
       "title": "Block Title",
       "subtitle": "Subtitle text",
       "text": "Detailed description text",
@@ -49,6 +52,7 @@ DO NOT include markdown backticks like \`\`\`json or any conversational preamble
       "fields": [
         { "name": "field1", "label": "Field Label", "type": "text", "required": true }
       ],
+      "candidates": ["Option A", "Option B", "Option C"],
       "phone": "+998 90 123 45 67",
       "telegram": "MazaikaSupportBot"
     }
@@ -63,21 +67,11 @@ Ensure the blocks are relevant to the user request. Output ONLY valid JSON.
             const result = await model.generateContent(promptText);
             const rawText = result.response.text();
             const cleanedJson = this.cleanJsonResponse(rawText);
-            const parsed = JSON.parse(cleanedJson);
-            return parsed;
+            return JSON.parse(cleanedJson);
         }
         catch (error) {
-            this.logger.error(`Gemini API Error in generateFullProject: ${error.message}. Attempting fallback model gemini-1.5-flash.`);
-            try {
-                const fallbackModel = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-                const result = await fallbackModel.generateContent(`${systemInstruction}\n\nUser Prompt: ${userPrompt}`);
-                const cleaned = this.cleanJsonResponse(result.response.text());
-                return JSON.parse(cleaned);
-            }
-            catch (fallbackError) {
-                this.logger.error(`Fallback Gemini model failed: ${fallbackError.message}`);
-                return this.createFallbackFullProject(userPrompt);
-            }
+            this.logger.error(`Gemini API Error in generateFullProject: ${error.message}`);
+            throw new common_1.InternalServerErrorException('Не удалось сгенерировать проект через ИИ. Пожалуйста, проверьте настройки API.');
         }
     }
     async generatePatch(userPrompt, currentPageUrl, selectedBlockId, currentConfig) {
@@ -112,12 +106,11 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
             const result = await model.generateContent(promptText);
             const rawText = result.response.text();
             const cleanedJson = this.cleanJsonResponse(rawText);
-            const parsed = JSON.parse(cleanedJson);
-            return parsed;
+            return JSON.parse(cleanedJson);
         }
         catch (error) {
             this.logger.error(`Gemini API Error in generatePatch: ${error.message}`);
-            return this.createFallbackPatch(userPrompt, selectedBlockId);
+            throw new common_1.InternalServerErrorException('Не удалось сгенерировать обновление через ИИ. Пожалуйста, проверьте настройки API.');
         }
     }
     cleanJsonResponse(text) {
@@ -129,52 +122,6 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
             clean = clean.replace(/^```/, '').replace(/```$/, '');
         }
         return clean.trim();
-    }
-    createFallbackFullProject(prompt) {
-        return {
-            explanation: `Проект «${prompt}» сгенерирован движком Antigravity AI!`,
-            appName: prompt.length > 25 ? prompt.substring(0, 25) + '...' : prompt,
-            theme: 'glassmorphism',
-            themeColor: '#1e90ff',
-            blocks: [
-                {
-                    id: '1',
-                    type: 'hero',
-                    title: prompt,
-                    subtitle: 'Sizning biznesingiz uchun Antigravity AI tomonidan noldan yaratilgan platforma.',
-                    ctaText: 'Batafsil',
-                    img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800'
-                },
-                {
-                    id: '2',
-                    type: 'catalog',
-                    title: 'Mahsulotlar katalogi',
-                    items: [
-                        { id: 'c1', name: 'Standart Paket', price: 99000, desc: 'Barcha imkoniyatlar to\'plami.' },
-                        { id: 'c2', name: 'VIP Premium', price: 299000, desc: 'Individual yondashuv.' }
-                    ]
-                },
-                { id: '3', type: 'contacts', title: 'Aloqada bo\'ling', phone: '+998 90 123 45 67', telegram: 'MazaikaSupportBot' }
-            ]
-        };
-    }
-    createFallbackPatch(prompt, selectedBlockId) {
-        const patches = [];
-        const lower = prompt.toLowerCase();
-        if (lower.includes('зелен') || lower.includes('yashil') || lower.includes('green')) {
-            patches.push({ op: 'replace', path: 'themeColor', value: '#10d974' });
-        }
-        else if (lower.includes('неон') || lower.includes('neon')) {
-            patches.push({ op: 'replace', path: 'theme', value: 'neon' });
-        }
-        else {
-            patches.push({ op: 'replace', path: 'appName', value: prompt });
-        }
-        return {
-            explanation: `Параметры элемента #${selectedBlockId || '0'} обновлены по запросу «${prompt}».`,
-            execution_mode: 'PATCH',
-            patch_operations: patches
-        };
     }
 };
 exports.AntigravityService = AntigravityService;

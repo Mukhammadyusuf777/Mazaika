@@ -18,11 +18,8 @@ export interface PatchResponse {
 export declare class AntigravityService {
     private readonly logger;
     private genAI;
-    private apiKey;
     constructor();
     generateFullProject(userPrompt: string): Promise<FullGenerationResponse>;
     generatePatch(userPrompt: string, currentPageUrl?: string, selectedBlockId?: string | null, currentConfig?: any): Promise<PatchResponse>;
     private cleanJsonResponse;
-    private createFallbackFullProject;
-    private createFallbackPatch;
 }
