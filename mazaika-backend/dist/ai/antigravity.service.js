@@ -8,21 +8,23 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 var AntigravityService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AntigravityService = void 0;
 const common_1 = require("@nestjs/common");
-const generative_ai_1 = require("@google/generative-ai");
+const groq_sdk_1 = __importDefault(require("groq-sdk"));
 let AntigravityService = AntigravityService_1 = class AntigravityService {
     logger = new common_1.Logger(AntigravityService_1.name);
-    genAI;
+    groq;
     constructor() {
-        const fallbackKey = ['AQ.', 'Ab8RN6ILTZktWc8rRm0hPoecdqlqbmR5JfO1xGXJx6oduhKpLQ'].join('');
-        const apiKey = process.env.GOOGLE_VERTEX_AI_KEY || process.env.GEMINI_API_KEY || fallbackKey;
-        if (!apiKey || apiKey === fallbackKey) {
-            this.logger.warn("Using fallback API key for Gemini. It is highly recommended to set GOOGLE_VERTEX_AI_KEY in production.");
+        const apiKey = process.env.GROQ_API_KEY;
+        if (!apiKey) {
+            this.logger.warn("GROQ_API_KEY is missing! AI features will fail.");
         }
-        this.genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
+        this.groq = new groq_sdk_1.default({ apiKey: apiKey || 'dummy-key-to-avoid-crash' });
     }
     async generateFullProject(userPrompt) {
         this.logger.log(`Generating full project layout for prompt: "${userPrompt}"`);
@@ -94,19 +96,21 @@ Generate ONLY raw valid JSON. DO NOT include markdown backticks like \`\`\`json.
 Choose the correct entity schema based on the user's intent. Output ONLY the JSON object.
 `;
         try {
-            const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
-            const promptText = `${systemInstruction}\n\nUser Prompt: ${userPrompt}`;
-            const result = await model.generateContent(promptText);
-            const rawText = result.response.text();
+            const completion = await this.groq.chat.completions.create({
+                messages: [
+                    { role: 'system', content: systemInstruction },
+                    { role: 'user', content: userPrompt }
+                ],
+                model: 'llama-3.3-70b-versatile',
+                temperature: 0.5,
+            });
+            const rawText = completion.choices[0]?.message?.content || '';
             const cleanedJson = this.cleanJsonResponse(rawText);
             return JSON.parse(cleanedJson);
         }
         catch (error) {
             this.logger.error(`AI Generation Failed: ${error.message}`);
-            if (error.message.includes('SERVICE_DISABLED') || error.message.includes('disabled')) {
-                throw new common_1.InternalServerErrorException(`Google Cloud Error: ${error.message}`);
-            }
-            throw new common_1.InternalServerErrorException(`Не удалось сгенерировать проект через ИИ. Ошибка от Google: ${error.message}`);
+            throw new common_1.InternalServerErrorException(`Не удалось сгенерировать проект через ИИ. Ошибка от Groq: ${error.message}`);
         }
     }
     async generatePatch(userPrompt, currentPageUrl, selectedBlockId, currentConfig) {
@@ -136,19 +140,21 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
 }
 `;
         try {
-            const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
-            const promptText = `${systemInstruction}\n\nUser Request: ${userPrompt}`;
-            const result = await model.generateContent(promptText);
-            const rawText = result.response.text();
+            const completion = await this.groq.chat.completions.create({
+                messages: [
+                    { role: 'system', content: systemInstruction },
+                    { role: 'user', content: userPrompt }
+                ],
+                model: 'llama-3.3-70b-versatile',
+                temperature: 0.5,
+            });
+            const rawText = completion.choices[0]?.message?.content || '';
             const cleanedJson = this.cleanJsonResponse(rawText);
             return JSON.parse(cleanedJson);
         }
         catch (error) {
             this.logger.error(`AI Generation Failed: ${error.message}`);
-            if (error.message.includes('SERVICE_DISABLED') || error.message.includes('disabled')) {
-                throw new common_1.InternalServerErrorException(`Google Cloud Error: ${error.message}`);
-            }
-            throw new common_1.InternalServerErrorException(`Не удалось обновить проект через ИИ. Ошибка от Google: ${error.message}`);
+            throw new common_1.InternalServerErrorException(`Не удалось обновить проект через ИИ. Ошибка от Groq: ${error.message}`);
         }
     }
     cleanJsonResponse(text) {

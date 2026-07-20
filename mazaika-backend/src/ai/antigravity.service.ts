@@ -1,5 +1,5 @@
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
 export interface PatchOperation {
   op: 'replace' | 'add' | 'remove';
@@ -24,22 +24,21 @@ export interface PatchResponse {
 @Injectable()
 export class AntigravityService {
   private readonly logger = new Logger(AntigravityService.name);
-  private genAI: GoogleGenerativeAI;
+  private groq: Groq;
 
   constructor() {
-    // Add the specific API key as a fallback if the env var isn't set, to ensure it works instantly for the user
-    const fallbackKey = ['AQ.', 'Ab8RN6ILTZktWc8rRm0hPoecdqlqbmR5JfO1xGXJx6oduhKpLQ'].join('');
-    const apiKey = process.env.GOOGLE_VERTEX_AI_KEY || process.env.GEMINI_API_KEY || fallbackKey;
+    // We use the Groq API key provided by the user via environment variables
+    const apiKey = process.env.GROQ_API_KEY;
     
-    if (!apiKey || apiKey === fallbackKey) {
-      this.logger.warn("Using fallback API key for Gemini. It is highly recommended to set GOOGLE_VERTEX_AI_KEY in production.");
+    if (!apiKey) {
+      this.logger.warn("GROQ_API_KEY is missing! AI features will fail.");
     }
     
-    this.genAI = new GoogleGenerativeAI(apiKey);
+    this.groq = new Groq({ apiKey: apiKey || 'dummy-key-to-avoid-crash' });
   }
 
   /**
-   * Full Generation Hub: Creates full project JSON configuration via Gemini API
+   * Full Generation Hub: Creates full project JSON configuration via Groq API
    */
   async generateFullProject(userPrompt: string): Promise<FullGenerationResponse> {
     this.logger.log(`Generating full project layout for prompt: "${userPrompt}"`);
@@ -113,21 +112,22 @@ Choose the correct entity schema based on the user's intent. Output ONLY the JSO
 `;
 
     try {
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
-      const promptText = `${systemInstruction}\n\nUser Prompt: ${userPrompt}`;
+      const completion = await this.groq.chat.completions.create({
+        messages: [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: userPrompt }
+        ],
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.5,
+      });
 
-      const result = await model.generateContent(promptText);
-      const rawText = result.response.text();
+      const rawText = completion.choices[0]?.message?.content || '';
       const cleanedJson = this.cleanJsonResponse(rawText);
 
       return JSON.parse(cleanedJson) as FullGenerationResponse;
     } catch (error: any) {
       this.logger.error(`AI Generation Failed: ${error.message}`);
-      // Throw the exact error so the frontend can display it
-      if (error.message.includes('SERVICE_DISABLED') || error.message.includes('disabled')) {
-         throw new InternalServerErrorException(`Google Cloud Error: ${error.message}`);
-      }
-      throw new InternalServerErrorException(`Не удалось сгенерировать проект через ИИ. Ошибка от Google: ${error.message}`);
+      throw new InternalServerErrorException(`Не удалось сгенерировать проект через ИИ. Ошибка от Groq: ${error.message}`);
     }
   }
 
@@ -168,20 +168,22 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
 `;
 
     try {
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
-      const promptText = `${systemInstruction}\n\nUser Request: ${userPrompt}`;
+      const completion = await this.groq.chat.completions.create({
+        messages: [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: userPrompt }
+        ],
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.5,
+      });
 
-      const result = await model.generateContent(promptText);
-      const rawText = result.response.text();
+      const rawText = completion.choices[0]?.message?.content || '';
       const cleanedJson = this.cleanJsonResponse(rawText);
 
       return JSON.parse(cleanedJson) as PatchResponse;
     } catch (error: any) {
       this.logger.error(`AI Generation Failed: ${error.message}`);
-      if (error.message.includes('SERVICE_DISABLED') || error.message.includes('disabled')) {
-         throw new InternalServerErrorException(`Google Cloud Error: ${error.message}`);
-      }
-      throw new InternalServerErrorException(`Не удалось обновить проект через ИИ. Ошибка от Google: ${error.message}`);
+      throw new InternalServerErrorException(`Не удалось обновить проект через ИИ. Ошибка от Groq: ${error.message}`);
     }
   }
 
