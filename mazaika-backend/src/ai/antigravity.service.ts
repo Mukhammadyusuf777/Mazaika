@@ -153,6 +153,7 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
         ],
         model: 'llama-3.3-70b-versatile',
         temperature: 0.5,
+        response_format: { type: 'json_object' },
       });
 
       const rawText = completion.choices[0]?.message?.content || '';
@@ -208,6 +209,7 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
         ],
         model: 'llama-3.3-70b-versatile',
         temperature: 0.5,
+        response_format: { type: 'json_object' },
       });
 
       const rawText = completion.choices[0]?.message?.content || '';
@@ -221,15 +223,28 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
   }
 
   /**
-   * Clean JSON string by extracting the JSON block using a greedy regex,
-   * completely ignoring any conversational text before or after it.
+   * Clean JSON string by extracting the first fully balanced JSON object.
+   * This completely ignores any conversational text before or after the JSON.
    */
   private cleanJsonResponse(text: string): string {
-    try {
-      const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-      return match ? match[0] : text.trim();
-    } catch {
-      return text.trim();
+    let clean = text.trim();
+    if (clean.startsWith('```json')) {
+      clean = clean.replace(/^```json/, '').replace(/```$/, '').trim();
+    } else if (clean.startsWith('```')) {
+      clean = clean.replace(/^```/, '').replace(/```$/, '').trim();
     }
+
+    const startIdx = clean.indexOf('{');
+    if (startIdx === -1) return clean;
+
+    let braceCount = 0;
+    for (let i = startIdx; i < clean.length; i++) {
+      if (clean[i] === '{') braceCount++;
+      if (clean[i] === '}') braceCount--;
+      if (braceCount === 0) {
+        return clean.substring(startIdx, i + 1);
+      }
+    }
+    return clean;
   }
 }
