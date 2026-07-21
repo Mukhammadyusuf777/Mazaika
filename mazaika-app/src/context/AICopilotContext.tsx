@@ -48,7 +48,7 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       {
         id: 'welcome_1',
         sender: 'agent',
-        text: 'Salom! Men sizning Antigravity AI Агентингизман 🤖. Istalgan g\'oyangizni yozing va men uni lahzalarda tayyor Mini App, bot yoki saytga aylantirib beraman!',
+        text: 'Salom! Men sizning Mazaika AI Агентингизман 🤖. Istalgan g\'oyangizni yozing va men uni lahzalarda tayyor Mini App, bot yoki saytga aylantirib beraman!',
         explanation: 'Готов генерировать новые проекты или редактировать текущий интерфейс по вашему запросу.',
         timestamp: new Date()
       }
@@ -117,11 +117,18 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setIsGenerating(true)
 
     try {
+      // Map recent messages to chat history format (limit to last 10 messages)
+      const chatHistory = messages.slice(-10).map(m => ({
+        role: m.sender,
+        content: m.text
+      }));
+
       const response = await queryAntigravityAgent(text, {
-        executionMode: overrideMode,
+        executionMode: overrideMode as 'FULL_GENERATION' | 'PATCH' | 'DISCUSSION' | undefined,
         selectedElementId: activeElementId,
         currentConfig: activeConfig,
-        currentPage: window.location.pathname
+        currentPage: window.location.pathname,
+        chatHistory
       })
 
       const agentMsg: ChatMessage = {

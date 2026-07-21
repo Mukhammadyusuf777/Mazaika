@@ -1,6 +1,10 @@
 import { AntigravityService } from './antigravity.service';
 export declare class GenerateDto {
     prompt: string;
+    chatHistory?: {
+        role: string;
+        content: string;
+    }[];
 }
 export declare class PatchDto {
     prompt: string;
@@ -11,6 +15,6 @@ export declare class PatchDto {
 export declare class AiController {
     private readonly antigravityService;
     constructor(antigravityService: AntigravityService);
-    generateFullProject(dto: GenerateDto): Promise<import("./antigravity.service").FullGenerationResponse>;
+    generateFullProject(dto: GenerateDto): Promise<any>;
     generatePatch(dto: PatchDto): Promise<import("./antigravity.service").PatchResponse>;
 }

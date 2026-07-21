@@ -63,7 +63,7 @@ export default function FloatingAgentWidget() {
       <button 
         className="floating-agent-trigger" 
         onClick={toggleWidget}
-        title="Antigravity AI Copilot — Sun'iy Intellekt Агенти"
+        title="Mazaika AI Copilot - Sun'iy Intellekt Агенти"
       >
         <span className="floating-agent-badge" />
         {isWidgetOpen ? <X size={24} /> : <Sparkles size={24} />}
@@ -79,7 +79,7 @@ export default function FloatingAgentWidget() {
                 <Bot size={18} />
               </div>
               <div>
-                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff' }}>Antigravity AI Copilot</h4>
+                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff' }}>Mazaika AI Copilot</h4>
                 <span style={{ fontSize: 10, color: '#10d974', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10d974' }} /> Online (Контекстный)
                 </span>
@@ -126,7 +126,7 @@ export default function FloatingAgentWidget() {
             ))}
             {isGenerating && (
               <div className="agent-message-item agent" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <RefreshCw size={14} className="spin" /> Antigravity kodingizni va interfeysni tahlil qilmoqda...
+                <RefreshCw size={14} className="spin" /> Mazaika kodingizni va interfeysni tahlil qilmoqda...
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -153,7 +153,7 @@ export default function FloatingAgentWidget() {
             <input 
               type="text" 
               className="agent-input" 
-              placeholder="Antigravity-ga buyruq bering..." 
+              placeholder="Mazaika-ga buyruq bering..." 
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyPress}

@@ -19,7 +19,10 @@ export declare class AntigravityService {
     private readonly logger;
     private groq;
     constructor();
-    generateFullProject(userPrompt: string): Promise<FullGenerationResponse>;
+    generateFullProject(userPrompt: string, chatHistory?: {
+        role: string;
+        content: string;
+    }[]): Promise<any>;
     generatePatch(userPrompt: string, currentPageUrl?: string, selectedBlockId?: string | null, currentConfig?: any): Promise<PatchResponse>;
     private cleanJsonResponse;
 }

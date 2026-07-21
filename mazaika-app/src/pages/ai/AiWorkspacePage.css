@@ -148,3 +148,12 @@
   border-color: #1e90ff;
   background: rgba(255, 255, 255, 0.08);
 }
+
+@keyframes fadeInSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.canvas-block-wrapper {
+  animation: fadeInSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}

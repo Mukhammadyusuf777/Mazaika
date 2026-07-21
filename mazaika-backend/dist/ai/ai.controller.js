@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const antigravity_service_1 = require("./antigravity.service");
 class GenerateDto {
     prompt;
+    chatHistory;
 }
 exports.GenerateDto = GenerateDto;
 class PatchDto {
@@ -32,7 +33,7 @@ let AiController = class AiController {
         this.antigravityService = antigravityService;
     }
     async generateFullProject(dto) {
-        return this.antigravityService.generateFullProject(dto.prompt);
+        return this.antigravityService.generateFullProject(dto.prompt, dto.chatHistory);
     }
     async generatePatch(dto) {
         return this.antigravityService.generatePatch(dto.prompt, dto.currentPage, dto.selectedBlockId, dto.currentConfig);

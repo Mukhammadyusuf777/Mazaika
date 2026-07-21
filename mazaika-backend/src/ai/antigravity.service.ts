@@ -40,85 +40,68 @@ export class AntigravityService {
   /**
    * Full Generation Hub: Creates full project JSON configuration via Groq API
    */
-  async generateFullProject(userPrompt: string): Promise<FullGenerationResponse> {
-    this.logger.log(`Generating full project layout for prompt: "${userPrompt}"`);
+  async generateFullProject(userPrompt: string, chatHistory: { role: string; content: string }[] = []): Promise<any> {
+    this.logger.log(`Processing prompt: "${userPrompt}"`);
 
     const systemInstruction = `
-You are "Antigravity", the elite core AI Copilot and Autonomous Architect for the "Mozaika Platform".
+You are "Mazaika AI", the elite core AI Copilot and Autonomous Architect for the "Mozaika Platform".
 Mozaika is an advanced No-Code development system used to build high-performance Websites, Telegram Bots, and Telegram Mini Apps.
 
-CRITICAL DIRECTIVE: STRICT ENTITY SEPARATION & PROFESSIONAL QUALITY
-You must classify the user's intent into exactly ONE of three target entities: "bot", "site", or "mini_app".
-- If the user asks for a "bot", "telegram bot", or mentions nodes/flows/messages -> YOU MUST SET "target_entity": "bot" AND USE ONLY BOT FLOW NODES (boshlash, xabar, matnli_savol, shart). DO NOT CREATE A MINI APP.
-- If the user asks for a "site", "landing page", or "website" -> YOU MUST SET "target_entity": "site" AND USE SITE BLOCKS (hero, about, contacts).
-- If the user asks for a "mini app", "web app", "store" -> YOU MUST SET "target_entity": "mini_app" AND USE APP BLOCKS (hero, catalog, form, savat).
+CRITICAL DIRECTIVE: CONVERSATION, CONTROL & GENERATION
+You are a highly intelligent assistant that can answer general questions, control existing projects, and generate new ones.
 
-Depending on the entity, generate entirely different structural schemas. Write fully detailed, highly professional marketing and technical texts in perfect Russian or Uzbek (depending on the user's prompt). DO NOT generate lazy stubs like "Standart Xizmat". 
-
-OUTPUT FORMAT:
-Generate ONLY raw valid JSON. DO NOT include markdown backticks like \`\`\`json.
-
-1. IF THE USER WANTS A "BOT" (Telegram Bot Flow):
+1. DISCUSSION MODE
+If the user is asking a general question, asking for advice, OR if they are proposing a new project but haven't given you the final green light to build it yet, you MUST return a discussion message.
 {
-  "explanation": "Professional summary of the bot workflow",
-  "execution_mode": "FULL_GENERATION",
-  "target_entity": "bot",
-  "project_data": {
-    "appName": "Bot Name",
-    "theme": "bot_flow",
-    "blocks": [
-      { "id": "node1", "type": "boshlash", "title": "Boshlash", "text": "Start node" },
-      { "id": "node2", "type": "xabar", "title": "Xush kelibsiz", "text": "Assalomu alaykum! Xizmat turini tanlang:", "buttons": ["Katalog", "Aloqa", "Test ishlash"] },
-      { "id": "node3", "type": "matnli_savol", "title": "Ism so'rash", "text": "Iltimos, ismingizni kiriting:", "variable": "user_name" },
-      { "id": "node4", "type": "shart", "title": "Yosh tekshirish", "condition": "user_age >= 18", "true_node": "node5", "false_node": "node6" }
-    ]
-  }
+  "execution_mode": "DISCUSSION",
+  "explanation": "Your conversational response in Russian or Uzbek."
 }
+Example: "Я понял, вы хотите создать магазин автозапчастей. Я добавлю каталог, корзину и контакты. Начинаем?"
 
-2. IF THE USER WANTS A "SITE" (Landing Page):
+2. FULL GENERATION MODE
+If the user explicitly agrees to build the project (e.g., "Yes, start", "go ahead", "create it"), classify the intent into "bot", "site", or "mini_app".
 {
-  "explanation": "Professional summary of the landing page",
+  "explanation": "Project successfully generated!",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "site",
   "project_data": {
     "appName": "Site Name",
-    "theme": "minimalist" | "glassmorphism",
+    "theme": "glassmorphism",
     "themeColor": "#2563eb",
     "blocks": [
-      { "id": "b1", "type": "hero", "title": "Engaging Headline", "subtitle": "High-quality marketing copy.", "ctaText": "Get Started", "img": "url" },
-      { "id": "b2", "type": "about", "title": "Biz haqimizda", "text": "Detailed professional description of the company or service." },
-      { "id": "b3", "type": "contacts", "title": "Aloqa", "phone": "+998 90 123 45 67", "telegram": "SupportBot" }
+      { "id": "b1", "type": "hero", "title": "...", "subtitle": "...", "img": "url" }
     ]
   }
 }
+*Note for bots: Use node types: boshlash, xabar, matnli_savol, shart.*
+*Note for sites: Use block types: hero, about, contacts.*
+*Note for mini_apps: Use block types: hero, catalog, form, savat.*
 
-3. IF THE USER WANTS A "MINI_APP" (Telegram Web App / Store):
+3. PATCH (PROJECT CONTROL) MODE
+If the user asks to modify an EXISTING project (e.g., "change the theme color to red", "add a new button", "translate to English"), you must issue a patch operation.
 {
-  "explanation": "Professional summary of the mini app",
-  "execution_mode": "FULL_GENERATION",
-  "target_entity": "mini_app",
-  "project_data": {
-    "appName": "App Name",
-    "theme": "glassmorphism" | "neon",
-    "themeColor": "#10b981",
-    "blocks": [
-      { "id": "m1", "type": "hero", "title": "Modern Interactive Header", "subtitle": "Description", "img": "url" },
-      { "id": "m2", "type": "catalog", "title": "Mahsulotlar Katalogi", "items": [ { "id": "i1", "name": "Specific Product Name", "price": 450000, "desc": "Detailed features.", "img": "url" } ] },
-      { "id": "m3", "type": "form", "title": "Buyurtma berish", "fields": [ { "name": "phone", "label": "Telefon raqam", "type": "tel", "required": true } ] },
-      { "id": "m4", "type": "savat", "title": "Savat (Cart)", "payment_methods": ["Payme", "Click"] },
-      { "id": "m5", "type": "loyalty", "title": "Cashback tizimi" },
-      { "id": "m6", "type": "quiz", "title": "Interactive Quiz (if requested)", "questions": [ { "q": "Formula?", "options": ["A", "B"] } ] }
-    ]
-  }
+  "explanation": "Theme color updated to red.",
+  "execution_mode": "PATCH",
+  "patch_operations": [
+    { "op": "replace", "path": "themeColor", "value": "#ef4444" }
+  ]
 }
 
-Choose the correct entity schema based on the user's intent. Output ONLY the JSON object.
+OUTPUT FORMAT:
+Generate ONLY raw valid JSON matching one of the three modes. DO NOT include markdown backticks like \`\`\`json.
 `;
 
     try {
+      // Map frontend history to Groq history format
+      const formattedHistory: any[] = chatHistory.map(msg => ({
+        role: msg.role === 'agent' ? 'assistant' : 'user',
+        content: msg.content
+      }));
+
       const completion = await this.groq.chat.completions.create({
         messages: [
           { role: 'system', content: systemInstruction },
+          ...formattedHistory,
           { role: 'user', content: userPrompt }
         ],
         model: 'llama-3.3-70b-versatile',
@@ -128,13 +111,12 @@ Choose the correct entity schema based on the user's intent. Output ONLY the JSO
       const rawText = completion.choices[0]?.message?.content || '';
       const cleanedJson = this.cleanJsonResponse(rawText);
 
-      return JSON.parse(cleanedJson) as FullGenerationResponse;
+      return JSON.parse(cleanedJson);
     } catch (error: any) {
       this.logger.error(`AI Generation Failed: ${error.message}`);
-      throw new InternalServerErrorException(`Не удалось сгенерировать проект через ИИ. Ошибка от Groq: ${error.message}`);
+      throw new InternalServerErrorException(`Не удалось сгенерировать ответ через ИИ. Ошибка от Groq: ${error.message}`);
     }
   }
-
   /**
    * Contextual Updates: Returns JSON Patch operations for specific UI elements
    */
@@ -147,7 +129,7 @@ Choose the correct entity schema based on the user's intent. Output ONLY the JSO
     this.logger.log(`Generating contextual patch for blockId: ${selectedBlockId}, prompt: "${userPrompt}"`);
 
     const systemInstruction = `
-You are "Antigravity", the contextual AI Copilot for Mozaika.
+You are "Mazaika AI", the contextual AI Copilot for Mozaika.
 The user is editing an element in the builder and sent a prompt to modify it.
 
 Current Metadata:

@@ -1,6 +1,6 @@
 /**
- * Antigravity AI Copilot Engine — Mozaika Generative AI Engine
- * Queries the NestJS backend for Gemini AI generation and patches.
+ * Mazaika AI Copilot Engine
+ * Queries the NestJS backend for Groq AI generation, patches, and conversation.
  */
 
 export interface PatchOperation {
@@ -11,36 +11,28 @@ export interface PatchOperation {
 
 export interface AgentResponsePayload {
   explanation: string
-  execution_mode: 'FULL_GENERATION' | 'PATCH'
-  target_entity: 'bot' | 'mini_app' | 'website'
+  execution_mode: 'FULL_GENERATION' | 'PATCH' | 'DISCUSSION'
+  target_entity: 'bot' | 'mini_app' | 'website' | 'none'
   project_data?: any
   patch_operations?: PatchOperation[]
 }
 
 /**
  * Primary Agent Query Function
- * Calls the secure NestJS backend at /api/ai/generate or /api/ai/patch.
+ * Calls the secure NestJS backend at /api/ai/generate.
  */
 export async function queryAntigravityAgent(
   prompt: string,
   contextMeta?: {
-    executionMode?: 'FULL_GENERATION' | 'PATCH'
+    executionMode?: 'FULL_GENERATION' | 'PATCH' | 'DISCUSSION'
     currentPage?: string
     selectedElementId?: string | null
     currentConfig?: any
+    chatHistory?: { role: string, content: string }[]
   }
 ): Promise<AgentResponsePayload> {
-  const lowerPrompt = prompt.toLowerCase()
-  
-  // STRICT PATCH MODE DETERMINATION:
-  // If executionMode is explicitly FULL_GENERATION, isPatchMode MUST be false!
-  const isExplicitFullGen = contextMeta?.executionMode === 'FULL_GENERATION'
-  const isPatchMode = isExplicitFullGen ? false : (contextMeta?.executionMode === 'PATCH' || (!!contextMeta?.selectedElementId && !lowerPrompt.includes('yarat') && !lowerPrompt.includes('создай') && !lowerPrompt.includes('noldan') && !lowerPrompt.includes('yangi')))
-
-  const endpoint = isPatchMode ? '/api/ai/patch' : '/api/ai/generate'
-  // Use VITE_API_URL for production (Render backend), fallback to localhost for local dev
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-  const backendUrl = `${baseUrl}${endpoint}`
+  const backendUrl = `${baseUrl}/api/ai/generate`
 
   try {
     const res = await fetch(backendUrl, {
@@ -50,7 +42,8 @@ export async function queryAntigravityAgent(
         prompt,
         currentPage: contextMeta?.currentPage,
         selectedBlockId: contextMeta?.selectedElementId,
-        currentConfig: contextMeta?.currentConfig
+        currentConfig: contextMeta?.currentConfig,
+        chatHistory: contextMeta?.chatHistory || []
       })
     })
 
@@ -66,18 +59,21 @@ export async function queryAntigravityAgent(
     }
 
     const data = await res.json()
-    if (isPatchMode) {
+    
+    const executionMode = data.execution_mode || 'DISCUSSION'
+
+    if (executionMode === 'PATCH') {
       return {
-        explanation: data.explanation || 'Элемент обновлен с помощью AI!',
+        explanation: data.explanation || 'Element updated via Mazaika AI!',
         execution_mode: 'PATCH',
-        target_entity: 'mini_app',
+        target_entity: 'none',
         patch_operations: data.patch_operations || []
       }
-    } else {
+    } else if (executionMode === 'FULL_GENERATION') {
       const projectData = data.project_data || {};
       const targetEntity = data.target_entity || 'mini_app';
       return {
-        explanation: data.explanation || 'Проект сгенерирован с помощью AI!',
+        explanation: data.explanation || 'Project generated via Mazaika AI!',
         execution_mode: 'FULL_GENERATION',
         target_entity: targetEntity,
         project_data: {
@@ -88,31 +84,22 @@ export async function queryAntigravityAgent(
           blocks: projectData.blocks || []
         }
       }
+    } else {
+      // DISCUSSION MODE
+      return {
+        explanation: data.explanation || 'Mazaika AI is responding...',
+        execution_mode: 'DISCUSSION',
+        target_entity: 'none'
+      }
     }
   } catch (error: any) {
     console.error("Failed to fetch from NestJS AI API:", error)
+    const errMsg = error.message || 'Unknown network error'
     
-    const errMsg = error.message || 'Неизвестная ошибка сети'
-    
-    // Return a clean connection error state instead of fake hardcoded components
     return {
-      explanation: `Ошибка API: ${errMsg}. Убедитесь, что бэкенд запущен и ключи API (Gemini) настроены верно.`,
-      execution_mode: 'FULL_GENERATION',
-      target_entity: 'mini_app',
-      project_data: {
-        appName: 'API Error',
-        theme: 'minimalist',
-        themeColor: '#ef4444',
-        blocks: [
-          {
-            id: 'err1',
-            type: 'hero',
-            title: 'Ошибка сервера',
-            subtitle: errMsg,
-            img: 'https://images.unsplash.com/photo-1594322436404-5a0526db4d13?w=800'
-          }
-        ]
-      }
+      explanation: `API Error: ${errMsg}. Please ensure the backend is running.`,
+      execution_mode: 'DISCUSSION',
+      target_entity: 'none'
     }
   }
 }

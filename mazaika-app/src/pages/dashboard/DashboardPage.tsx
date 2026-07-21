@@ -32,7 +32,8 @@ export default function DashboardPage() {
   const { user, setUser } = useAuthStore()
   
   const [bots, setBots] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState<'bots' | 'analytics' | 'templates' | 'settings'>('bots')
+  const [activeTab, setActiveTab] = useState<'bots' | 'sites' | 'analytics' | 'templates' | 'settings'>('bots')
+  const [language, setLanguage] = useState<'UZ' | 'RU' | 'EN'>('UZ')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newBotName, setNewBotName] = useState('')
   const [newBotToken, setNewBotToken] = useState('')
@@ -143,6 +144,10 @@ export default function DashboardPage() {
             <Bot size={18} />
             <span>Botlar</span>
           </button>
+          <button className={`dash-nav-item ${activeTab === 'sites' ? 'active' : ''}`} onClick={() => setActiveTab('sites')}>
+            <Globe size={18} />
+            <span>Saytlar</span>
+          </button>
           <button className={`dash-nav-item ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>
             <BarChart2 size={18} />
             <span>Analitika</span>
@@ -156,6 +161,24 @@ export default function DashboardPage() {
             <span>Sozlamalar</span>
           </button>
         </nav>
+
+        <div className="dash-lang-switcher" style={{ padding: '0 24px', marginBottom: '16px', display: 'flex', gap: '8px' }}>
+          {['UZ', 'RU', 'EN'].map(lang => (
+            <button 
+              key={lang}
+              onClick={() => setLanguage(lang as 'UZ'|'RU'|'EN')}
+              style={{ 
+                background: language === lang ? 'rgba(30,144,255,0.2)' : 'transparent',
+                color: language === lang ? '#1e90ff' : '#64748b',
+                border: `1px solid ${language === lang ? 'rgba(30,144,255,0.3)' : 'transparent'}`,
+                borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700,
+                cursor: 'pointer', flex: 1, transition: '0.2s'
+              }}
+            >
+              {lang}
+            </button>
+          ))}
+        </div>
 
         <div className="dash-user">
           <div className="dash-avatar">{user?.name?.substring(0, 1).toUpperCase() || 'M'}</div>
@@ -248,35 +271,10 @@ export default function DashboardPage() {
                         <Bot size={22} />
                       </div>
                       <span className={`bot-status ${bot.status}`} style={{ marginRight: '24px' }}>
-                        {bot.status === 'active' ? '● Faol' : '● To\'xtatilgan'}
+                        {bot.status === 'active' ? 'Faol' : 'To\'xtatilgan'}
                       </span>
-                      <button
-                        style={{
-                          position: 'absolute',
-                          top: '0px',
-                          right: '0px',
-                          background: 'rgba(239, 68, 68, 0.1)',
-                          color: '#ef4444',
-                          border: 'none',
-                          borderRadius: '6px',
-                          width: '26px',
-                          height: '26px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          zIndex: 10
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteBot(bot.id, bot.name);
-                        }}
-                        title="Botni o'chirish"
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#ef4444' + '22'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
-                      >
-                        <Trash2 size={13} />
+                      <button className="btn-icon" style={{ position: 'absolute', top: 0, right: 0 }} onClick={(e) => { e.stopPropagation(); handleDeleteBot(bot.id, bot.name) }}>
+                        <Trash2 size={16} />
                       </button>
                     </div>
                     <div className="bot-name">{bot.name}</div>

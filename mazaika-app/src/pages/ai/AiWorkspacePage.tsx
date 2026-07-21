@@ -138,7 +138,7 @@ export default function AiWorkspacePage() {
               <Sparkles size={16} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Antigravity AI Workspace</h3>
+              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Mazaika AI Workspace</h3>
               <span style={{ fontSize: 11, color: '#94a3b8' }}>Generativ AI Arxitektor & Copilot</span>
             </div>
           </div>
@@ -196,7 +196,7 @@ export default function AiWorkspacePage() {
             ))}
             {isGenerating && (
               <div className="agent-message-item agent" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <RefreshCw size={16} className="spin" style={{ color: '#1e90ff' }} /> Antigravity yangi loyiha strukturasini generatsiya qilmoqda...
+                <RefreshCw size={16} className="spin" style={{ color: '#1e90ff' }} /> Mazaika AI yangi loyiha strukturasini generatsiya qilmoqda...
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -207,7 +207,7 @@ export default function AiWorkspacePage() {
             <input 
               type="text" 
               className="agent-input" 
-              placeholder="Antigravity AI ga qanday loyiha yaratish kerakligini yozing..." 
+              placeholder="Mazaika AI ga qanday loyiha yaratish kerakligini yozing..." 
               value={promptInput}
               onChange={e => setPromptInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSendPrompt()}
@@ -253,7 +253,18 @@ export default function AiWorkspacePage() {
 
                   {/* Render Generated Blocks */}
                   {(Array.isArray(activeConfig.blocks) ? activeConfig.blocks : []).map((b: any, bIdx: number) => (
-                    <div key={b.id || bIdx} style={{ marginBottom: 16, padding: 12, borderRadius: 12, background: activeConfig.theme === 'minimalist' ? '#fff' : 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div 
+                      key={b.id || bIdx} 
+                      className="canvas-block-wrapper"
+                      style={{ 
+                        animationDelay: `${bIdx * 0.15}s`,
+                        marginBottom: 16, 
+                        padding: 12, 
+                        borderRadius: 12, 
+                        background: activeConfig.theme === 'minimalist' ? '#fff' : 'rgba(255,255,255,0.04)', 
+                        border: '1px solid rgba(255,255,255,0.08)' 
+                      }}
+                    >
                       {b.type === 'hero' && (
                         <div>
                           {b.img && <img src={b.img} alt="" style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />}
@@ -375,7 +386,7 @@ export default function AiWorkspacePage() {
           ) : (
             <div style={{ textAlign: 'center', color: '#94a3b8', maxWidth: 400 }}>
               <Bot size={48} style={{ color: '#1e90ff', marginBottom: 16, opacity: 0.8 }} />
-              <h3 style={{ color: '#fff', fontSize: 18, marginBottom: 8 }}>Antigravity AI Live Preview</h3>
+              <h3 style={{ color: '#fff', fontSize: 18, marginBottom: 8 }}>Mazaika AI Live Preview</h3>
               <p style={{ fontSize: 13, lineHeight: 1.5 }}>Чатида лойиҳангизни баён қилинг ёки юқоридаги тайёр шаблонлардан бирини босинг. ИИ автоматик тарзда сайтингиз, мини апп ва ботингизни алгоритмини тузиб беради.</p>
             </div>
           )}
