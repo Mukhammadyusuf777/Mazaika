@@ -39,14 +39,15 @@ export default function AiWorkspacePage() {
       alert("Iltimos, avval tizimga kiring!")
       return
     }
-    if (!activeConfig || !activeConfig.blocks) {
+    if (!activeConfig || (!activeConfig.blocks && !activeConfig.bot_blocks && !activeConfig.site_blocks)) {
       alert("Avval AI orqali loyiha yarating!")
       return
     }
 
     setSavingBot(true)
     try {
-      const isBot = activeConfig.target_entity === 'bot'
+      const isBot = activeConfig.target_entity === 'bot' || activeConfig.target_entity === 'bot_and_mini_app'
+      const isSite = activeConfig.target_entity === 'site' || activeConfig.target_entity === 'mini_app' || activeConfig.target_entity === 'bot_and_mini_app'
       
       let customNodes = undefined;
       let customEdges = undefined;
@@ -56,8 +57,10 @@ export default function AiWorkspacePage() {
         customNodes = [];
         customEdges = [];
         
+        const botBlocks = activeConfig.target_entity === 'bot_and_mini_app' ? activeConfig.bot_blocks : activeConfig.blocks;
+        
         let yOffset = 100;
-        activeConfig.blocks.forEach((block: any, index: number) => {
+        (botBlocks || []).forEach((block: any, index: number) => {
           let nodeType = 'message';
           if (block.type === 'boshlash') nodeType = 'start';
           if (block.type === 'xabar') nodeType = 'message';
@@ -80,7 +83,7 @@ export default function AiWorkspacePage() {
 
           // Connect sequential nodes
           if (index > 0) {
-            const prevBlock = activeConfig.blocks[index - 1]
+            const prevBlock = botBlocks[index - 1]
             customEdges.push({
               id: `e-${index}`,
               source: prevBlock.id || `node-${index - 1}`,
@@ -97,20 +100,27 @@ export default function AiWorkspacePage() {
       const newBot = await createBot(user.id, {
         name: activeConfig.appName || 'AI Generated Project',
         token: 'TEST_TOKEN_' + Date.now().toString().slice(-6),
-        creationType: isBot ? 'bot_only' : 'bot_and_webapp',
+        creationType: (activeConfig.target_entity === 'bot') ? 'bot_only' : 'bot_and_webapp',
         customNodes,
         customEdges
       })
 
       // 2. Save Generated SiteConfig to Firestore (if it's a site/mini app)
-      if (!isBot) {
-        await saveSiteConfig(newBot.id, activeConfig)
+      if (isSite) {
+        // If it's both, we need to pass site_blocks as blocks to the SiteConfig
+        const siteConfigToSave = activeConfig.target_entity === 'bot_and_mini_app' 
+          ? { ...activeConfig, blocks: activeConfig.site_blocks }
+          : activeConfig;
+        await saveSiteConfig(newBot.id, siteConfigToSave)
       }
 
       alert(`🎉 "${activeConfig.appName || 'AI Loyiha'}" muvaffaqiyatli saqlandi!`)
       
       // 3. Navigate depending on target_entity
-      if (isBot) {
+      if (activeConfig.target_entity === 'bot') {
+        navigate(`/bot/${newBot.id}/editor`)
+      } else if (activeConfig.target_entity === 'bot_and_mini_app') {
+        // Navigate to bot editor first, they can switch to sitebuilder from there
         navigate(`/bot/${newBot.id}/editor`)
       } else {
         navigate(`/bot/${newBot.id}/sitebuilder`)
@@ -283,7 +293,10 @@ export default function AiWorkspacePage() {
                   </div>
 
                   {/* Render Generated Blocks */}
-                  {(Array.isArray(activeConfig.blocks) ? activeConfig.blocks : []).map((b: any, bIdx: number) => (
+                  {(activeConfig.target_entity === 'bot_and_mini_app' 
+                    ? [...(activeConfig.bot_blocks || []), { type: 'separator', title: '📱 Mini App Visual Preview' }, ...(activeConfig.site_blocks || [])] 
+                    : (Array.isArray(activeConfig.blocks) ? activeConfig.blocks : [])
+                  ).map((b: any, bIdx: number) => (
                     <div 
                       key={b.id || bIdx} 
                       className="canvas-block-wrapper"
@@ -296,6 +309,12 @@ export default function AiWorkspacePage() {
                         border: '1px solid rgba(255,255,255,0.08)' 
                       }}
                     >
+                      {b.type === 'separator' && (
+                        <div style={{ padding: '20px 0', borderBottom: '2px dashed rgba(255,255,255,0.2)', marginBottom: 20, textAlign: 'center', fontWeight: 900, color: '#10d974', fontSize: 16 }}>
+                          {b.title}
+                        </div>
+                      )}
+
                       {b.type === 'hero' && (
                         <div>
                           {b.img && <img src={b.img} alt="" style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />}

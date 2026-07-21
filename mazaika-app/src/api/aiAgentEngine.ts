@@ -12,7 +12,7 @@ export interface PatchOperation {
 export interface AgentResponsePayload {
   explanation: string
   execution_mode: 'FULL_GENERATION' | 'PATCH' | 'DISCUSSION'
-  target_entity: 'bot' | 'mini_app' | 'website' | 'none'
+  target_entity: 'bot' | 'mini_app' | 'website' | 'bot_and_mini_app' | 'none'
   project_data?: any
   patch_operations?: PatchOperation[]
 }
@@ -81,7 +81,9 @@ export async function queryAntigravityAgent(
           appName: projectData.appName || prompt,
           theme: projectData.theme || 'glassmorphism',
           themeColor: projectData.themeColor || '#1e90ff',
-          blocks: projectData.blocks || []
+          blocks: projectData.blocks || [],
+          bot_blocks: projectData.bot_blocks || [],
+          site_blocks: projectData.site_blocks || []
         }
       }
     } else {
