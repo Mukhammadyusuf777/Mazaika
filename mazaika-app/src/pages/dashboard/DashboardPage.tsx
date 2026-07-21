@@ -207,7 +207,7 @@ export default function DashboardPage() {
                   onClick={() => navigate('/dashboard/ai-workspace')} 
                   style={{ gap: 8, background: 'linear-gradient(135deg, #a855f7, #1e90ff)', border: 'none' }}
                 >
-                  <Sparkles size={16} /> ✨ AI Copilot (1 Daqiqada Yaratish)
+                  <Sparkles size={16} /> ✨ Mazaika AI (1 Daqiqada Yaratish)
                 </button>
                 <button className="btn btn-aqua" onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setShowCreateModal(true); }}>
                   <Plus size={16} /> Yangi bot

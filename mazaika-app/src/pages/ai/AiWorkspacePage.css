@@ -157,3 +157,31 @@
 .canvas-block-wrapper {
   animation: fadeInSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
+
+.ai-constructor-shell {
+  width: 100%;
+  max-width: 800px;
+  height: 700px;
+  max-height: calc(100vh - 120px);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #090d16;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 50px rgba(139, 92, 246, 0.15);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-desktop-shell {
+  width: 100%;
+  max-width: 900px;
+  height: 700px;
+  max-height: calc(100vh - 120px);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #090d16;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 50px rgba(30, 144, 255, 0.15);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}

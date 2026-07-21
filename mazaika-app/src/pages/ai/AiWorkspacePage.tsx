@@ -233,15 +233,46 @@ export default function AiWorkspacePage() {
                 <span>Live AI Dynamic Canvas (Mazaika Generative Engine)</span>
               </div>
 
-              {/* Smartphone Preview Shell */}
-              <div className="ai-phone-shell">
-                <div style={{ height: 24, background: '#090d16', display: 'flex', justifyContent: 'space-between', padding: '4px 20px', fontSize: 10, color: '#94a3b8', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                  <span>9:41</span>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    <span>📶</span>
-                    <span>🔋</span>
+              {/* Dynamic Preview Shell */}
+              <div className={
+                activeConfig.target_entity === 'bot' ? 'ai-constructor-shell' : 
+                activeConfig.target_entity === 'site' ? 'ai-desktop-shell' : 
+                'ai-phone-shell'
+              }>
+                {/* Only show status bar for phones */}
+                {activeConfig.target_entity !== 'bot' && activeConfig.target_entity !== 'site' && (
+                  <div style={{ height: 24, background: '#090d16', display: 'flex', justifyContent: 'space-between', padding: '4px 20px', fontSize: 10, color: '#94a3b8', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                    <span>9:41</span>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <span>📶</span>
+                      <span>🔋</span>
+                    </div>
                   </div>
-                </div>
+                )}
+                {/* Browser toolbar for sites */}
+                {activeConfig.target_entity === 'site' && (
+                  <div style={{ height: 32, background: '#1e293b', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }}></div>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#eab308' }}></div>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#22c55e' }}></div>
+                    </div>
+                    <div style={{ flex: 1, background: '#0f172a', height: 20, borderRadius: 4, display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: 10, color: '#94a3b8' }}>
+                      <Globe size={10} style={{ marginRight: 6 }} /> mazaika-live.com
+                    </div>
+                  </div>
+                )}
+                {/* Constructor toolbar for bots */}
+                {activeConfig.target_entity === 'bot' && (
+                  <div style={{ height: 40, background: '#1e293b', display: 'flex', alignItems: 'center', padding: '0 16px', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Bot size={14} style={{ color: '#a855f7' }} /> Bot Constructor Board
+                    </div>
+                    <div style={{ fontSize: 10, color: '#94a3b8' }}>
+                      Drag & Drop Nodes Enabled
+                    </div>
+                  </div>
+                )}
 
                 {/* Render Mock Canvas */}
                 <div style={{ flex: 1, padding: 16, overflowY: 'auto', background: activeConfig.theme === 'minimalist' ? '#f8fafc' : activeConfig.theme === 'neon' ? '#05050d' : '#090d16', color: activeConfig.theme === 'minimalist' ? '#0f172a' : '#fff' }}>
