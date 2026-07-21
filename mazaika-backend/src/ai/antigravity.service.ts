@@ -142,7 +142,8 @@ IF THE USER WANTS BOTH "BOT" AND "MINI_APP" AT THE SAME TIME:
 }
 
 3. PATCH (PROJECT CONTROL) MODE
-If the user asks to modify an EXISTING project (e.g., "change the theme color to red", "add a new button", "translate to English"), you must issue a patch operation.
+If the user asks to modify an EXISTING project and the change is small (e.g., "change the theme color to red", "add a new button", "translate to English"), you must issue a patch operation.
+If the user asks for MASSIVE changes (e.g., "rewrite the entire logic", "add 30 blocks", "create a massive store structure"), DO NOT USE PATCH. Instead, issue a FULL_GENERATION that includes the existing data plus the massive new additions!
 {
   "explanation": "Theme color updated to red.",
   "execution_mode": "PATCH",

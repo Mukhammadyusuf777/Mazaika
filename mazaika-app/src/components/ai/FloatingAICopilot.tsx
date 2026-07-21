@@ -19,7 +19,7 @@ export default function FloatingAICopilot() {
     if (!promptInput.trim() || isGenerating) return
     const text = promptInput
     setPromptInput('')
-    await sendMessage(text, 'PATCH')
+    await sendMessage(text)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -34,7 +34,7 @@ export default function FloatingAICopilot() {
       <button 
         className="floating-ai-toggle"
         onClick={() => setWidgetOpen(true)}
-        title="Antigravity AI Copilot"
+        title="Mazaika AI"
       >
         <Sparkles size={24} color="#fff" />
       </button>
@@ -48,7 +48,7 @@ export default function FloatingAICopilot() {
           <div className="fai-icon-bg">
             <Sparkles size={14} />
           </div>
-          <span>AI Copilot</span>
+          <span>Mazaika AI</span>
         </div>
         <div className="fai-header-actions">
           <button onClick={() => setIsMinimized(!isMinimized)}>

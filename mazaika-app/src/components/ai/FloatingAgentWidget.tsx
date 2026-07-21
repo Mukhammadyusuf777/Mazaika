@@ -63,7 +63,7 @@ export default function FloatingAgentWidget() {
       <button 
         className="floating-agent-trigger" 
         onClick={toggleWidget}
-        title="Mazaika AI Copilot - Sun'iy Intellekt Агенти"
+        title="Mazaika AI - Sun'iy Intellekt Агенти"
       >
         <span className="floating-agent-badge" />
         {isWidgetOpen ? <X size={24} /> : <Sparkles size={24} />}
@@ -79,10 +79,8 @@ export default function FloatingAgentWidget() {
                 <Bot size={18} />
               </div>
               <div>
-                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff' }}>Mazaika AI Copilot</h4>
-                <span style={{ fontSize: 10, color: '#10d974', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10d974' }} /> Online (Контекстный)
-                </span>
+                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff' }}>Mazaika AI</h4>
+                <p style={{ margin: 0, fontSize: 10, color: '#94a3b8' }}>Sizning shaxsiy yordamchingiz</p>
               </div>
             </div>
 
