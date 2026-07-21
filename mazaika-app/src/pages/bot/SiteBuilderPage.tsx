@@ -6,11 +6,13 @@ import {
   UserCheck, Laptop, Smartphone, Plus, Info, CheckCircle
 } from 'lucide-react'
 
+import { Reorder } from 'framer-motion'
+import BuilderBlock from './BuilderBlock'
 import { getSiteConfig, saveSiteConfig, updateBot } from '../../api/firestore'
 
 export interface Block {
   id: string
-  type: 'hero' | 'about' | 'catalog' | 'blog' | 'contacts' | 'form' | 'loyalty' | 'voting'
+  type: 'hero' | 'about' | 'catalog' | 'blog' | 'contacts' | 'form' | 'loyalty' | 'voting' | string
   title?: string
   subtitle?: string
   text?: string
@@ -22,6 +24,10 @@ export interface Block {
   telegram?: string
   fields?: Array<{ name: string; label: string; type: string; required: boolean }>
   candidates?: string[]
+  styles?: {
+    paddingTop?: number
+    paddingBottom?: number
+  }
 }
 
 interface SiteConfig {
@@ -361,166 +367,29 @@ export default function SiteBuilderPage() {
 
               {/* Desktop Rendered Blocks Stack */}
               <div style={{ padding: '32px' }}>
-                {config.blocks.map((block) => {
-                  const isActive = selectedBlockId === block.id
-                  return (
-                    <div 
+                <Reorder.Group 
+                  axis="y" 
+                  values={config.blocks} 
+                  onReorder={(newOrder) => setConfig({ ...config, blocks: newOrder })}
+                  style={{ listStyle: 'none', padding: 0, margin: 0 }}
+                >
+                  {config.blocks.map((block) => (
+                    <BuilderBlock
                       key={block.id}
+                      block={block}
+                      config={config}
+                      isActive={selectedBlockId === block.id}
                       onClick={() => {
                         setSelectedBlockId(block.id)
-                        setActiveTab('properties') // auto switch properties tab when block clicked
+                        setActiveTab('properties')
                       }}
-                      style={{
-                        position: 'relative',
-                        padding: '24px',
-                        marginBottom: '24px',
-                        borderRadius: '16px',
-                        border: isActive ? `2px solid ${config.themeColor}` : '2px solid transparent',
-                        background: config.theme === 'minimalist' 
-                          ? (isActive ? '#f0f7ff' : '#f8fafc') 
-                          : (isActive ? 'rgba(30,144,255,0.05)' : 'rgba(255,255,255,0.02)'),
-                        boxShadow: isActive ? '0 10px 25px rgba(30,144,255,0.1)' : 'none',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
+                      onUpdateBlock={(updatedBlock) => {
+                        const newBlocks = config.blocks.map(b => b.id === updatedBlock.id ? updatedBlock : b)
+                        setConfig({ ...config, blocks: newBlocks })
                       }}
-                    >
-                      {isActive && (
-                        <div style={{ 
-                          position: 'absolute', top: -10, left: 16, 
-                          background: config.themeColor, color: '#fff', 
-                          fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
-                          boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
-                        }}>
-                          TAHRIRLASH
-                        </div>
-                      )}
-
-                      {/* HERO BLOCK */}
-                      {block.type === 'hero' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: block.img ? '1fr 1fr' : '1fr', gap: 32, alignItems: 'center' }}>
-                          <div>
-                            <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 12 }}>{block.title || 'Sarlavha'}</h1>
-                            <p style={{ fontSize: 14, opacity: 0.8, marginBottom: 20, lineHeight: 1.6 }}>{block.subtitle || 'Kompaniya shiori...'}</p>
-                            <button style={{ background: config.themeColor, color: '#fff', border: 'none', padding: '10px 24px', borderRadius: 8, fontSize: 13, fontWeight: 700 }}>
-                              {block.ctaText || 'Batafsil'}
-                            </button>
-                          </div>
-                          {block.img && (
-                            <img src={block.img} alt="Hero image" style={{ width: '100%', height: 260, borderRadius: 16, objectFit: 'cover', boxShadow: '0 10px 20px rgba(0,0,0,0.3)' }} />
-                          )}
-                        </div>
-                      )}
-
-                      {/* ABOUT BLOCK */}
-                      {block.type === 'about' && (
-                        <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-                          <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, color: config.themeColor }}>{block.title || 'Biz haqimizda'}</h2>
-                          <p style={{ fontSize: 14, lineHeight: 1.8, opacity: 0.8 }}>{block.text || 'Matn...'}</p>
-                        </div>
-                      )}
-
-                      {/* CATALOG BLOCK */}
-                      {block.type === 'catalog' && (
-                        <div>
-                          <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 20, color: config.themeColor, textAlign: 'center' }}>{block.title || 'Do\'kon / Katalog'}</h2>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 20 }}>
-                            {(block.items || []).map((item) => (
-                              <div key={item.id} style={{ background: config.theme === 'minimalist' ? '#fff' : 'rgba(15,23,42,0.4)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}>
-                                {item.img && <img src={item.img} alt={item.name} style={{ width: '100%', height: 140, objectFit: 'cover' }} />}
-                                <div style={{ padding: 12, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                                  <div>
-                                    <h4 style={{ margin: '0 0 4px 0', fontSize: 14, fontWeight: 700 }}>{item.name}</h4>
-                                    <p style={{ margin: '0 0 12px 0', fontSize: 11, opacity: 0.6 }}>{item.desc}</p>
-                                  </div>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontSize: 13, fontWeight: 800, color: config.themeColor }}>{item.price.toLocaleString()} UZS</span>
-                                    <button style={{ background: 'none', border: `1px solid ${config.themeColor}`, color: config.themeColor, borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 700 }}>
-                                      Savatga
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* BLOG BLOCK */}
-                      {block.type === 'blog' && (
-                        <div>
-                          <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 20, color: config.themeColor }}>{block.title || 'Yangiliklar'}</h2>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                            {(block.posts || []).map(post => (
-                              <div key={post.id} style={{ padding: 16, borderRadius: 12, background: config.theme === 'minimalist' ? '#f1f5f9' : 'rgba(255,255,255,0.01)', borderLeft: `4px solid ${config.themeColor}` }}>
-                                <h4 style={{ margin: '0 0 8px 0', fontSize: 15, fontWeight: 700 }}>{post.title}</h4>
-                                <p style={{ margin: 0, fontSize: 12, opacity: 0.8, lineHeight: 1.5 }}>{post.text}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* CONTACTS BLOCK */}
-                      {block.type === 'contacts' && (
-                        <div style={{ textAlign: 'center', maxWidth: 400, margin: '0 auto' }}>
-                          <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12, color: config.themeColor }}>{block.title || 'Kontaktlar'}</h3>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 14 }}>
-                            {block.phone && <div>📞 Telefon: <strong>{block.phone}</strong></div>}
-                            {block.telegram && <div>✈ Telegram: <strong>@{block.telegram}</strong></div>}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* FORM BLOCK */}
-                      {block.type === 'form' && (
-                        <div style={{ maxWidth: 500, margin: '0 auto' }}>
-                          <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: config.themeColor }}>{block.title || 'Mijoz arizasi'}</h3>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {(block.fields || []).map(f => (
-                              <div key={f.name}>
-                                <label style={{ display: 'block', fontSize: 11, marginBottom: 4, opacity: 0.7 }}>{f.label}</label>
-                                <input type={f.type} className="input" placeholder={f.label} disabled style={{ width: '100%', fontSize: 12 }} />
-                              </div>
-                            ))}
-                            <button style={{ background: config.themeColor, color: '#fff', border: 'none', padding: '10px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, alignSelf: 'flex-start', marginTop: 4 }}>
-                              Ariza yuborish
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* LOYALTY BLOCK */}
-                      {block.type === 'loyalty' && (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', background: 'rgba(16,217,116,0.06)', border: '1px solid #10d974', borderRadius: 12, maxWidth: 600, margin: '0 auto' }}>
-                          <div>
-                            <h3 style={{ margin: 0, fontSize: 16, color: '#10d974', fontWeight: 800 }}>{block.title || 'Mijoz cashback balansi'}</h3>
-                            <p style={{ margin: 0, fontSize: 11, opacity: 0.6 }}>Telegram orqali avtomatik aniqlanadi</p>
-                          </div>
-                          <span style={{ fontSize: 20, fontWeight: 900, color: '#10d974' }}>75,000 ball</span>
-                        </div>
-                      )}
-
-                      {/* VOTING BLOCK */}
-                      {block.type === 'voting' && (
-                        <div style={{ maxWidth: 500, margin: '0 auto' }}>
-                          <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16, color: config.themeColor }}>{block.title || 'Ovoz berish'}</h3>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {(block.candidates || []).map((cand, cidx) => (
-                              <label key={cidx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <input type="radio" disabled />
-                                <span>{cand}</span>
-                              </label>
-                            ))}
-                            <button style={{ background: config.themeColor, color: '#fff', border: 'none', padding: '10px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, alignSelf: 'flex-start', marginTop: 4 }}>
-                              Ovoz berish
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                    </div>
-                  )
-                })}
+                    />
+                  ))}
+                </Reorder.Group>
 
                 {config.blocks.length === 0 && (
                   <div style={{ padding: '60px 0', textAlign: 'center', opacity: 0.5, fontSize: 14 }}>
@@ -570,208 +439,30 @@ export default function SiteBuilderPage() {
 
                 {/* Inner Scroll container */}
                 <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px 60px 12px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-                  {config.blocks.map((block) => (
-                    <div 
-                      key={block.id}
-                      onClick={() => {
-                        setSelectedBlockId(block.id)
-                        setActiveTab('properties')
-                      }}
-                      style={{
-                        padding: '16px', marginBottom: '16px', borderRadius: '12px',
-                        border: selectedBlockId === block.id ? `2px dashed ${config.themeColor}` : '1px solid rgba(255,255,255,0.03)',
-                        background: config.theme === 'minimalist' ? '#f1f5f9' : 'rgba(255,255,255,0.01)',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {/* Hero inside mobile */}
-                      {block.type === 'hero' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                          {block.img && <img src={block.img} alt="Hero" style={{ width: '100%', height: 110, borderRadius: 8, objectFit: 'cover' }} />}
-                          <div>
-                            <h4 style={{ fontSize: 13, fontWeight: 800, margin: '0 0 4px 0' }}>{block.title}</h4>
-                            <p style={{ fontSize: 10, opacity: 0.8, margin: '0 0 10px 0', lineHeight: 1.4 }}>{block.subtitle}</p>
-                            <button style={{ background: config.themeColor, color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 4, fontSize: 9, fontWeight: 700 }}>
-                              {block.ctaText}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* About inside mobile */}
-                      {block.type === 'about' && (
-                        <div>
-                          <h5 style={{ fontSize: 12, fontWeight: 800, margin: '0 0 6px 0', color: config.themeColor }}>{block.title}</h5>
-                          <p style={{ fontSize: 10, lineHeight: 1.5, opacity: 0.8, margin: 0 }}>{block.text}</p>
-                        </div>
-                      )}
-
-                      {/* Catalog inside mobile */}
-                      {block.type === 'catalog' && (
-                        <div>
-                          <h5 style={{ fontSize: 12, fontWeight: 800, margin: '0 0 10px 0', color: config.themeColor, textAlign: 'center' }}>{block.title || 'Bizning Katalog'}</h5>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                            {(block.items || []).map(item => (
-                              <div key={item.id} style={{ 
-                                background: config.theme === 'minimalist' ? '#fff' : 'rgba(0,0,0,0.2)', 
-                                borderRadius: 12, 
-                                border: '1px solid rgba(255,255,255,0.03)',
-                                overflow: 'hidden',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                height: '100%',
-                                justifyContent: 'space-between'
-                              }}>
-                                {/* Product Image */}
-                                <div style={{ position: 'relative', width: '100%', paddingTop: '100%', background: 'rgba(255,255,255,0.02)' }}>
-                                  {item.img ? (
-                                    <img 
-                                      src={item.img} 
-                                      alt={item.name} 
-                                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} 
-                                    />
-                                  ) : (
-                                    <div style={{ 
-                                      position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
-                                      display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                      color: 'var(--text-muted)', fontSize: 9, background: 'rgba(255,255,255,0.01)'
-                                    }}>
-                                      Rasm yo'q
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Product Info */}
-                                <div style={{ padding: 8, display: 'flex', flexDirection: 'column', gap: 4, flex: 1, justifyContent: 'space-between' }}>
-                                  <div>
-                                    <h6 style={{ margin: 0, fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: '14px', height: '28px' }}>
-                                      {item.name}
-                                    </h6>
-                                    {item.desc && (
-                                      <p style={{ margin: 0, fontSize: 9, opacity: 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.desc}>
-                                        {item.desc}
-                                      </p>
-                                    )}
-                                  </div>
-
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
-                                    <span style={{ fontSize: 10, color: config.themeColor, fontWeight: 800 }}>
-                                      {item.price.toLocaleString()} UZS
-                                    </span>
-                                    <button 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const existing = previewCart.find(i => i.id === item.id);
-                                        if (existing) {
-                                          setPreviewCart(previewCart.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i));
-                                        } else {
-                                          setPreviewCart([...previewCart, { id: item.id, name: item.name, price: item.price, qty: 1 }]);
-                                        }
-                                      }}
-                                      style={{
-                                        background: config.themeColor, color: '#fff', border: 'none', borderRadius: 6, 
-                                        padding: '4px 8px', fontSize: 9, fontWeight: 700, cursor: 'pointer', width: '100%', textAlign: 'center'
-                                      }}
-                                    >
-                                      + Savatga
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Blog inside mobile */}
-                      {block.type === 'blog' && (
-                        <div>
-                          <h5 style={{ fontSize: 12, fontWeight: 800, margin: '0 0 8px 0', color: config.themeColor }}>{block.title || 'Yangiliklar'}</h5>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            {(block.posts || []).map(post => (
-                              <div key={post.id} style={{ padding: 8, borderLeft: `2.5px solid ${config.themeColor}`, background: 'rgba(255,255,255,0.02)', borderRadius: '0 4px 4px 0' }}>
-                                <h6 style={{ margin: '0 0 2px 0', fontSize: 11, fontWeight: 700 }}>{post.title}</h6>
-                                <p style={{ margin: 0, fontSize: 9, opacity: 0.8, lineHeight: 1.3 }}>{post.text}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Contacts inside mobile */}
-                      {block.type === 'contacts' && (
-                        <div style={{ textAlign: 'center', padding: '4px 0' }}>
-                          <h5 style={{ fontSize: 11, fontWeight: 800, margin: '0 0 6px 0', color: config.themeColor }}>{block.title || 'Aloqa'}</h5>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 10 }}>
-                            {block.phone && <div>📞 {block.phone}</div>}
-                            {block.telegram && <div>✈ @{block.telegram}</div>}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Form inside mobile */}
-                      {block.type === 'form' && (
-                        <div>
-                          <h5 style={{ fontSize: 12, fontWeight: 800, margin: '0 0 8px 0', color: config.themeColor }}>{block.title || 'So\'rovnoma'}</h5>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            {(block.fields || []).map(f => (
-                              <div key={f.name}>
-                                <label style={{ display: 'block', fontSize: 9, marginBottom: 2, opacity: 0.7 }}>{f.label}</label>
-                                <input type={f.type} placeholder={f.label} disabled className="input" style={{ width: '100%', padding: '5px 8px', fontSize: 10 }} />
-                              </div>
-                            ))}
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                alert(`[Mazaika Sandbox] So'rovnoma test rejimida yuborildi!\n(Haqiqiy Telegram botda bu ariza sizga chat orqali yoziladi)`);
-                              }}
-                              style={{ background: config.themeColor, color: '#fff', border: 'none', padding: '6px 10px', borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: 'pointer', marginTop: 4 }}
-                            >
-                              Yuborish (Submit)
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Loyalty inside mobile */}
-                      {block.type === 'loyalty' && (
-                        <div style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12,
-                          background: 'rgba(16,217,116,0.06)', border: '1px solid #10d974', borderRadius: 10
-                        }}>
-                          <div>
-                            <h6 style={{ margin: 0, fontSize: 11, color: '#10d974', fontWeight: 800 }}>{block.title || 'Cashback Balans'}</h6>
-                            <p style={{ margin: 0, fontSize: 8, opacity: 0.6 }}>Telegram ID orqali</p>
-                          </div>
-                          <span style={{ fontSize: 13, fontWeight: 900, color: '#10d974' }}>75,000 ball</span>
-                        </div>
-                      )}
-
-                      {/* Voting inside mobile */}
-                      {block.type === 'voting' && (
-                        <div>
-                          <h5 style={{ fontSize: 12, fontWeight: 800, margin: '0 0 6px 0', color: config.themeColor }}>{block.title || 'Ovoz berish'}</h5>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                            {(block.candidates || []).map((cand, cidx) => (
-                              <label key={cidx} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, background: 'rgba(255,255,255,0.02)', padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.03)' }}>
-                                <input type="radio" disabled />
-                                <span>{cand}</span>
-                              </label>
-                            ))}
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                alert(`[Mazaika Sandbox] Ovoz yozildi! (Preview rejimi)`);
-                              }}
-                              style={{ background: config.themeColor, color: '#fff', border: 'none', padding: '5px 10px', borderRadius: 4, fontSize: 10, fontWeight: 700, cursor: 'pointer', marginTop: 4 }}
-                            >
-                              Ovoz berish
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                  <Reorder.Group 
+                    axis="y" 
+                    values={config.blocks} 
+                    onReorder={(newOrder) => setConfig({ ...config, blocks: newOrder })}
+                    style={{ listStyle: 'none', padding: 0, margin: 0 }}
+                  >
+                    {config.blocks.map((block) => (
+                      <BuilderBlock
+                        key={block.id}
+                        block={block}
+                        config={config}
+                        viewMode="mobile"
+                        isActive={selectedBlockId === block.id}
+                        onClick={() => {
+                          setSelectedBlockId(block.id)
+                          setActiveTab('properties')
+                        }}
+                        onUpdateBlock={(updatedBlock) => {
+                          const newBlocks = config.blocks.map(b => b.id === updatedBlock.id ? updatedBlock : b)
+                          setConfig({ ...config, blocks: newBlocks })
+                        }}
+                      />
+                    ))}
+                  </Reorder.Group>
                 </div>
 
                 {/* Cart Bottom Sheet in Mobile Preview */}
