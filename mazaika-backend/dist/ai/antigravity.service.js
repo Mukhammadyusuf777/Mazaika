@@ -190,14 +190,13 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
         }
     }
     cleanJsonResponse(text) {
-        let clean = text.trim();
-        if (clean.startsWith('```json')) {
-            clean = clean.replace(/^```json/, '').replace(/```$/, '');
+        try {
+            const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+            return match ? match[0] : text.trim();
         }
-        else if (clean.startsWith('```')) {
-            clean = clean.replace(/^```/, '').replace(/```$/, '');
+        catch {
+            return text.trim();
         }
-        return clean.trim();
     }
 };
 exports.AntigravityService = AntigravityService;

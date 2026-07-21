@@ -221,15 +221,15 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
   }
 
   /**
-   * Clean JSON string by stripping markdown fences
+   * Clean JSON string by extracting the JSON block using a greedy regex,
+   * completely ignoring any conversational text before or after it.
    */
   private cleanJsonResponse(text: string): string {
-    let clean = text.trim();
-    if (clean.startsWith('```json')) {
-      clean = clean.replace(/^```json/, '').replace(/```$/, '');
-    } else if (clean.startsWith('```')) {
-      clean = clean.replace(/^```/, '').replace(/```$/, '');
+    try {
+      const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+      return match ? match[0] : text.trim();
+    } catch {
+      return text.trim();
     }
-    return clean.trim();
   }
 }
