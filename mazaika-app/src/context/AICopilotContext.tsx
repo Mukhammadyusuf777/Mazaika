@@ -78,19 +78,7 @@ const [isWidgetOpen, setWidgetOpen] = useState(false)
     }
   }
 
-  // Persist messages whenever they change
-  React.useEffect(() => {
-    localStorage.setItem('mazaika_ai_messages_' + activeProjectId, JSON.stringify(messages))
-  }, [messages, activeProjectId])
 
-  // Persist config whenever it changes
-  React.useEffect(() => {
-    if (activeConfig) {
-      localStorage.setItem('mazaika_ai_config_' + activeProjectId, JSON.stringify(activeConfig))
-    } else {
-      localStorage.removeItem('mazaika_ai_config_' + activeProjectId)
-    }
-  }, [activeConfig, activeProjectId])
 
   const toggleWidget = () => setWidgetOpen(prev => !prev)
 
@@ -121,7 +109,8 @@ const [isWidgetOpen, setWidgetOpen] = useState(false)
           }
         }
       })
-
+      
+      localStorage.setItem('mazaika_ai_config_' + activeProjectId, JSON.stringify(updated))
       return updated
     })
   }
@@ -136,11 +125,14 @@ const [isWidgetOpen, setWidgetOpen] = useState(false)
       timestamp: new Date()
     }
 
-    setMessages(prev => [...prev, userMsg])
+    setMessages(prev => {
+      const updated = [...prev, userMsg]
+      localStorage.setItem('mazaika_ai_messages_' + activeProjectId, JSON.stringify(updated))
+      return updated
+    })
     setIsGenerating(true)
 
     try {
-      // Map recent messages to chat history format (limit to last 10 messages)
       const chatHistory = messages.slice(-10).map(m => ({
         role: m.sender,
         content: m.text
@@ -164,12 +156,17 @@ const [isWidgetOpen, setWidgetOpen] = useState(false)
         timestamp: new Date()
       }
 
-      setMessages(prev => [...prev, agentMsg])
+      setMessages(prev => {
+        const updated = [...prev, agentMsg]
+        localStorage.setItem('mazaika_ai_messages_' + activeProjectId, JSON.stringify(updated))
+        return updated
+      })
 
       if (response.execution_mode === 'PATCH' && response.patch_operations) {
         applyPatchOperations(response.patch_operations)
       } else if (response.execution_mode === 'FULL_GENERATION' && response.project_data) {
         setActiveConfig(response.project_data)
+        localStorage.setItem('mazaika_ai_config_' + activeProjectId, JSON.stringify(response.project_data))
       }
 
       return response
@@ -181,13 +178,16 @@ const [isWidgetOpen, setWidgetOpen] = useState(false)
         text: 'Kechirasiz, sorovni qayta ishlashda xatolik yuz berdi. Qaytadan urinib koring.',
         timestamp: new Date()
       }
-      setMessages(prev => [...prev, errorMsg])
+      setMessages(prev => {
+        const updated = [...prev, errorMsg]
+        localStorage.setItem('mazaika_ai_messages_' + activeProjectId, JSON.stringify(updated))
+        return updated
+      })
       return null
     } finally {
       setIsGenerating(false)
     }
   }
-
   return (
     <AICopilotContext.Provider value={{
       isWidgetOpen,
