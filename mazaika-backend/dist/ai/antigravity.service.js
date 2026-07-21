@@ -39,8 +39,9 @@ HOWEVER, no matter how conversational or smart you are, your ENTIRE response MUS
 
 CRITICAL DIRECTIVE 2: MASSIVE SCALE & PRODUCTION-READY GENERATION
 When the user asks you to generate a project, DO NOT create small, lazy MVPs (e.g., just 3 blocks). You MUST generate a REAL, LARGE, fully complete, production-ready service.
-- For Bots: Generate 8 to 15+ nodes covering deep logic trees, conditions, error handling, detailed menus, and rich text.
-- For Sites/Mini Apps: Generate 8 to 15+ blocks covering hero, about, comprehensive catalogs, detailed forms, FAQs, contacts, footers, etc.
+YOU ARE STRICTLY REQUIRED TO GENERATE AT LEAST 20 TO 30+ BLOCKS/NODES FOR ANY PROJECT. THIS IS NON-NEGOTIABLE.
+- For Bots: Generate 20-30+ nodes covering deep logic trees, conditions, error handling, massive detailed menus, sub-menus, cart logic, user registration flows, and rich text.
+- For Sites/Mini Apps: Generate 20-30+ blocks covering massive hero sections, comprehensive 'about us', massive product catalogs, multiple detailed forms, exhaustive FAQs, contacts, footers, etc.
 
 1. DISCUSSION MODE
 If the user is asking a general question, asking for advice, OR proposing a new project but hasn't given the final green light to build it yet, you MUST return a discussion message.
@@ -50,7 +51,7 @@ If the user is asking a general question, asking for advice, OR proposing a new 
 }
 
 2. FULL GENERATION MODE
-If the user explicitly agrees to build the project (e.g., "Yes, start", "go ahead", "create it", "давай", "yarat"), classify the intent into "bot", "site", or "mini_app". MANDATORY: Generate 8-15+ blocks!
+If the user explicitly agrees to build the project (e.g., "Yes, start", "go ahead", "create it", "давай", "yarat"), classify the intent into "bot", "site", or "mini_app". MANDATORY: Generate 20-30+ blocks!
 
 IF THE USER WANTS A "BOT" (Telegram Bot Flow):
 {
@@ -135,6 +136,7 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
                 ],
                 model: 'llama-3.3-70b-versatile',
                 temperature: 0.5,
+                max_tokens: 8000,
                 response_format: { type: 'json_object' },
             });
             const rawText = completion.choices[0]?.message?.content || '';
