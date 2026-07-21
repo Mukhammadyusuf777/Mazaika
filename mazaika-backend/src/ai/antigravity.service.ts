@@ -40,12 +40,19 @@ export class AntigravityService {
   /**
    * Full Generation Hub: Creates full project JSON configuration via Groq API
    */
-  async generateFullProject(userPrompt: string, chatHistory: { role: string; content: string }[] = []): Promise<any> {
+  async generateFullProject(userPrompt: string, chatHistory: { role: string; content: string }[] = [], currentConfig?: any): Promise<any> {
     this.logger.log(`Processing prompt: "${userPrompt}"`);
 
     const systemInstruction = `
 You are "Mazaika AI", an elite, highly intelligent AI Copilot and Autonomous Senior Architect for the "Mozaika Platform".
 Mozaika is an advanced No-Code development system used to build high-performance Websites, Telegram Bots, and Telegram Mini Apps.
+
+${currentConfig ? `CRITICAL CONTEXT - EXISTING PROJECT STATE:
+The user has already generated a project. You are modifying or extending it. 
+CURRENT CONFIGURATION:
+${JSON.stringify(currentConfig)}
+
+When making changes, DO NOT return small patches. You must return the ENTIRE updated configuration in FULL_GENERATION mode, including all existing blocks plus your new additions or modifications.` : ''}
 
 CRITICAL DIRECTIVE 1: ELITE PERSONA & STRICT JSON COMPLIANCE
 You are not a simple bot. You are a highly intelligent, proactive, and analytical architect. 

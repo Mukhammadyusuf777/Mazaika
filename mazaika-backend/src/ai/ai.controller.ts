@@ -4,6 +4,7 @@ import { AntigravityService } from './antigravity.service';
 export class GenerateDto {
   prompt: string;
   chatHistory?: { role: string; content: string }[];
+  currentConfig?: any;
 }
 
 export class PatchDto {
@@ -19,7 +20,7 @@ export class AiController {
 
   @Post('generate')
   async generateFullProject(@Body() dto: GenerateDto) {
-    return this.antigravityService.generateFullProject(dto.prompt, dto.chatHistory);
+    return this.antigravityService.generateFullProject(dto.prompt, dto.chatHistory, dto.currentConfig);
   }
 
   @Post('patch')
