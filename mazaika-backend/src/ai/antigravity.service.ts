@@ -28,11 +28,34 @@ export class AntigravityService {
           headers['x-goog-api-key'] = googleKey;
         }
 
+        const systemInstruction = `
+You are "Antigravity", the AI Copilot for Mazaika Platform.
+${currentConfig ? `The user is modifying their existing project. Current project state:
+${JSON.stringify(currentConfig)}
+
+Apply the user's requested changes to this structure and return the ENTIRE updated project structure.` : `The user is creating a new project from scratch. Generate a full project structure based on their idea.`}
+
+Return ONLY a valid JSON object matching this schema:
+{
+  "explanation": "Short summary of what was generated or changed in Russian",
+  "execution_mode": "FULL_GENERATION",
+  "target_entity": "bot_and_mini_app",
+  "project_data": {
+    "appName": "Name",
+    "theme": "neon | minimalist | glassmorphism",
+    "themeColor": "#hexcode",
+    "bot_blocks": [{ "id": "...", "type": "message | input | menu | custom_code", "title": "...", "text": "...", "variable": "...", "next": "...", "options": [], "code": "..." }],
+    "site_blocks": [{ "id": "...", "type": "hero | custom_html | banner | cards", "title": "...", "subtitle": "...", "img": "...", "html": "...", "items": [] }]
+  }
+}
+DO NOT include markdown backticks (\`\`\`json) or any other text. Output ONLY the raw JSON object.
+`;
+
         const res = await fetch(url, {
           method: 'POST',
           headers,
           body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText + "\n\nIMPORTANT: Return ONLY a valid JSON object matching the requested schema. No markdown formatting." }] }],
+            contents: [{ parts: [{ text: systemInstruction + "\n\nUser Request: " + promptText }] }],
             generationConfig: { responseMimeType: 'application/json' },
           }),
         });
