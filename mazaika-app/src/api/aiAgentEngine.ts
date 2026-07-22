@@ -1,6 +1,7 @@
 /**
- * Mazaika AI Copilot Engine
- * Queries the NestJS backend for Groq AI generation, patches, and conversation.
+ * Mazaika AI
+ * aiAgentEngine.ts
+ * Queries the NestJS backend for Gemini AI generation, patches, and conversation.
  */
 
 export interface PatchOperation {

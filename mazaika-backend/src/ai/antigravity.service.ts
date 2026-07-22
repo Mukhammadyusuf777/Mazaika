@@ -27,18 +27,18 @@ export class AntigravityService {
   private genAI: GoogleGenerativeAI | null = null;
 
   constructor() {
-    const geminiKey = process.env.GOOGLE_AI_STUDIO_KEY;
+    const apiKey = process.env.GOOGLE_AI_STUDIO_KEY || process.env.GEMINI_API_KEY;
     
-    if (geminiKey) {
-      this.genAI = new GoogleGenerativeAI(geminiKey);
+    if (apiKey) {
+      this.genAI = new GoogleGenerativeAI(apiKey);
       this.logger.log("Initialized Gemini AI (Pure Google AI Studio implementation)");
     } else {
-      this.logger.warn("GOOGLE_AI_STUDIO_KEY is missing! AI features will fail.");
+      this.logger.warn("GOOGLE_AI_STUDIO_KEY or GEMINI_API_KEY is missing! AI features will fail.");
     }
   }
 
   /**
-   * Helper to aggressively minify the config to avoid Groq TPM limits
+   * Helper to aggressively minify the config to avoid Gemini API limits
    */
   private minifyConfig(config: any): any {
     if (!config) return config;
@@ -77,7 +77,7 @@ export class AntigravityService {
   }
 
   /**
-   * Full Generation Hub: Creates full project JSON configuration via Groq API
+   * Full Generation Hub: Creates full project JSON configuration via Gemini API
    */
   async generateFullProject(userPrompt: string, chatHistory: { role: string; content: string }[] = [], currentConfig?: any): Promise<any> {
     this.logger.log(`Processing prompt: "${userPrompt}"`);
@@ -264,7 +264,7 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
         if (!this.genAI) throw new Error("Google AI Studio Key not provided");
 
         const model = this.genAI.getGenerativeModel({ 
-          model: "gemini-1.5-flash-latest",
+          model: "gemini-1.5-flash",
           generationConfig: { responseMimeType: "application/json" }
         });
         
@@ -309,7 +309,7 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
       return parsed;
     } catch (error: any) {
       this.logger.error(`AI Generation Failed: ${error.message}`);
-      throw new InternalServerErrorException(`Не удалось сгенерировать ответ через ИИ. Ошибка от Groq: ${error.message}`);
+      throw new InternalServerErrorException(`Не удалось сгенерировать ответ через ИИ. Ошибка от Gemini: ${error.message}`);
     }
   }
   /**
@@ -353,7 +353,7 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
         if (!this.genAI) throw new Error("Google AI Studio Key not provided");
 
         const model = this.genAI.getGenerativeModel({ 
-          model: "gemini-1.5-flash-latest",
+          model: "gemini-1.5-flash",
           generationConfig: { responseMimeType: "application/json" }
         });
         
@@ -383,7 +383,7 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
       return JSON.parse(cleanedJson) as PatchResponse;
     } catch (error: any) {
       this.logger.error(`AI Generation Failed: ${error.message}`);
-      throw new InternalServerErrorException(`Не удалось обновить проект через ИИ. Ошибка от Groq: ${error.message}`);
+      throw new InternalServerErrorException(`Не удалось обновить проект через ИИ. Ошибка от Gemini: ${error.message}`);
     }
   }
 
