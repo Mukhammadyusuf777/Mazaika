@@ -1,5 +1,4 @@
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export interface PatchOperation {
   op: 'replace' | 'add' | 'remove';
@@ -255,23 +254,41 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
         const rawKey = process.env.GOOGLE_AI_STUDIO_KEY || process.env.GEMINI_API_KEY;
         if (!rawKey) throw new InternalServerErrorException("GOOGLE_AI_STUDIO_KEY is missing");
 
-        const genAI = new GoogleGenerativeAI(rawKey.trim());
-        const model = genAI.getGenerativeModel({ 
-          model: "gemini-1.5-flash",
-          generationConfig: { responseMimeType: "application/json" }
-        });
+        const apiKey = rawKey.trim();
+        const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
         
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+
+        if (apiKey.startsWith('AQ.')) {
+          headers['Authorization'] = `Bearer ${apiKey}`;
+        } else {
+          headers['x-goog-api-key'] = apiKey;
+        }
+
         let historyText = formattedHistory.map(h => `${h.role === 'assistant' ? 'AI' : 'User'}: ${h.content}`).join('\n\n');
         const finalPrompt = `${systemInstruction}\n\n=== CHAT HISTORY ===\n${historyText}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
         
-        const result = await model.generateContent({
-          contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
-          generationConfig: {
-            temperature: 0.5,
-            responseMimeType: "application/json"
-          }
+        const res = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: finalPrompt }] }],
+            generationConfig: { responseMimeType: 'application/json' },
+          }),
         });
-        return { choices: [{ message: { content: result.response.text() } }] };
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`Google API Http ${res.status}: ${errorText}`);
+        }
+
+        const data = await res.json();
+        const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!responseText) throw new Error('Empty generation result from Gemini API');
+
+        return { choices: [{ message: { content: responseText } }] };
       };
 
       let completion;
@@ -346,22 +363,40 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
         const rawKey = process.env.GOOGLE_AI_STUDIO_KEY || process.env.GEMINI_API_KEY;
         if (!rawKey) throw new InternalServerErrorException("GOOGLE_AI_STUDIO_KEY is missing");
 
-        const genAI = new GoogleGenerativeAI(rawKey.trim());
-        const model = genAI.getGenerativeModel({ 
-          model: "gemini-1.5-flash",
-          generationConfig: { responseMimeType: "application/json" }
-        });
+        const apiKey = rawKey.trim();
+        const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
         
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+
+        if (apiKey.startsWith('AQ.')) {
+          headers['Authorization'] = `Bearer ${apiKey}`;
+        } else {
+          headers['x-goog-api-key'] = apiKey;
+        }
+
         const finalPrompt = `${systemInstruction}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
         
-        const result = await model.generateContent({
-          contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
-          generationConfig: {
-            temperature: 0.5,
-            responseMimeType: "application/json"
-          }
+        const res = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: finalPrompt }] }],
+            generationConfig: { responseMimeType: 'application/json' },
+          }),
         });
-        return { choices: [{ message: { content: result.response.text() } }] };
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`Google API Http ${res.status}: ${errorText}`);
+        }
+
+        const data = await res.json();
+        const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!responseText) throw new Error('Empty generation result from Gemini API');
+
+        return { choices: [{ message: { content: responseText } }] };
       };
 
       let completion;
