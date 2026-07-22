@@ -23,6 +23,15 @@ export interface PatchResponse {
 @Injectable()
 export class AntigravityService {
   private readonly logger = new Logger(AntigravityService.name);
+
+  // Array of top free models on OpenRouter to try in order of preference
+  private readonly openRouterModels = [
+    'google/gemini-2.0-flash-exp:free',
+    'google/gemini-2.0-flash-lite-preview-02-05:free',
+    'qwen/qwen-2.5-coder-32b-instruct:free',
+    'meta-llama/llama-3.3-70b-instruct:free',
+  ];
+
   constructor() {
     this.logger.log("AntigravityService initialized (Pure Google AI Studio implementation)");
   }
@@ -256,44 +265,56 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
 
         let historyText = formattedHistory.map(h => `${h.role === 'assistant' ? 'AI' : 'User'}: ${h.content}`).join('\n\n');
         const finalPrompt = `${systemInstruction}\n\n=== CHAT HISTORY ===\n${historyText}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
+        
+        let lastErrorMessage = '';
 
-        // 1. TRY OPENROUTER FIRST
+        // 1. TRY OPENROUTER WITH MULTI-MODEL FALLBACK
         if (openRouterKey) {
-          this.logger.log('Attempting generation via OpenRouter...');
-          try {
-            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${openRouterKey}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://mazaika.uz',
-                'X-Title': 'Mazaika AI Platform',
-              },
-              body: JSON.stringify({
-                model: 'google/gemini-2.0-flash-exp:free',
-                messages: [{ role: 'user', content: finalPrompt }],
-              }),
-            });
+          for (const modelName of this.openRouterModels) {
+            this.logger.log(`Attempting OpenRouter generation with model: ${modelName}`);
+            try {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout for large JSON
 
-            if (res.ok) {
-              const data = await res.json();
-              const content = data.choices?.[0]?.message?.content;
-              if (content) {
-                this.logger.log('OpenRouter response generated successfully.');
-                return { choices: [{ message: { content } }] };
+              const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                signal: controller.signal,
+                headers: {
+                  'Authorization': `Bearer ${openRouterKey}`,
+                  'Content-Type': 'application/json',
+                  'HTTP-Referer': 'https://mazaika.uz',
+                  'X-Title': 'Mazaika AI Platform',
+                },
+                body: JSON.stringify({
+                  model: modelName,
+                  messages: [{ role: 'user', content: finalPrompt }],
+                }),
+              });
+
+              clearTimeout(timeoutId);
+
+              if (res.ok) {
+                const data = await res.json();
+                const content = data.choices?.[0]?.message?.content;
+                if (content) {
+                  this.logger.log(`Success using model ${modelName}`);
+                  return { choices: [{ message: { content } }] };
+                }
+              } else {
+                const errText = await res.text();
+                lastErrorMessage = `OpenRouter (${modelName}) [${res.status}]: ${errText}`;
+                this.logger.warn(lastErrorMessage);
               }
-            } else {
-              const errorBody = await res.text();
-              this.logger.error(`OpenRouter Error (${res.status}): ${errorBody}`);
+            } catch (err: any) {
+              lastErrorMessage = `OpenRouter (${modelName}) Exception: ${err.message}`;
+              this.logger.warn(lastErrorMessage);
             }
-          } catch (err: any) {
-            this.logger.error(`OpenRouter Exception: ${err.message}`);
           }
         }
 
-        // 2. FALLBACK TO DIRECT GOOGLE API
+        // 2. DIRECT GOOGLE API FALLBACK
         if (googleKey) {
-          this.logger.log('Attempting generation via Google Direct API...');
+          this.logger.log('Attempting direct Google Gemini API fallback...');
           try {
             const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -318,15 +339,15 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
               const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
               if (responseText) return { choices: [{ message: { content: responseText } }] };
             } else {
-              const errText = await res.text();
-              this.logger.warn(`Google Direct API failed (${res.status}): ${errText}`);
+              const gErr = await res.text();
+              lastErrorMessage += ` | Direct Google Error [${res.status}]: ${gErr}`;
             }
           } catch (err: any) {
-            this.logger.warn(`Google Direct API Error: ${err.message}`);
+            lastErrorMessage += ` | Direct Google Exception: ${err.message}`;
           }
         }
 
-        throw new Error('AI Generation Failed. Please check backend logs in Render or verify OPENROUTER_API_KEY.');
+        throw new Error(`AI Generation Failed. Details: ${lastErrorMessage}`);
       };
 
       let completion;
@@ -402,42 +423,54 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
         const googleKey = (process.env.GOOGLE_AI_STUDIO_KEY || process.env.GEMINI_API_KEY || '').trim();
 
         const finalPrompt = `${systemInstruction}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
+        
+        let lastErrorMessage = '';
 
-        // 1. TRY OPENROUTER FIRST
+        // 1. TRY OPENROUTER WITH MULTI-MODEL FALLBACK
         if (openRouterKey) {
-          this.logger.log('Attempting patch generation via OpenRouter...');
-          try {
-            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${openRouterKey}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://mazaika.uz',
-                'X-Title': 'Mazaika AI Platform',
-              },
-              body: JSON.stringify({
-                model: 'google/gemini-2.0-flash-exp:free',
-                messages: [{ role: 'user', content: finalPrompt }],
-              }),
-            });
+          for (const modelName of this.openRouterModels) {
+            this.logger.log(`Attempting patch generation with model: ${modelName}`);
+            try {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-            if (res.ok) {
-              const data = await res.json();
-              const content = data.choices?.[0]?.message?.content;
-              if (content) {
-                this.logger.log('OpenRouter patch generated successfully.');
-                return { choices: [{ message: { content } }] };
+              const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                signal: controller.signal,
+                headers: {
+                  'Authorization': `Bearer ${openRouterKey}`,
+                  'Content-Type': 'application/json',
+                  'HTTP-Referer': 'https://mazaika.uz',
+                  'X-Title': 'Mazaika AI Platform',
+                },
+                body: JSON.stringify({
+                  model: modelName,
+                  messages: [{ role: 'user', content: finalPrompt }],
+                }),
+              });
+
+              clearTimeout(timeoutId);
+
+              if (res.ok) {
+                const data = await res.json();
+                const content = data.choices?.[0]?.message?.content;
+                if (content) {
+                  this.logger.log(`Success using model ${modelName}`);
+                  return { choices: [{ message: { content } }] };
+                }
+              } else {
+                const errText = await res.text();
+                lastErrorMessage = `OpenRouter (${modelName}) [${res.status}]: ${errText}`;
+                this.logger.warn(lastErrorMessage);
               }
-            } else {
-              const errorBody = await res.text();
-              this.logger.error(`OpenRouter Error (${res.status}): ${errorBody}`);
+            } catch (err: any) {
+              lastErrorMessage = `OpenRouter (${modelName}) Exception: ${err.message}`;
+              this.logger.warn(lastErrorMessage);
             }
-          } catch (err: any) {
-            this.logger.error(`OpenRouter Exception: ${err.message}`);
           }
         }
 
-        // 2. FALLBACK TO DIRECT GOOGLE API
+        // 2. DIRECT GOOGLE API FALLBACK
         if (googleKey) {
           this.logger.log('Attempting patch generation via Google Direct API...');
           try {
@@ -464,15 +497,15 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
               const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
               if (responseText) return { choices: [{ message: { content: responseText } }] };
             } else {
-              const errText = await res.text();
-              this.logger.warn(`Google Direct API failed (${res.status}): ${errText}`);
+              const gErr = await res.text();
+              lastErrorMessage += ` | Direct Google Error [${res.status}]: ${gErr}`;
             }
           } catch (err: any) {
-            this.logger.warn(`Google Direct API Error: ${err.message}`);
+            lastErrorMessage += ` | Direct Google Exception: ${err.message}`;
           }
         }
 
-        throw new Error('AI Generation Failed. Please check backend logs in Render or verify OPENROUTER_API_KEY.');
+        throw new Error(`AI Generation Failed. Details: ${lastErrorMessage}`);
       };
 
       let completion;
