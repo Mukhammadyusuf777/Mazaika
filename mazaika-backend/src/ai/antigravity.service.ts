@@ -24,13 +24,13 @@ export interface PatchResponse {
 export class AntigravityService {
   private readonly logger = new Logger(AntigravityService.name);
 
-  // Exact model slugs for Gemini Flash on OpenRouter
+  // Gemini Flash model slugs for OpenRouter
   private readonly openRouterModels = [
-    'google/gemini-2.0-flash-exp:free',
-    'google/gemini-2.0-flash:free',
+    'google/gemini-3.5-flash',
     'google/gemini-2.0-flash-001',
+    'google/gemini-2.0-flash-exp:free',
     'google/gemini-2.0-flash-lite-preview-02-05:free',
-    'qwen/qwen-2.5-coder-32b-instruct:free',
+    'google/gemini-flash-1.5',
   ];
 
   constructor() {
@@ -272,7 +272,7 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
         // 1. TRY OPENROUTER WITH MULTI-MODEL FALLBACK
         if (openRouterKey) {
           for (const modelName of this.openRouterModels) {
-            this.logger.log(`Attempting OpenRouter generation with model: ${modelName}`);
+            this.logger.log(`Trying OpenRouter Gemini Flash model: ${modelName}`);
             try {
               const controller = new AbortController();
               const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for large JSON
@@ -304,12 +304,12 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
               } else {
                 const errText = await res.text();
                 lastErrorMessage = `[${modelName}] HTTP ${res.status}: ${errText}`;
-                this.logger.warn(`Model ${modelName} returned ${res.status}, skipping to next...`);
+                this.logger.warn(`Model ${modelName} returned ${res.status}, skipping to next Gemini Flash model...`);
                 continue;
               }
             } catch (err: any) {
               lastErrorMessage = `[${modelName}] Exception: ${err.message}`;
-              this.logger.warn(`Model ${modelName} exception, skipping to next...`);
+              this.logger.warn(`Model ${modelName} error, skipping to next...`);
               continue;
             }
           }
@@ -432,7 +432,7 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
         // 1. TRY OPENROUTER WITH MULTI-MODEL FALLBACK
         if (openRouterKey) {
           for (const modelName of this.openRouterModels) {
-            this.logger.log(`Attempting patch generation with model: ${modelName}`);
+            this.logger.log(`Trying OpenRouter Gemini Flash model: ${modelName}`);
             try {
               const controller = new AbortController();
               const timeoutId = setTimeout(() => controller.abort(), 60000);
@@ -464,12 +464,12 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
               } else {
                 const errText = await res.text();
                 lastErrorMessage = `[${modelName}] HTTP ${res.status}: ${errText}`;
-                this.logger.warn(`Model ${modelName} returned ${res.status}, skipping to next...`);
+                this.logger.warn(`Model ${modelName} returned ${res.status}, skipping to next Gemini Flash model...`);
                 continue;
               }
             } catch (err: any) {
               lastErrorMessage = `[${modelName}] Exception: ${err.message}`;
-              this.logger.warn(`Model ${modelName} exception, skipping to next...`);
+              this.logger.warn(`Model ${modelName} error, skipping to next...`);
               continue;
             }
           }
