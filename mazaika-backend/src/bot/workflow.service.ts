@@ -430,6 +430,22 @@ export class WorkflowService {
         return { wait: false }; // Handled directly in getNextNode
       }
 
+      if (node.type === 'custom_code') {
+        const code = node.data?.code;
+        if (code) {
+          try {
+            // WARNING: In a production environment this needs a sandbox (like vm2). 
+            // For this generative MVP, we use raw async eval to allow maximum AI freedom.
+            const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+            const executor = new AsyncFunction('ctx', 'variables', 'botId', 'contactId', code);
+            await executor(ctx, variables, botId, contactId);
+          } catch (err: any) {
+            this.logger.error(`Custom code execution failed for node ${node.id}: ${err.message}`);
+          }
+        }
+        return { wait: false };
+      }
+
       if (node.type === 'subscription') {
         const channel = node.data?.channel;
         let isSubscribed = false;

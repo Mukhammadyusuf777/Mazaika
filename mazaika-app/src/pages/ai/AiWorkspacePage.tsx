@@ -103,9 +103,21 @@ const renderCanvasBlock = (b: any, bIdx: number, activeConfig: any) => {
         </div>
       )}
 
-      {['boshlash', 'xabar', 'matnli_savol', 'shart'].includes(b.type) && (
-        <div style={{ borderLeft: `3px solid ${activeConfig.themeColor || "#8b5cf6"}`, paddingLeft: 8 }}>
-          <h4 style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>Node: {b.title} <span style={{ fontSize: 9, opacity: 0.6, background: '#334155', padding: '2px 4px', borderRadius: 4 }}>{b.type}</span></h4>
+      {['boshlash', 'xabar', 'matnli_savol', 'shart', 'custom_code'].includes(b.type) && (
+        <div style={{ borderLeft: `3px solid ${b.type === 'custom_code' ? '#f59e0b' : activeConfig.themeColor || "#8b5cf6"}`, paddingLeft: 8 }}>
+          <h4 style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#e2e8f0' }}>
+            Node: {b.title || 'Dynamic Logic'}{' '}
+            <span style={{ fontSize: 9, opacity: 0.6, background: b.type === 'custom_code' ? '#f59e0b' : '#334155', color: b.type === 'custom_code' ? '#000' : '#fff', padding: '2px 4px', borderRadius: 4 }}>{b.type}</span>
+          </h4>
+          
+          {b.type === 'custom_code' && b.code && (
+            <div style={{ marginTop: 8, background: '#0f172a', padding: 8, borderRadius: 6, border: '1px solid #1e293b', overflowX: 'auto' }}>
+              <pre style={{ margin: 0, fontSize: 10, color: '#10b981', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+                {b.code}
+              </pre>
+            </div>
+          )}
+
           {b.text && <p style={{ fontSize: 11, color: '#94a3b8', margin: '4px 0 0 0' }}>{b.text}</p>}
           {b.condition && <p style={{ fontSize: 10, color: '#fbbf24', margin: '4px 0 0 0', fontFamily: 'monospace' }}>if ({b.condition})</p>}
           {b.variable && <p style={{ fontSize: 10, color: '#38bdf8', margin: '4px 0 0 0', fontFamily: 'monospace' }}>-{'>'} {b.variable}</p>}

@@ -157,13 +157,22 @@ IF THE USER WANTS BOTH "BOT" AND "MINI_APP" AT THE SAME TIME:
 }
 
 DYNAMIC / CUSTOM FEATURES:
-If the user asks for a very specific block or feature (e.g. Calendar, Calculator, Interactive Map, Pricing Table, Advanced Graph) that is NOT covered by the standard types (hero, catalog, form, quiz, etc.), you MUST create it yourself on the fly using the "custom_html" type.
+If the user asks for a very specific block or feature for the MINI APP (e.g. Calendar, Calculator, Interactive Map, Pricing Table, Advanced Graph) that is NOT covered by the standard types (hero, catalog, form, quiz, etc.), you MUST create it yourself on the fly using the "custom_html" type.
 {
   "id": "custom1",
   "type": "custom_html",
   "title": "Custom Feature Name",
   "html": "<div class='dynamic-container'>... raw HTML elements ...</div>",
   "css": ".dynamic-container { padding: 10px; color: white; }"
+}
+
+DYNAMIC BOT LOGIC:
+If the user asks for advanced BOT logic (e.g. math calculation, random numbers, external API calls, custom validation), you MUST generate a "custom_code" node. Write raw JavaScript in the "code" field. You have access to "ctx", "variables", and can modify "variables" directly.
+{
+  "id": "node99",
+  "type": "custom_code",
+  "title": "Complex Logic",
+  "code": "const random = Math.floor(Math.random() * 100); variables.random_num = random; await ctx.reply('Generated: ' + random);"
 }
 
 3. PATCH (PROJECT CONTROL) MODE
