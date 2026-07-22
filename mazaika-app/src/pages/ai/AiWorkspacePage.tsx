@@ -277,10 +277,16 @@ export default function AiWorkspacePage() {
         customNodes = [];
         customEdges = [];
         
-        const botBlocks = activeConfig.target_entity === 'bot_and_mini_app' ? activeConfig.bot_blocks : activeConfig.blocks;
+        let botBlocks = activeConfig.target_entity === 'bot_and_mini_app' || activeConfig.bot_blocks 
+          ? (activeConfig.bot_blocks || []) 
+          : (activeConfig.blocks || []);
+        
+        if (!Array.isArray(botBlocks)) {
+          botBlocks = [];
+        }
         
         let yOffset = 100;
-        (botBlocks || []).forEach((block: any, index: number) => {
+        botBlocks.forEach((block: any, index: number) => {
           let nodeType = 'message';
           if (block.type === 'boshlash') nodeType = 'start';
           if (block.type === 'xabar') nodeType = 'message';
@@ -310,7 +316,7 @@ export default function AiWorkspacePage() {
         })
 
         // Pass 2: Generate Edges based on AI routing or sequential fallback
-        (botBlocks || []).forEach((block: any, index: number) => {
+        botBlocks.forEach((block: any, index: number) => {
           let hasExplicitEdges = false;
           
           if (block.true_node) {
