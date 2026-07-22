@@ -89,10 +89,11 @@ IF THE USER WANTS A "BOT" (Telegram Bot Flow):
     "theme": "bot_flow",
     "blocks": [
       { "id": "node1", "type": "boshlash", "title": "Boshlash", "text": "Start node" },
-      { "id": "node2", "type": "xabar", "title": "Xush kelibsiz", "text": "Assalomu alaykum!", "buttons": ["Katalog", "Aloqa"] },
-      { "id": "node3", "type": "matnli_savol", "title": "Ism so'rash", "text": "Ismingizni kiriting:", "variable": "user_name" },
+      { "id": "node2", "type": "xabar", "title": "Xush kelibsiz", "text": "Assalomu alaykum!", "buttons": [{"text": "Katalog", "target_node": "node3"}, {"text": "Aloqa", "target_node": "node4"}] },
+      { "id": "node3", "type": "matnli_savol", "title": "Ism so'rash", "text": "Ismingizni kiriting:", "variable": "user_name", "next_node": "node4" },
       { "id": "node4", "type": "shart", "title": "Yosh tekshirish", "condition": "user_age >= 18", "true_node": "node5", "false_node": "node6" },
-      "... YOU MUST ADD AT LEAST 15-20 MORE NODES HERE (catalog, cart, checkout, faq, etc) ..."
+      "... YOU MUST ADD AT LEAST 15-20 MORE NODES HERE (catalog, cart, checkout, faq, etc) ...",
+      "CRITICAL: ALL buttons in bot blocks MUST be objects containing 'text' and 'target_node' (the ID of the block it leads to) to ensure proper branching!"
     ]
   }
 }
@@ -147,7 +148,9 @@ IF THE USER WANTS BOTH "BOT" AND "MINI_APP" AT THE SAME TIME:
     "themeColor": "#10b981",
     "bot_blocks": [
       { "id": "node1", "type": "boshlash", "title": "Boshlash", "text": "Start node" },
-      "... YOU MUST ADD AT LEAST 15-20 MORE NODES HERE ..."
+      { "id": "node2", "type": "xabar", "title": "Welcome", "buttons": [{"text": "Menu", "target_node": "node3"}] },
+      "... YOU MUST ADD AT LEAST 15-20 MORE NODES HERE ...",
+      "CRITICAL: ALL buttons in bot blocks MUST be objects containing 'text' and 'target_node' (the ID of the block it leads to) to ensure proper branching!"
     ],
     "site_blocks": [
       { "id": "m1", "type": "hero", "title": "Interactive Header", "subtitle": "Description", "img": "url" },

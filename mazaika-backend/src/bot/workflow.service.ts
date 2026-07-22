@@ -134,7 +134,8 @@ export class WorkflowService {
         if (text.startsWith('btn_') && currentNode?.data?.buttons) {
           const idx = parseInt(text.split('_')[1]);
           if (!isNaN(idx) && currentNode.data.buttons[idx]) {
-            answer = currentNode.data.buttons[idx];
+            const btn = currentNode.data.buttons[idx];
+            answer = typeof btn === 'string' ? btn : (btn.text || 'Tugma');
           }
         }
         state.variables[varName] = answer;
@@ -380,8 +381,9 @@ export class WorkflowService {
 
         const mediaUrl = node.data?.mediaUrl;
         const buttons = node.data?.buttons || [];
-        const inlineKeyboard = buttons.map((btn: string, idx: number) => {
-          const parts = btn.split('|');
+        const inlineKeyboard = buttons.map((btn: any, idx: number) => {
+          const btnText = typeof btn === 'string' ? btn : (btn.text || 'Tugma');
+          const parts = btnText.split('|');
           if (parts.length > 1) {
             const label = parts[0].trim();
             const urlVal = parts[1].trim();
@@ -391,7 +393,7 @@ export class WorkflowService {
               return [{ text: label, url: urlVal }];
             }
           }
-          return [{ text: btn, callback_data: `btn_${idx}` }];
+          return [{ text: btnText, callback_data: `btn_${idx}` }];
         });
 
         const extra = inlineKeyboard.length > 0 ? {
@@ -514,8 +516,9 @@ export class WorkflowService {
 
         const mediaUrl = node.data?.mediaUrl;
         const buttons = node.data?.buttons || [];
-        const inlineKeyboard = buttons.map((btn: string, idx: number) => {
-          return [{ text: btn, callback_data: `btn_${idx}` }];
+        const inlineKeyboard = buttons.map((btn: any, idx: number) => {
+          const btnText = typeof btn === 'string' ? btn : (btn.text || 'Tugma');
+          return [{ text: btnText, callback_data: `btn_${idx}` }];
         });
 
         const extra = inlineKeyboard.length > 0 ? {
