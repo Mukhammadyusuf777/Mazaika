@@ -27,10 +27,6 @@ export class AntigravityService {
   // Gemini Flash model slugs for OpenRouter
   private readonly openRouterModels = [
     'google/gemini-3.5-flash',
-    'google/gemini-2.0-flash-001',
-    'google/gemini-2.0-flash-exp:free',
-    'google/gemini-2.0-flash-lite-preview-02-05:free',
-    'google/gemini-flash-1.5',
   ];
 
   constructor() {
