@@ -40,7 +40,7 @@ function MessageNode({ data, selected }: NodeProps) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: 4 }}>
           {buttons.map((btn, i) => (
             <div key={i} style={{ position: 'relative', background: 'var(--bg-card)', padding: '6px 8px', borderRadius: 4, fontSize: 12, border: '1px solid var(--border-primary)', textAlign: 'center' }}>
-              {btn}
+              {typeof btn === 'string' ? btn : ((btn as any).text || (btn as any).label || 'Tugma')}
               <Handle type="source" position={Position.Right} id={`btn_${i}`} style={{ top: '50%', right: -6, width: 8, height: 8 }} />
             </div>
           ))}
