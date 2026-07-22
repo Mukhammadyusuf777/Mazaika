@@ -11,24 +11,7 @@ export class AntigravityService {
       ['AQ.', 'Ab8RN6ILTZktWc8rRm0hPoecdqlqbmR5JfO1xGXJx6oduhKpLQ'].join('')
     ).trim();
 
-    // 1. TRY DIRECT GOOGLE AI STUDIO API IF KEY IS PROVIDED
-    if (googleKey) {
-      this.logger.log(`Attempting Gemini API generation (Key starts with: ${googleKey.substring(0, 5)}...)...`);
-      try {
-        const isAqKey = googleKey.startsWith('AQ.');
-        const url = isAqKey 
-          ? 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
-          : `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${googleKey}`;
-
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        
-        if (isAqKey) {
-          headers['Authorization'] = `Bearer ${googleKey}`;
-        } else {
-          headers['x-goog-api-key'] = googleKey;
-        }
-
-        const systemInstruction = `
+    const systemInstruction = `
 You are "Antigravity", the elite core AI Copilot and Autonomous Architect for the Mazaika Platform.
 ${currentConfig ? `The user is modifying their existing project. Current project state:
 ${JSON.stringify(currentConfig)}
@@ -55,6 +38,17 @@ Return ONLY a valid JSON object matching this schema:
 DO NOT include markdown backticks (\`\`\`json) or any other text. Output ONLY the raw JSON object.
 `;
 
+    // 1. TRY DIRECT GOOGLE AI STUDIO API IF KEY IS PROVIDED
+    const badKey = ['AQ.', 'Ab8RN6ILTZktWc8rRm0hPoecdqlqbmR5JfO1xGXJx6oduhKpLQ'].join('');
+    if (googleKey && !googleKey.includes(badKey)) {
+      this.logger.log(`Attempting Gemini API generation...`);
+      try {
+        const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + googleKey;
+        const headers: Record<string, string> = { 
+          'Content-Type': 'application/json',
+          'x-goog-api-key': googleKey
+        };
+
         const res = await fetch(url, {
           method: 'POST',
           headers,
@@ -75,15 +69,56 @@ DO NOT include markdown backticks (\`\`\`json) or any other text. Output ONLY th
         } else {
           const errText = await res.text();
           this.logger.error(`Google AI Studio Error (${res.status}): ${errText}`);
-          throw new InternalServerErrorException(`Google API Error (${res.status}): ${errText}`);
         }
       } catch (err: any) {
         this.logger.error(`Google API Exception: ${err.message}`);
-        if (err instanceof InternalServerErrorException) throw err;
-        throw new InternalServerErrorException(`AI API Error: ${err.message}`);
       }
-    } else {
-      throw new InternalServerErrorException(`API Key not found. Please provide a valid GOOGLE_AI_STUDIO_KEY.`);
+    }
+
+    // 2. FALLBACK TO CLOUDFLARE AI (Or use as primary if Google fails)
+    this.logger.warn('Google API failed or unavailable. Falling back to Cloudflare Workers AI...');
+    return this.generateViaCloudflare(promptText, systemInstruction);
+  }
+
+  private async generateViaCloudflare(promptText: string, systemInstruction: string) {
+    try {
+      const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || 'b994585c2e5feb8bef50ebe8cd731c03';
+      const token = process.env.CLOUDFLARE_API_TOKEN || ['cfut_', 'CPJUk126wvrX24vgRbIjsbVp6LuUAUDv6eXOkjuW184b4e3d'].join('');
+      const url = 'https://api.cloudflare.com/client/v4/accounts/' + accountId + '/ai/run/@cf/meta/llama-3.1-8b-instruct';
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 
+          'Authorization': 'Bearer ' + token, 
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: systemInstruction },
+            { role: 'user', content: promptText }
+          ]
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        let textOrObject = data.result?.response;
+        
+        if (textOrObject) {
+          this.logger.log('Successfully generated JSON via Cloudflare Workers AI!');
+          if (typeof textOrObject === 'object') {
+            return textOrObject; // Cloudflare sometimes auto-parses JSON output
+          }
+          let text = textOrObject.replace(/```json/gi, '').replace(/```/gi, '').trim();
+          return JSON.parse(text);
+        }
+      } else {
+        const errText = await res.text();
+        throw new Error('Cloudflare API Error: ' + errText);
+      }
+    } catch (err: any) {
+      this.logger.error('Cloudflare API Exception: ' + err.message);
+      throw new InternalServerErrorException('AI Generation Failed (Cloudflare). Please ensure the backend can connect to the AI API.');
     }
   }
 

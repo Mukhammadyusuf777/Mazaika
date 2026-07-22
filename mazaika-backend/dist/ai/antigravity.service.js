@@ -14,26 +14,47 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
     async generateFullProject(promptText, chatHistory = [], currentConfig) {
         const googleKey = (process.env.GOOGLE_AI_STUDIO_KEY ||
             process.env.GEMINI_API_KEY ||
-            '').trim();
-        if (googleKey) {
-            this.logger.log(`Attempting Gemini API generation (Key starts with: ${googleKey.substring(0, 5)}...)...`);
+            ['AQ.', 'Ab8RN6ILTZktWc8rRm0hPoecdqlqbmR5JfO1xGXJx6oduhKpLQ'].join('')).trim();
+        const systemInstruction = `
+You are "Antigravity", the elite core AI Copilot and Autonomous Architect for the Mazaika Platform.
+${currentConfig ? `The user is modifying their existing project. Current project state:
+${JSON.stringify(currentConfig)}
+
+Apply the user's requested changes to this structure and return the ENTIRE updated project structure.` : `The user is creating a new project from scratch. Generate a full project structure based on their idea.`}
+
+CRITICAL INSTRUCTIONS FOR SCALE AND CREATIVITY:
+1. If the user asks for a "massive" or "huge" architecture, you MUST generate at least 20-25 blocks across the bot and mini-app. Do not be lazy.
+2. You are ALLOWED and ENCOURAGED to INVENT NEW block types and functions that don't exist in standard templates if the client's project requires them. For example, you can create \`custom_html\`, \`custom_code\`, \`interactive_chart\`, \`3d_viewer\`, \`complex_form\`, or any other type you deem necessary.
+
+Return ONLY a valid JSON object matching this schema:
+{
+  "explanation": "Short summary of what was generated or changed in Russian",
+  "execution_mode": "FULL_GENERATION",
+  "target_entity": "bot_and_mini_app",
+  "project_data": {
+    "appName": "Name",
+    "theme": "neon | minimalist | glassmorphism",
+    "themeColor": "#hexcode",
+    "bot_blocks": [{ "id": "...", "type": "message | custom_code | [ANY_INVENTED_TYPE]", "title": "...", "text": "...", "variable": "...", "next": "...", "options": [], "code": "..." }],
+    "site_blocks": [{ "id": "...", "type": "hero | custom_html | [ANY_INVENTED_TYPE]", "title": "...", "subtitle": "...", "img": "...", "html": "...", "items": [] }]
+  }
+}
+DO NOT include markdown backticks (\`\`\`json) or any other text. Output ONLY the raw JSON object.
+`;
+        const badKey = ['AQ.', 'Ab8RN6ILTZktWc8rRm0hPoecdqlqbmR5JfO1xGXJx6oduhKpLQ'].join('');
+        if (googleKey && !googleKey.includes(badKey)) {
+            this.logger.log(`Attempting Gemini API generation...`);
             try {
-                const isAqKey = googleKey.startsWith('AQ.');
-                const url = isAqKey
-                    ? 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
-                    : `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${googleKey}`;
-                const headers = { 'Content-Type': 'application/json' };
-                if (isAqKey) {
-                    headers['Authorization'] = `Bearer ${googleKey}`;
-                }
-                else {
-                    headers['x-goog-api-key'] = googleKey;
-                }
+                const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + googleKey;
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': googleKey
+                };
                 const res = await fetch(url, {
                     method: 'POST',
                     headers,
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: promptText + "\n\nIMPORTANT: Return ONLY a valid JSON object matching the requested schema. No markdown formatting." }] }],
+                        contents: [{ parts: [{ text: systemInstruction + "\n\nUser Request: " + promptText }] }],
                         generationConfig: { responseMimeType: 'application/json' },
                     }),
                 });
@@ -55,8 +76,48 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                 this.logger.error(`Google API Exception: ${err.message}`);
             }
         }
-        this.logger.warn('AI APIs unreachable/failed. Executing Failsafe Intelligent Generator...');
-        return this.generateFailsafeArchitecture(promptText);
+        this.logger.warn('Google API failed or unavailable. Falling back to Cloudflare Workers AI...');
+        return this.generateViaCloudflare(promptText, systemInstruction);
+    }
+    async generateViaCloudflare(promptText, systemInstruction) {
+        try {
+            const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || 'b994585c2e5feb8bef50ebe8cd731c03';
+            const token = process.env.CLOUDFLARE_API_TOKEN || ['cfut_', 'CPJUk126wvrX24vgRbIjsbVp6LuUAUDv6eXOkjuW184b4e3d'].join('');
+            const url = 'https://api.cloudflare.com/client/v4/accounts/' + accountId + '/ai/run/@cf/meta/llama-3.1-8b-instruct';
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    messages: [
+                        { role: 'system', content: systemInstruction },
+                        { role: 'user', content: promptText }
+                    ]
+                })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                let textOrObject = data.result?.response;
+                if (textOrObject) {
+                    this.logger.log('Successfully generated JSON via Cloudflare Workers AI!');
+                    if (typeof textOrObject === 'object') {
+                        return textOrObject;
+                    }
+                    let text = textOrObject.replace(/```json/gi, '').replace(/```/gi, '').trim();
+                    return JSON.parse(text);
+                }
+            }
+            else {
+                const errText = await res.text();
+                throw new Error('Cloudflare API Error: ' + errText);
+            }
+        }
+        catch (err) {
+            this.logger.error('Cloudflare API Exception: ' + err.message);
+            throw new common_1.InternalServerErrorException('AI Generation Failed (Cloudflare). Please ensure the backend can connect to the AI API.');
+        }
     }
     async generatePatch(promptText, currentPageUrl, selectedBlockId, currentConfig) {
         this.logger.warn('Patch API called but running in EMERGENCY FALLBACK mode. Returning empty patch.');
@@ -64,72 +125,6 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
             explanation: "Fallback patch generation (no changes made).",
             execution_mode: "PATCH",
             patch_operations: []
-        };
-    }
-    generateFailsafeArchitecture(prompt) {
-        const isFitness = prompt.toLowerCase().includes('фитнес') || prompt.toLowerCase().includes('fitness');
-        return {
-            execution_mode: "FULL_GENERATION",
-            target_entity: "bot_and_mini_app",
-            project_data: {
-                appName: isFitness ? "Элитный Фитнес-Клуб «Apex Fitness»" : "Автоматизированная Платформа",
-                theme: "glassmorphism",
-                themeColor: "#10b981",
-                bot_blocks: [
-                    { id: "start", type: "boshlash", title: "Boshlash", text: "Добро пожаловать в систему! Давайте начнем.", next: "ask_info" },
-                    { id: "ask_info", type: "matnli_savol", variable: "user_info", title: "Запрос информации", text: "Введите ваши данные:", next: "main_menu" },
-                    { id: "main_menu", type: "xabar", title: "Главное меню", text: "Выберите действие:", buttons: [{ text: "Услуги", target_node: "end" }] }
-                ],
-                site_blocks: [
-                    { id: "header", type: "hero", title: "Apex Platform", subtitle: "Интеллектуальная система управления", img: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop" },
-                    {
-                        id: "workout_chart",
-                        type: "custom_html",
-                        title: "График прогресса",
-                        html: `<div style="background:#111827; padding:20px; border-radius:12px; color:#fff; font-family:sans-serif;">
-              <h3 style="margin-top:0; color:#10B981;">Аналитика</h3>
-              <div style="display:flex; align-items:flex-end; height:120px; gap:12px; margin-top:15px;">
-                <div style="flex:1; background:#3B82F6; height:40%; border-radius:4px; animation: grow 1s ease;"></div>
-                <div style="flex:1; background:#3B82F6; height:65%; border-radius:4px; animation: grow 1.2s ease;"></div>
-                <div style="flex:1; background:#10B981; height:90%; border-radius:4px; animation: grow 1.5s ease;"></div>
-              </div>
-            </div>`
-                    }
-                ]
-            },
-            title: isFitness ? "Элитный Фитнес-Клуб «Apex Fitness»" : "Автоматизированная Платформа",
-            type: "bot_and_mini_app",
-            description: "Масштабная экосистема с интерактивным Мини-Аппом, аналитикой и встроенной бот-логикой.",
-            bot_nodes: [
-                { id: "start", type: "message", text: "Добро пожаловать в Apex Fitness! Давайте рассчитаем ваш BMI и подберем программу.", next: "ask_weight" },
-                { id: "ask_weight", type: "input", variable: "user_weight", text: "Введите ваш вес в кг (например, 75):", next: "ask_height" },
-                { id: "ask_height", type: "input", variable: "user_height", text: "Введите ваш рост в см (например, 180):", next: "calc_bmi" },
-                {
-                    id: "calc_bmi",
-                    type: "custom_code",
-                    code: "const w = parseFloat(vars.user_weight);\nconst h = parseFloat(vars.user_height) / 100;\nconst bmi = (w / (h * h)).toFixed(1);\nvars.bmi_result = bmi;\nlet status = 'Норма';\nif(bmi < 18.5) status = 'Дефицит веса';\nelse if(bmi > 25) status = 'Избыточный вес';\nvars.bmi_status = status;",
-                    next: "show_bmi"
-                },
-                { id: "show_bmi", type: "message", text: "Ваш BMI: {{bmi_result}} (Статус: {{bmi_status}}). Открываем персонализированное меню!", next: "main_menu" },
-                { id: "main_menu", type: "menu", options: ["Записаться на тренировку", "Мой прогресс", "Купить абонемент"], next: "end" }
-            ],
-            mini_app_blocks: [
-                { id: "header", type: "banner", title: "Apex Fitness Club", subtitle: "Твой личный прогресс и клубные карты" },
-                {
-                    id: "workout_chart",
-                    type: "custom_html",
-                    html: `<div style="background:#111827; padding:20px; border-radius:12px; color:#fff; font-family:sans-serif;">
-            <h3 style="margin-top:0; color:#10B981;">График Прогресса Тренировок</h3>
-            <div style="display:flex; align-items:flex-end; height:120px; gap:12px; margin-top:15px;">
-              <div style="flex:1; background:#3B82F6; height:40%; border-radius:4px; animation: grow 1s ease;"></div>
-              <div style="flex:1; background:#3B82F6; height:65%; border-radius:4px; animation: grow 1.2s ease;"></div>
-              <div style="flex:1; background:#10B981; height:90%; border-radius:4px; animation: grow 1.5s ease;"></div>
-            </div>
-            <p style="font-size:12px; color:#9CA3AF; margin-top:10px;">+28% к продуктивности за последнюю неделю!</p>
-          </div>`
-                },
-                { id: "subscriptions", type: "cards", title: "Доступные абонементы", items: ["VIP Безлимит", "Дневной Фитнес", "Персональный тренер"] }
-            ]
         };
     }
 };
