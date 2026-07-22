@@ -100,6 +100,8 @@ export default function DashboardPage() {
     if (!window.confirm(`Haqiqatan ham "${botName}" botini o'chirmoqchimisiz?`)) return
     try {
       await deleteBot(botId)
+      localStorage.removeItem('mazaika_ai_messages_' + botId)
+      localStorage.removeItem('mazaika_site_' + botId)
       fetchBots()
     } catch (e) {
       console.error(e)
