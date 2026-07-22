@@ -299,20 +299,52 @@ export default function AiWorkspacePage() {
               condition: block.condition || '',
             }
           }
-          customNodes.push(node)
-
-          if (index > 0) {
-            const prevBlock = botBlocks[index - 1]
-            customEdges.push({
-              id: `e-${index}`,
-              source: prevBlock.id || `node-${index - 1}`,
-              target: node.id,
-              type: 'buttonEdge',
-              animated: true
-            })
+          // Add custom_code mapping
+          if (block.type === 'custom_code') {
+            node.type = 'custom_code';
+            (node.data as any).code = block.code;
           }
+
+          customNodes.push(node)
           yOffset += 150;
         })
+
+        // Pass 2: Generate Edges based on AI routing or sequential fallback
+        (botBlocks || []).forEach((block: any, index: number) => {
+          let hasExplicitEdges = false;
+          
+          if (block.true_node) {
+            customEdges.push({ id: `e-${block.id}-true`, source: block.id, target: block.true_node, sourceHandle: 'true', type: 'buttonEdge', animated: true });
+            hasExplicitEdges = true;
+          }
+          if (block.false_node) {
+            customEdges.push({ id: `e-${block.id}-false`, source: block.id, target: block.false_node, sourceHandle: 'false', type: 'buttonEdge', animated: true });
+            hasExplicitEdges = true;
+          }
+          if (block.next_node) {
+            customEdges.push({ id: `e-${block.id}-next`, source: block.id, target: block.next_node, type: 'buttonEdge', animated: true });
+            hasExplicitEdges = true;
+          }
+          if (Array.isArray(block.buttons)) {
+            block.buttons.forEach((btn: any, btnIdx: number) => {
+              if (btn && typeof btn === 'object' && btn.target_node) {
+                customEdges.push({ id: `e-${block.id}-btn${btnIdx}`, source: block.id, target: btn.target_node, sourceHandle: `btn_${btnIdx}`, type: 'buttonEdge', animated: true });
+                hasExplicitEdges = true;
+              }
+            });
+          }
+          
+          if (!hasExplicitEdges && index < botBlocks.length - 1) {
+             const nextBlock = botBlocks[index + 1];
+             customEdges.push({
+               id: `e-${block.id}-${nextBlock.id}`,
+               source: block.id || `node-${index}`,
+               target: nextBlock.id || `node-${index + 1}`,
+               type: 'buttonEdge',
+               animated: true
+             });
+          }
+        });
       }
 
       const newBot = await createBot(user.id, {
