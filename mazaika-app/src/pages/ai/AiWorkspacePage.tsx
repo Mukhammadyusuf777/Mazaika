@@ -14,12 +14,13 @@ const PRESET_TEMPLATES = [
 ]
 
 
-const renderCanvasBlock = (b: any, bIdx: number, activeConfig: any) => {
+const renderCanvasBlock = (b: any, bIdx: number, activeConfig: any, onEditClick?: (b: any) => void) => {
   return (
     <div 
       key={b.id || bIdx} 
       className="canvas-block-wrapper"
       style={{ 
+        position: 'relative',
         animationDelay: `${bIdx * 0.15}s`, 
         marginBottom: 16, 
         padding: 12, 
@@ -28,6 +29,15 @@ const renderCanvasBlock = (b: any, bIdx: number, activeConfig: any) => {
         border: '1px solid rgba(255,255,255,0.08)' 
       }}
     >
+      {onEditClick && (
+        <button 
+          onClick={() => onEditClick(b)}
+          title="AI bilan tahrirlash"
+          style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(16, 217, 116, 0.15)', border: 'none', color: '#10d974', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+        >
+          <Sparkles size={14} />
+        </button>
+      )}
       {b.type === 'hero' && (
         <div>
           {b.img && <img src={b.img} alt="" style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />}
@@ -204,6 +214,14 @@ export default function AiWorkspacePage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [projects, setProjects] = useState<any[]>([])
   const { switchProject } = useAICopilot()
+  
+  const handleEditBlockClick = (b: any) => {
+    setPromptInput(`Ushbu blokni o'zgartiring (ID: ${b.id}, Tip: ${b.type}): `);
+    setTimeout(() => {
+      const inputEl = document.getElementById('ai-prompt-input');
+      if (inputEl) inputEl.focus();
+    }, 50);
+  };
 
   useEffect(() => {
     if (user) {
@@ -212,8 +230,6 @@ export default function AiWorkspacePage() {
   }, [user])
 
   const handleSelectProject = (proj: any) => {
-    // If it's an existing bot, we can load it to AI context
-    // First, let's load the activeConfig
     const siteConfig = localStorage.getItem(`mazaika_site_${proj.id}`)
     let config = { ...proj, target_entity: 'bot' };
     if (siteConfig) {
@@ -221,9 +237,6 @@ export default function AiWorkspacePage() {
        config = { ...config, ...parsedSite, target_entity: 'bot_and_mini_app' }
     }
     
-    // Instead of doing complicated things, just switch the context:
-    // If it was already saved in localStorage for AI config, it will load.
-    // Or we just pass the default config we constructed.
     switchProject(proj.id, config)
     setDrawerOpen(false)
   }
@@ -261,7 +274,6 @@ export default function AiWorkspacePage() {
       let customEdges = undefined;
 
       if (isBot) {
-        // Translate AI flat blocks into React Flow Nodes and Edges
         customNodes = [];
         customEdges = [];
         
@@ -289,7 +301,6 @@ export default function AiWorkspacePage() {
           }
           customNodes.push(node)
 
-          // Connect sequential nodes
           if (index > 0) {
             const prevBlock = botBlocks[index - 1]
             customEdges.push({
@@ -304,7 +315,6 @@ export default function AiWorkspacePage() {
         })
       }
 
-      // 1. Create Bot in Firestore
       const newBot = await createBot(user.id, {
         name: activeConfig.appName || 'AI Generated Project',
         token: 'TEST_TOKEN_' + Date.now().toString().slice(-6),
@@ -313,9 +323,7 @@ export default function AiWorkspacePage() {
         customEdges
       })
 
-      // 2. Save Generated SiteConfig to Firestore (if it's a site/mini app)
       if (isSite) {
-        // If it's both, we need to pass site_blocks as blocks to the SiteConfig
         const siteConfigToSave = activeConfig.target_entity === 'bot_and_mini_app' 
           ? { ...activeConfig, blocks: activeConfig.site_blocks }
           : activeConfig;
@@ -324,11 +332,9 @@ export default function AiWorkspacePage() {
 
       alert(`🎉 "${activeConfig.appName || 'AI Loyiha'}" muvaffaqiyatli saqlandi!`)
       
-      // 3. Navigate depending on target_entity
       if (activeConfig.target_entity === 'bot') {
         navigate(`/bot/${newBot.id}/editor`)
       } else if (activeConfig.target_entity === 'bot_and_mini_app') {
-        // Navigate to bot editor first, they can switch to sitebuilder from there
         navigate(`/bot/${newBot.id}/editor`)
       } else {
         navigate(`/bot/${newBot.id}/sitebuilder`)
@@ -466,6 +472,7 @@ export default function AiWorkspacePage() {
           {/* Input Bar */}
           <div className="agent-input-container">
             <input 
+              id="ai-prompt-input"
               type="text" 
               className="agent-input" 
               placeholder="Mazaika AI ga qanday loyiha yaratish kerakligini yozing..." 
@@ -507,7 +514,7 @@ export default function AiWorkspacePage() {
                       <div style={{ padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 16, fontWeight: 900, color: activeConfig.themeColor || '#1e90ff' }}>
                         🏆 {activeConfig.appName} (Bot Logic)
                       </div>
-                      {(activeConfig.bot_blocks || activeConfig.blocks || []).map((b: any, bIdx: number) => renderCanvasBlock(b, bIdx, activeConfig))}
+                      {(activeConfig.bot_blocks || activeConfig.blocks || []).map((b: any, bIdx: number) => renderCanvasBlock(b, bIdx, activeConfig, handleEditBlockClick))}
                     </div>
                   </div>
 
@@ -520,7 +527,7 @@ export default function AiWorkspacePage() {
                       <div style={{ padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 16, fontWeight: 900, color: activeConfig.themeColor || '#1e90ff' }}>
                         📱 {activeConfig.appName} (Mini App UI)
                       </div>
-                      {(activeConfig.site_blocks || []).map((b: any, bIdx: number) => renderCanvasBlock(b, bIdx, activeConfig))}
+                      {(activeConfig.site_blocks || []).map((b: any, bIdx: number) => renderCanvasBlock(b, bIdx, activeConfig, handleEditBlockClick))}
                     </div>
                   </div>
                 </div>
@@ -551,7 +558,7 @@ export default function AiWorkspacePage() {
                     <div style={{ padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 16, fontWeight: 900, color: activeConfig.themeColor || '#1e90ff' }}>
                       🏆 {activeConfig.appName}
                     </div>
-                    {(activeConfig.blocks || activeConfig.bot_blocks || activeConfig.site_blocks || []).map((b: any, bIdx: number) => renderCanvasBlock(b, bIdx, activeConfig))}
+                    {(activeConfig.blocks || activeConfig.bot_blocks || activeConfig.site_blocks || []).map((b: any, bIdx: number) => renderCanvasBlock(b, bIdx, activeConfig, handleEditBlockClick))}
                   </div>
                 </div>
               )}
