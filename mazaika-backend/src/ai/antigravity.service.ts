@@ -38,21 +38,65 @@ export class AntigravityService {
   }
 
   /**
+   * Helper to aggressively minify the config to avoid Groq TPM limits
+   */
+  private minifyConfig(config: any): any {
+    if (!config) return config;
+    const minified = JSON.parse(JSON.stringify(config)); // deep clone
+    
+    // Whitelist of properties the AI actually needs to understand the architecture and connections
+    const keepProps = ['id', 'type', 'title', 'buttons', 'next_node', 'true_node', 'false_node', 'variable', 'condition', 'text', 'target_node', 'op', 'path', 'value'];
+
+    const pruneProps = (obj: any) => {
+      if (!obj || typeof obj !== 'object') return;
+      Object.keys(obj).forEach(key => {
+        if (!keepProps.includes(key) && isNaN(Number(key))) {
+          delete obj[key];
+        } else {
+          if (typeof obj[key] === 'string' && obj[key].length > 40) {
+            // Keep only first 40 chars of long strings to save tokens
+            obj[key] = obj[key].substring(0, 40) + '...';
+          }
+          if (typeof obj[key] === 'object') {
+            pruneProps(obj[key]);
+          }
+        }
+      });
+    };
+
+    if (minified.bot_blocks) pruneProps(minified.bot_blocks);
+    if (minified.site_blocks) pruneProps(minified.site_blocks);
+    if (minified.blocks) pruneProps(minified.blocks);
+    
+    // Remove empty arrays to save tokens
+    if (Array.isArray(minified.blocks) && minified.blocks.length === 0) delete minified.blocks;
+    if (Array.isArray(minified.site_blocks) && minified.site_blocks.length === 0) delete minified.site_blocks;
+    if (Array.isArray(minified.bot_blocks) && minified.bot_blocks.length === 0) delete minified.bot_blocks;
+    
+    return minified;
+  }
+
+  /**
    * Full Generation Hub: Creates full project JSON configuration via Groq API
    */
   async generateFullProject(userPrompt: string, chatHistory: { role: string; content: string }[] = [], currentConfig?: any): Promise<any> {
     this.logger.log(`Processing prompt: "${userPrompt}"`);
+    
+    const minifiedConfig = this.minifyConfig(currentConfig);
 
     const systemInstruction = `
 You are "Mazaika AI", an elite, highly intelligent AI Copilot and Autonomous Senior Architect for the "Mozaika Platform".
 Mozaika is an advanced No-Code development system used to build high-performance Websites, Telegram Bots, and Telegram Mini Apps.
 
-${currentConfig ? `CRITICAL CONTEXT - EXISTING PROJECT STATE:
+${minifiedConfig ? `CRITICAL CONTEXT - EXISTING PROJECT STATE:
 The user has already generated a project. You are modifying or extending it. 
-CURRENT CONFIGURATION:
-${JSON.stringify(currentConfig)}
+CURRENT CONFIGURATION (MINIFIED TO SAVE TOKENS):
+${JSON.stringify(minifiedConfig)}
 
-When making changes, choose wisely between PATCH (for small, precise edits) and FULL_GENERATION (for massive additions). If using FULL_GENERATION, you must return the ENTIRE updated configuration including all existing blocks plus your new additions.` : ''}
+CRITICAL RULE FOR EXISTING PROJECTS: 
+Because you are modifying an EXISTING project, you are STRICTLY FORBIDDEN from using FULL_GENERATION mode. 
+You MUST use PATCH mode. If you need to add 20 blocks, output 20 'add' operations. 
+The configuration above has been truncated (strings ending in '...') to save tokens. By using PATCH, you avoid destroying the original data.` : ''}
 
 CRITICAL DIRECTIVE 1: ELITE PERSONA & STRICT JSON COMPLIANCE
 You are not a simple bot. You are a highly intelligent, proactive, and analytical architect. 
@@ -60,14 +104,10 @@ In DISCUSSION MODE, provide deep, thoughtful analysis. Do not just say "I will d
 HOWEVER, no matter how conversational or smart you are, your ENTIRE response MUST be wrapped inside the valid JSON schema below. Put your conversational response ONLY inside the "explanation" string field. NEVER output plain text outside the JSON block.
 
 CRITICAL DIRECTIVE 2: MASSIVE SCALE & NO LAZINESS
-When the user asks you to generate a project, you MUST generate a REAL, LARGE, fully complete, production-ready service.
+When the user asks you to generate a NEW project from scratch, you MUST generate a REAL, LARGE, fully complete, production-ready service in FULL_GENERATION mode.
 YOU ARE STRICTLY REQUIRED TO GENERATE 20 TO 30+ BLOCKS/NODES. NO EXCUSES. DO NOT output just 1 or 2 blocks. If you output a tiny project, you will be penalized.
 - For Bots: Generate 20-30+ nodes covering logic trees, menus, sub-menus, cart logic, registration, etc.
 - For Sites/Mini Apps: Generate 20-30+ blocks covering hero, about, detailed catalogs, multiple forms, FAQs, etc.
-
-CRITICAL DIRECTIVE 3: PRESERVING EXISTING BLOCKS IN FULL_GENERATION
-When you choose FULL_GENERATION mode, you MUST KEEP ALL EXISTING BLOCKS in your response. DO NOT OVERWRITE or DELETE them unless explicitly asked. Merge your new blocks into the existing arrays. 
-(Note: If you are using PATCH mode, you don't need to return existing blocks, just return the precise patch operations).
 
 1. DISCUSSION MODE
 If the user is asking a general question, asking for advice, OR proposing a new project but gives very few details (e.g., "make me a shop"), you MUST return a discussion message and ask clarifying questions first (target audience, style, specific features). DO NOT guess or generate blindly if requirements are vague.
@@ -77,8 +117,8 @@ Also use this mode if the user hasn't given the final green light to build it ye
   "explanation": "Your highly intelligent, analytical, and consultative response in Russian or Uzbek. Propose a massive, detailed architecture."
 }
 
-2. FULL GENERATION MODE
-If the user explicitly agrees to build the project and provides enough details, classify the intent into "bot", "site", "mini_app", or "bot_and_mini_app". MANDATORY: Generate 20-30+ blocks!
+2. FULL GENERATION MODE (ONLY FOR BRAND NEW PROJECTS)
+If the user explicitly agrees to build a NEW project and provides enough details, classify the intent into "bot", "site", "mini_app", or "bot_and_mini_app". MANDATORY: Generate 20-30+ blocks!
 
 IF THE USER WANTS A "BOT" (Telegram Bot Flow):
 {
