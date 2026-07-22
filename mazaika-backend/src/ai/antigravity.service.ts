@@ -13,13 +13,24 @@ export class AntigravityService {
 
     // 1. TRY DIRECT GOOGLE AI STUDIO API IF KEY IS PROVIDED
     if (googleKey) {
-      this.logger.log('Attempting generation via Google AI Studio Key...');
+      this.logger.log(`Attempting Gemini API generation (Key starts with: ${googleKey.substring(0, 5)}...)...`);
       try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${googleKey}`;
+        const isAqKey = googleKey.startsWith('AQ.');
+        const url = isAqKey 
+          ? 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
+          : `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${googleKey}`;
+
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         
+        if (isAqKey) {
+          headers['Authorization'] = `Bearer ${googleKey}`;
+        } else {
+          headers['x-goog-api-key'] = googleKey;
+        }
+
         const res = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             contents: [{ parts: [{ text: promptText + "\n\nIMPORTANT: Return ONLY a valid JSON object matching the requested schema. No markdown formatting." }] }],
             generationConfig: { responseMimeType: 'application/json' },
