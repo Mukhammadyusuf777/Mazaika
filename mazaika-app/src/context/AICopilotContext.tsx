@@ -89,29 +89,24 @@ const [isWidgetOpen, setWidgetOpen] = useState(false)
       if (!prevConfig) return prevConfig
       let updated = { ...prevConfig }
 
-      ops.forEach(op => {
-        if (op.path === 'themeColor') {
-          updated.themeColor = op.value
-        } else if (op.path === 'theme') {
-          updated.theme = op.value
-        } else if (op.path === 'appName') {
-          updated.appName = op.value
-        } else if (op.path === 'blocks' && op.op === 'add') {
-          updated.blocks = [...(updated.blocks || []), op.value]
-        } else if (op.path.startsWith('blocks.') && op.op === 'replace') {
-          const parts = op.path.split('.')
-          const blockIdx = parseInt(parts[1], 10)
-          const field = parts[2]
-          if (updated.blocks && updated.blocks[blockIdx]) {
-            const newBlocks = [...updated.blocks]
-            newBlocks[blockIdx] = { ...newBlocks[blockIdx], [field]: op.value }
-            updated.blocks = newBlocks
-          }
-        }
-      })
-      
-      localStorage.setItem('mazaika_ai_config_' + activeProjectId, JSON.stringify(updated))
-      return updated
+      try {
+        // Fast JSON Patch supports RFC6902 (path: '/blocks/0/title' instead of 'blocks.0.title')
+        // We will adapt the AI's paths if they use dot notation to slash notation for safety.
+        const normalizedOps = ops.map(op => ({
+          ...op,
+          path: op.path.startsWith('/') ? op.path : '/' + op.path.replace(/\./g, '/')
+        }));
+        
+        import('fast-json-patch').then(jsonpatch => {
+          const newDoc = jsonpatch.applyPatch(updated, normalizedOps).newDocument;
+          setActiveConfig(newDoc);
+          localStorage.setItem('mazaika_ai_config_' + activeProjectId, JSON.stringify(newDoc));
+        });
+        return updated; // Temporary return while async patch processes
+      } catch (e) {
+        console.error("Patch application failed:", e);
+        return updated;
+      }
     })
   }
 
