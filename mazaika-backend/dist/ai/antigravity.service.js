@@ -94,7 +94,8 @@ DO NOT include markdown backticks (\`\`\`json) or any other text. Output ONLY th
                     messages: [
                         { role: 'system', content: systemInstruction },
                         { role: 'user', content: promptText }
-                    ]
+                    ],
+                    max_tokens: 5000
                 })
             });
             if (res.ok) {
