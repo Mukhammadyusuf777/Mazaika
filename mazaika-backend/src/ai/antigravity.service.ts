@@ -91,7 +91,8 @@ IF THE USER WANTS A "BOT" (Telegram Bot Flow):
       { "id": "node1", "type": "boshlash", "title": "Boshlash", "text": "Start node" },
       { "id": "node2", "type": "xabar", "title": "Xush kelibsiz", "text": "Assalomu alaykum!", "buttons": ["Katalog", "Aloqa"] },
       { "id": "node3", "type": "matnli_savol", "title": "Ism so'rash", "text": "Ismingizni kiriting:", "variable": "user_name" },
-      { "id": "node4", "type": "shart", "title": "Yosh tekshirish", "condition": "user_age >= 18", "true_node": "node5", "false_node": "node6" }
+      { "id": "node4", "type": "shart", "title": "Yosh tekshirish", "condition": "user_age >= 18", "true_node": "node5", "false_node": "node6" },
+      "... YOU MUST ADD AT LEAST 15-20 MORE NODES HERE (catalog, cart, checkout, faq, etc) ..."
     ]
   }
 }
@@ -108,7 +109,8 @@ IF THE USER WANTS A "SITE" (Landing Page):
     "blocks": [
       { "id": "b1", "type": "hero", "title": "Hero Title", "subtitle": "Subtitle.", "ctaText": "Get Started", "img": "url" },
       { "id": "b2", "type": "about", "title": "Biz haqimizda", "text": "About us text." },
-      { "id": "b3", "type": "contacts", "title": "Aloqa", "phone": "+998 90 123 45 67", "telegram": "SupportBot" }
+      { "id": "b3", "type": "contacts", "title": "Aloqa", "phone": "+998 90 123 45 67", "telegram": "SupportBot" },
+      "... YOU MUST ADD AT LEAST 15-20 MORE BLOCKS HERE (features, testimonials, pricing, etc) ..."
     ]
   }
 }
@@ -128,7 +130,8 @@ IF THE USER WANTS A "MINI_APP" (Telegram Web App / Store):
       { "id": "m3", "type": "form", "title": "Buyurtma berish", "fields": [ { "name": "phone", "label": "Telefon raqam", "type": "tel", "required": true } ] },
       { "id": "m4", "type": "savat", "title": "Savat (Cart)", "payment_methods": ["Payme", "Click"] },
       { "id": "m5", "type": "loyalty", "title": "Cashback tizimi" },
-      { "id": "m6", "type": "quiz", "title": "Interactive Quiz", "questions": [ { "q": "Formula?", "options": ["A", "B"] } ] }
+      { "id": "m6", "type": "quiz", "title": "Interactive Quiz", "questions": [ { "q": "Formula?", "options": ["A", "B"] } ] },
+      "... YOU MUST ADD AT LEAST 15-20 MORE BLOCKS HERE (profile, orders history, settings, etc) ..."
     ]
   }
 }
@@ -143,10 +146,12 @@ IF THE USER WANTS BOTH "BOT" AND "MINI_APP" AT THE SAME TIME:
     "theme": "glassmorphism",
     "themeColor": "#10b981",
     "bot_blocks": [
-      { "id": "node1", "type": "boshlash", "title": "Boshlash", "text": "Start node" }
+      { "id": "node1", "type": "boshlash", "title": "Boshlash", "text": "Start node" },
+      "... YOU MUST ADD AT LEAST 15-20 MORE NODES HERE ..."
     ],
     "site_blocks": [
-      { "id": "m1", "type": "hero", "title": "Interactive Header", "subtitle": "Description", "img": "url" }
+      { "id": "m1", "type": "hero", "title": "Interactive Header", "subtitle": "Description", "img": "url" },
+      "... YOU MUST ADD AT LEAST 15-20 MORE BLOCKS HERE FOR THE MINI APP ..."
     ]
   }
 }
@@ -190,8 +195,22 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
 
       const rawText = completion.choices[0]?.message?.content || '';
       const cleanedJson = this.cleanJsonResponse(rawText);
+      const parsed = JSON.parse(cleanedJson);
 
-      return JSON.parse(cleanedJson);
+      // Clean up string comments from blocks arrays to prevent UI crash
+      if (parsed.project_data) {
+        if (Array.isArray(parsed.project_data.blocks)) {
+          parsed.project_data.blocks = parsed.project_data.blocks.filter((b: any) => typeof b === 'object' && b !== null);
+        }
+        if (Array.isArray(parsed.project_data.bot_blocks)) {
+          parsed.project_data.bot_blocks = parsed.project_data.bot_blocks.filter((b: any) => typeof b === 'object' && b !== null);
+        }
+        if (Array.isArray(parsed.project_data.site_blocks)) {
+          parsed.project_data.site_blocks = parsed.project_data.site_blocks.filter((b: any) => typeof b === 'object' && b !== null);
+        }
+      }
+
+      return parsed;
     } catch (error: any) {
       this.logger.error(`AI Generation Failed: ${error.message}`);
       throw new InternalServerErrorException(`Не удалось сгенерировать ответ через ИИ. Ошибка от Groq: ${error.message}`);
