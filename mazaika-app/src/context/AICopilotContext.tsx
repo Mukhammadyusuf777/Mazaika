@@ -26,6 +26,7 @@ interface AICopilotContextType {
   applyPatchOperations: (ops: PatchOperation[]) => void
   activeProjectId: string
   switchProject: (projectId: string, config: any) => void
+  startNewProject: () => void
 }
 
 const AICopilotContext = createContext<AICopilotContextType | undefined>(undefined)
@@ -76,6 +77,20 @@ const [isWidgetOpen, setWidgetOpen] = useState(false)
         }
       ])
     }
+  }
+
+  const startNewProject = () => {
+    const newId = 'new_' + Date.now();
+    setActiveProjectId(newId);
+    setActiveConfig(null);
+    setMessages([
+      {
+        id: 'welcome_' + newId,
+        sender: 'agent',
+        text: 'Salom! Men sizning Mazaika AI Агентингизман 🤖. Istalgan g\'oyangizni yozing va men uni lahzalarda tayyor loyihaga aylantirib beraman!',
+        timestamp: new Date()
+      }
+    ]);
   }
 
 
@@ -197,7 +212,8 @@ const [isWidgetOpen, setWidgetOpen] = useState(false)
       setActiveConfig,
       applyPatchOperations,
       activeProjectId,
-      switchProject
+      switchProject,
+      startNewProject
     }}>
       {children}
     </AICopilotContext.Provider>

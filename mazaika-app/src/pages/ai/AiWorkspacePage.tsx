@@ -206,7 +206,7 @@ const renderCanvasBlock = (b: any, bIdx: number, activeConfig: any, onEditClick?
 export default function AiWorkspacePage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { messages, isGenerating, sendMessage, activeConfig } = useAICopilot()
+  const { messages, isGenerating, sendMessage, activeConfig, startNewProject, activeProjectId } = useAICopilot()
 
   const [promptInput, setPromptInput] = useState('')
   const [savingBot, setSavingBot] = useState(false)
@@ -225,9 +225,15 @@ export default function AiWorkspacePage() {
 
   useEffect(() => {
     if (user) {
-      getBotsByUser(user.id).then(setProjects)
+      getBotsByUser(user.id).then(projs => {
+        setProjects(projs)
+        // If there are absolutely no projects, ensure the chat is clean
+        if (projs.length === 0 && activeProjectId === 'default') {
+          startNewProject()
+        }
+      })
     }
-  }, [user])
+  }, [user, activeProjectId, startNewProject])
 
   const handleSelectProject = (proj: any) => {
     const siteConfig = localStorage.getItem(`mazaika_site_${proj.id}`)
@@ -403,7 +409,7 @@ export default function AiWorkspacePage() {
           <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
             <div 
               style={{ padding: 12, borderRadius: 8, background: 'rgba(255,255,255,0.05)', cursor: 'pointer', marginBottom: 8, border: '1px dashed rgba(255,255,255,0.2)' }}
-              onClick={() => { switchProject('default', null); setDrawerOpen(false); }}
+              onClick={() => { startNewProject(); setDrawerOpen(false); }}
             >
               <div style={{ fontSize: 13, fontWeight: 700 }}>+ Yangi Loyiha</div>
             </div>
@@ -500,8 +506,11 @@ export default function AiWorkspacePage() {
               </div>
             ))}
             {isGenerating && (
-              <div className="agent-message-item agent" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <RefreshCw size={16} className="spin" style={{ color: '#1e90ff' }} /> Mazaika AI yangi loyiha strukturasini generatsiya qilmoqda...
+              <div className="agent-message-item agent" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div className="thinking-dots">
+                  <span></span><span></span><span></span>
+                </div>
+                <span style={{ fontSize: 13 }}>Mazaika AI o'ylamoqda...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
