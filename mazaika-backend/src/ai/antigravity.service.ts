@@ -267,7 +267,6 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
           content: content
         };
       });
-
       const makeRequest = async (modelName: string) => {
         if (this.genAI) {
           const modelsToTry = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro"];
@@ -292,31 +291,42 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
               this.logger.warn(`Gemini model ${modelName} failed: ${err.message}. Trying next model...`);
             }
           }
-          throw lastError;
-        } else {
-          // Use Groq
-          return await this.groq.chat.completions.create({
-            messages: [
-              { role: 'system', content: systemInstruction },
-              ...formattedHistory,
-              { role: 'user', content: userPrompt }
-            ],
-            model: modelName,
-            temperature: 0.5,
-            max_tokens: 8000,
-            response_format: { type: 'json_object' },
-          });
+          
+          this.logger.warn(`All Gemini models failed. Falling back to Groq...`);
+          // Fall through to Groq if Gemini fails
         }
+        
+        // Use Groq (Either genAI is null, or it failed)
+        return await this.groq.chat.completions.create({
+          messages: [
+            { role: 'system', content: systemInstruction },
+            ...formattedHistory,
+            { role: 'user', content: userPrompt }
+          ],
+          model: 'llama-3.3-70b-versatile',
+          temperature: 0.5,
+          max_tokens: 8000,
+          response_format: { type: 'json_object' },
+        });
       };
 
       let completion;
       try {
         completion = await makeRequest('llama-3.3-70b-versatile');
       } catch (e: any) {
-        if (this.genAI) throw e; // Gemini doesn't need fallback
         if (e?.status === 413 || e?.status === 429 || e?.message?.includes('too large') || e?.message?.includes('tokens')) {
           this.logger.warn(`Llama-3.3-70b rate limit exceeded (TPM). Falling back to llama-3.1-8b-instant which has a higher 30,000 TPM limit...`);
-          completion = await makeRequest('llama-3.1-8b-instant');
+          completion = await this.groq.chat.completions.create({
+            messages: [
+              { role: 'system', content: systemInstruction },
+              ...formattedHistory,
+              { role: 'user', content: userPrompt }
+            ],
+            model: 'llama-3.1-8b-instant',
+            temperature: 0.5,
+            max_tokens: 8000,
+            response_format: { type: 'json_object' },
+          });
         } else {
           throw e;
         }
@@ -405,29 +415,38 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
               this.logger.warn(`Gemini model ${modelName} failed for patch: ${err.message}. Trying next model...`);
             }
           }
-          throw lastError;
-        } else {
-          // Use Groq
-          return await this.groq.chat.completions.create({
-            messages: [
-              { role: 'system', content: systemInstruction },
-              { role: 'user', content: userPrompt }
-            ],
-            model: modelName,
-            temperature: 0.5,
-            response_format: { type: 'json_object' },
-          });
+          
+          this.logger.warn(`All Gemini models failed for patch. Falling back to Groq...`);
+          // Fall through to Groq
         }
+        
+        // Use Groq
+        return await this.groq.chat.completions.create({
+          messages: [
+            { role: 'system', content: systemInstruction },
+            { role: 'user', content: userPrompt }
+          ],
+          model: 'llama-3.3-70b-versatile',
+          temperature: 0.5,
+          response_format: { type: 'json_object' },
+        });
       };
 
       let completion;
       try {
         completion = await makeRequest('llama-3.3-70b-versatile');
       } catch (e: any) {
-        if (this.genAI) throw e;
         if (e?.status === 413 || e?.status === 429 || e?.message?.includes('too large') || e?.message?.includes('tokens')) {
           this.logger.warn(`Llama-3.3-70b rate limit exceeded for patch. Falling back to llama-3.1-8b-instant...`);
-          completion = await makeRequest('llama-3.1-8b-instant');
+          completion = await this.groq.chat.completions.create({
+            messages: [
+              { role: 'system', content: systemInstruction },
+              { role: 'user', content: userPrompt }
+            ],
+            model: 'llama-3.1-8b-instant',
+            temperature: 0.5,
+            response_format: { type: 'json_object' },
+          });
         } else {
           throw e;
         }
