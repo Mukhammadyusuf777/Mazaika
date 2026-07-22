@@ -29,11 +29,15 @@ export class AntigravityService {
         }
 
         const systemInstruction = `
-You are "Antigravity", the AI Copilot for Mazaika Platform.
+You are "Antigravity", the elite core AI Copilot and Autonomous Architect for the Mazaika Platform.
 ${currentConfig ? `The user is modifying their existing project. Current project state:
 ${JSON.stringify(currentConfig)}
 
 Apply the user's requested changes to this structure and return the ENTIRE updated project structure.` : `The user is creating a new project from scratch. Generate a full project structure based on their idea.`}
+
+CRITICAL INSTRUCTIONS FOR SCALE AND CREATIVITY:
+1. If the user asks for a "massive" or "huge" architecture, you MUST generate at least 20-25 blocks across the bot and mini-app. Do not be lazy.
+2. You are ALLOWED and ENCOURAGED to INVENT NEW block types and functions that don't exist in standard templates if the client's project requires them. For example, you can create \`custom_html\`, \`custom_code\`, \`interactive_chart\`, \`3d_viewer\`, \`complex_form\`, or any other type you deem necessary.
 
 Return ONLY a valid JSON object matching this schema:
 {
@@ -44,8 +48,8 @@ Return ONLY a valid JSON object matching this schema:
     "appName": "Name",
     "theme": "neon | minimalist | glassmorphism",
     "themeColor": "#hexcode",
-    "bot_blocks": [{ "id": "...", "type": "message | input | menu | custom_code", "title": "...", "text": "...", "variable": "...", "next": "...", "options": [], "code": "..." }],
-    "site_blocks": [{ "id": "...", "type": "hero | custom_html | banner | cards", "title": "...", "subtitle": "...", "img": "...", "html": "...", "items": [] }]
+    "bot_blocks": [{ "id": "...", "type": "message | custom_code | [ANY_INVENTED_TYPE]", "title": "...", "text": "...", "variable": "...", "next": "...", "options": [], "code": "..." }],
+    "site_blocks": [{ "id": "...", "type": "hero | custom_html | [ANY_INVENTED_TYPE]", "title": "...", "subtitle": "...", "img": "...", "html": "...", "items": [] }]
   }
 }
 DO NOT include markdown backticks (\`\`\`json) or any other text. Output ONLY the raw JSON object.
@@ -92,57 +96,8 @@ DO NOT include markdown backticks (\`\`\`json) or any other text. Output ONLY th
     };
   }
 
-  private async generateFailsafeArchitecture(promptText: string, currentConfig?: any) {
-    this.logger.log('Executing intelligent fallback via text.pollinations.ai...');
-    
-    const systemInstruction = `
-You are "Antigravity", the AI Copilot for Mazaika Platform.
-${currentConfig ? `The user is modifying their existing project. Current project state:\n${JSON.stringify(currentConfig)}\nApply the user's requested changes and return the ENTIRE updated project.` : `The user is creating a new project. Generate a very detailed, massive architecture (20+ blocks) if requested.`}
-
-Return ONLY a valid JSON object matching this schema:
-{
-  "explanation": "Short summary of what was generated in Russian",
-  "execution_mode": "FULL_GENERATION",
-  "target_entity": "bot_and_mini_app",
-  "project_data": {
-    "appName": "Name",
-    "theme": "neon | minimalist | glassmorphism",
-    "themeColor": "#hexcode",
-    "bot_blocks": [{ "id": "...", "type": "message | input | menu | custom_code", "title": "...", "text": "...", "variable": "...", "next": "...", "options": [], "code": "..." }],
-    "site_blocks": [{ "id": "...", "type": "hero | custom_html | banner | cards", "title": "...", "subtitle": "...", "img": "...", "html": "...", "items": [] }]
-  }
-}
-DO NOT include markdown backticks (\`\`\`json) or any other text. Output ONLY the raw JSON object. Make sure to generate exactly what the user asks for, no matter how complex or large.
-`;
-
-    try {
-      const res = await fetch('https://text.pollinations.ai/openai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemInstruction },
-            { role: 'user', content: promptText }
-          ],
-          jsonMode: true
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        let text = data.choices?.[0]?.message?.content;
-        if (text) {
-          text = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
-          this.logger.log('Successfully generated JSON via Pollinations AI Fallback!');
-          return JSON.parse(text);
-        }
-      }
-    } catch (err: any) {
-      this.logger.error(`Pollinations API Exception: ${err.message}`);
-    }
-
-    // Absolute fallback if everything fails
-    const isFitness = promptText.toLowerCase().includes('фитнес') || promptText.toLowerCase().includes('fitness');
+  private generateFailsafeArchitecture(prompt: string) {
+    const isFitness = prompt.toLowerCase().includes('фитнес') || prompt.toLowerCase().includes('fitness');
     return {
       execution_mode: "FULL_GENERATION",
       target_entity: "bot_and_mini_app",
