@@ -251,44 +251,71 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
         };
       });
       const makeRequest = async () => {
-        const rawKey = process.env.GOOGLE_AI_STUDIO_KEY || process.env.GEMINI_API_KEY;
-        if (!rawKey) throw new InternalServerErrorException("GOOGLE_AI_STUDIO_KEY is missing");
-
-        const apiKey = rawKey.trim();
-        const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-        
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-
-        if (apiKey.startsWith('AQ.')) {
-          headers['Authorization'] = `Bearer ${apiKey}`;
-        } else {
-          headers['x-goog-api-key'] = apiKey;
-        }
+        const googleKey = (process.env.GOOGLE_AI_STUDIO_KEY || process.env.GEMINI_API_KEY || '').trim();
+        const openRouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
 
         let historyText = formattedHistory.map(h => `${h.role === 'assistant' ? 'AI' : 'User'}: ${h.content}`).join('\n\n');
         const finalPrompt = `${systemInstruction}\n\n=== CHAT HISTORY ===\n${historyText}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
-        
-        const res = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: finalPrompt }] }],
-            generationConfig: { responseMimeType: 'application/json' },
-          }),
-        });
 
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(`Google API Http ${res.status}: ${errorText}`);
+        if (googleKey) {
+          try {
+            const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            
+            if (googleKey.startsWith('AQ.')) {
+              headers['Authorization'] = `Bearer ${googleKey}`;
+            } else {
+              headers['x-goog-api-key'] = googleKey;
+            }
+            
+            const res = await fetch(url, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: finalPrompt }] }],
+                generationConfig: { responseMimeType: 'application/json' },
+              }),
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (responseText) return { choices: [{ message: { content: responseText } }] };
+            } else {
+              const errText = await res.text();
+              this.logger.warn(`Google Direct API failed (${res.status}): ${errText}. Trying OpenRouter...`);
+            }
+          } catch (err: any) {
+            this.logger.warn(`Google Direct API Error: ${err.message}. Switching to fallback...`);
+          }
         }
 
-        const data = await res.json();
-        const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!responseText) throw new Error('Empty generation result from Gemini API');
+        if (openRouterKey) {
+          try {
+            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${openRouterKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'google/gemini-2.0-flash-exp:free',
+                messages: [{ role: 'user', content: finalPrompt }],
+                response_format: { type: 'json_object' }
+              }),
+            });
 
-        return { choices: [{ message: { content: responseText } }] };
+            if (res.ok) {
+              const data = await res.json();
+              const content = data.choices?.[0]?.message?.content;
+              if (content) return { choices: [{ message: { content } }] };
+            }
+          } catch (err: any) {
+            this.logger.error(`OpenRouter Fallback Failed: ${err.message}`);
+          }
+        }
+
+        throw new Error('AI Generation Failed. Please check if Generative Language API is ENABLED in Google Cloud Console or add OPENROUTER_API_KEY.');
       };
 
       let completion;
@@ -360,43 +387,70 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
 
     try {
       const makeRequest = async () => {
-        const rawKey = process.env.GOOGLE_AI_STUDIO_KEY || process.env.GEMINI_API_KEY;
-        if (!rawKey) throw new InternalServerErrorException("GOOGLE_AI_STUDIO_KEY is missing");
-
-        const apiKey = rawKey.trim();
-        const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-        
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-
-        if (apiKey.startsWith('AQ.')) {
-          headers['Authorization'] = `Bearer ${apiKey}`;
-        } else {
-          headers['x-goog-api-key'] = apiKey;
-        }
+        const googleKey = (process.env.GOOGLE_AI_STUDIO_KEY || process.env.GEMINI_API_KEY || '').trim();
+        const openRouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
 
         const finalPrompt = `${systemInstruction}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
-        
-        const res = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: finalPrompt }] }],
-            generationConfig: { responseMimeType: 'application/json' },
-          }),
-        });
 
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(`Google API Http ${res.status}: ${errorText}`);
+        if (googleKey) {
+          try {
+            const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            
+            if (googleKey.startsWith('AQ.')) {
+              headers['Authorization'] = `Bearer ${googleKey}`;
+            } else {
+              headers['x-goog-api-key'] = googleKey;
+            }
+            
+            const res = await fetch(url, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: finalPrompt }] }],
+                generationConfig: { responseMimeType: 'application/json' },
+              }),
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (responseText) return { choices: [{ message: { content: responseText } }] };
+            } else {
+              const errText = await res.text();
+              this.logger.warn(`Google Direct API failed (${res.status}): ${errText}. Trying OpenRouter...`);
+            }
+          } catch (err: any) {
+            this.logger.warn(`Google Direct API Error: ${err.message}. Switching to fallback...`);
+          }
         }
 
-        const data = await res.json();
-        const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!responseText) throw new Error('Empty generation result from Gemini API');
+        if (openRouterKey) {
+          try {
+            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${openRouterKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'google/gemini-2.0-flash-exp:free',
+                messages: [{ role: 'user', content: finalPrompt }],
+                response_format: { type: 'json_object' }
+              }),
+            });
 
-        return { choices: [{ message: { content: responseText } }] };
+            if (res.ok) {
+              const data = await res.json();
+              const content = data.choices?.[0]?.message?.content;
+              if (content) return { choices: [{ message: { content } }] };
+            }
+          } catch (err: any) {
+            this.logger.error(`OpenRouter Fallback Failed: ${err.message}`);
+          }
+        }
+
+        throw new Error('AI Generation Failed. Please check if Generative Language API is ENABLED in Google Cloud Console or add OPENROUTER_API_KEY.');
       };
 
       let completion;
