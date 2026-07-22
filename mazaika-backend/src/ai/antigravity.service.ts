@@ -1,5 +1,6 @@
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import Groq from 'groq-sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export interface PatchOperation {
   op: 'replace' | 'add' | 'remove';
@@ -25,16 +26,22 @@ export interface PatchResponse {
 export class AntigravityService {
   private readonly logger = new Logger(AntigravityService.name);
   private groq: Groq;
+  private genAI: GoogleGenerativeAI | null = null;
 
   constructor() {
-    // We use the Groq API key provided by the user via environment variables
-    const apiKey = process.env.GROQ_API_KEY;
+    const groqKey = process.env.GROQ_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY;
     
-    if (!apiKey) {
-      this.logger.warn("GROQ_API_KEY is missing! AI features will fail.");
+    if (geminiKey) {
+      this.genAI = new GoogleGenerativeAI(geminiKey);
+      this.logger.log("Initialized Gemini AI (No TPM Limits!)");
+    } else if (groqKey) {
+      this.groq = new Groq({ apiKey: groqKey });
+      this.logger.log("Initialized Groq AI (Warning: strict TPM limits)");
+    } else {
+      this.logger.warn("No API Keys found! AI features will fail.");
+      this.groq = new Groq({ apiKey: 'dummy-key-to-avoid-crash' });
     }
-    
-    this.groq = new Groq({ apiKey: apiKey || 'dummy-key-to-avoid-crash' });
   }
 
   /**
@@ -262,23 +269,42 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
       });
 
       const makeRequest = async (modelName: string) => {
-        return await this.groq.chat.completions.create({
-          messages: [
-            { role: 'system', content: systemInstruction },
-            ...formattedHistory,
-            { role: 'user', content: userPrompt }
-          ],
-          model: modelName,
-          temperature: 0.5,
-          max_tokens: 8000,
-          response_format: { type: 'json_object' },
-        });
+        if (this.genAI) {
+          // Use Google Gemini (no strict TPM limits)
+          const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+          
+          let historyText = formattedHistory.map(h => `${h.role === 'assistant' ? 'AI' : 'User'}: ${h.content}`).join('\n\n');
+          const finalPrompt = `${systemInstruction}\n\n=== CHAT HISTORY ===\n${historyText}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
+          
+          const result = await model.generateContent({
+            contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
+            generationConfig: {
+              temperature: 0.5,
+              responseMimeType: "application/json"
+            }
+          });
+          return { choices: [{ message: { content: result.response.text() } }] };
+        } else {
+          // Use Groq
+          return await this.groq.chat.completions.create({
+            messages: [
+              { role: 'system', content: systemInstruction },
+              ...formattedHistory,
+              { role: 'user', content: userPrompt }
+            ],
+            model: modelName,
+            temperature: 0.5,
+            max_tokens: 8000,
+            response_format: { type: 'json_object' },
+          });
+        }
       };
 
       let completion;
       try {
         completion = await makeRequest('llama-3.3-70b-versatile');
       } catch (e: any) {
+        if (this.genAI) throw e; // Gemini doesn't need fallback
         if (e?.status === 413 || e?.status === 429 || e?.message?.includes('too large') || e?.message?.includes('tokens')) {
           this.logger.warn(`Llama-3.3-70b rate limit exceeded (TPM). Falling back to llama-3.1-8b-instant which has a higher 30,000 TPM limit...`);
           completion = await makeRequest('llama-3.1-8b-instant');
@@ -348,21 +374,39 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
 
     try {
       const makeRequest = async (modelName: string) => {
-        return await this.groq.chat.completions.create({
-          messages: [
-            { role: 'system', content: systemInstruction },
-            { role: 'user', content: userPrompt }
-          ],
-          model: modelName,
-          temperature: 0.5,
-          response_format: { type: 'json_object' },
-        });
+        if (this.genAI) {
+          // Use Google Gemini (no strict TPM limits)
+          const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+          
+          const finalPrompt = `${systemInstruction}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
+          
+          const result = await model.generateContent({
+            contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
+            generationConfig: {
+              temperature: 0.5,
+              responseMimeType: "application/json"
+            }
+          });
+          return { choices: [{ message: { content: result.response.text() } }] };
+        } else {
+          // Use Groq
+          return await this.groq.chat.completions.create({
+            messages: [
+              { role: 'system', content: systemInstruction },
+              { role: 'user', content: userPrompt }
+            ],
+            model: modelName,
+            temperature: 0.5,
+            response_format: { type: 'json_object' },
+          });
+        }
       };
 
       let completion;
       try {
         completion = await makeRequest('llama-3.3-70b-versatile');
       } catch (e: any) {
+        if (this.genAI) throw e;
         if (e?.status === 413 || e?.status === 429 || e?.message?.includes('too large') || e?.message?.includes('tokens')) {
           this.logger.warn(`Llama-3.3-70b rate limit exceeded for patch. Falling back to llama-3.1-8b-instant...`);
           completion = await makeRequest('llama-3.1-8b-instant');
