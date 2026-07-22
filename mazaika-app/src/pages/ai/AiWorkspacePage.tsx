@@ -138,8 +138,26 @@ const renderCanvasBlock = (b: any, bIdx: number, activeConfig: any) => {
         </div>
       )}
 
+      {/* DYNAMIC AI BLOCKS */}
+      {b.type === 'custom_html' && (
+        <div>
+          <h4 style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 700 }}>
+            {b.title || 'Maxsus Blok'}{' '}
+            <span style={{ fontSize: 9, opacity: 0.6, background: '#10b981', color: '#000', padding: '2px 4px', borderRadius: 4, marginLeft: 4 }}>AI Jeneratsiyasi</span>
+          </h4>
+          {b.css && <style dangerouslySetInnerHTML={{ __html: b.css }} />}
+          {b.html && (
+            <div 
+              className="ai-custom-html-wrapper" 
+              dangerouslySetInnerHTML={{ __html: b.html }} 
+              style={{ fontSize: 12, lineHeight: 1.5 }}
+            />
+          )}
+        </div>
+      )}
+
       {/* Fallback for unknown AI generated types so they don't appear as empty boxes */}
-      {!['hero', 'about', 'catalog', 'form', 'voting', 'loyalty', 'contacts', 'quiz', 'boshlash', 'xabar', 'matnli_savol', 'shart'].includes(b.type) && (
+      {!['hero', 'about', 'catalog', 'form', 'voting', 'loyalty', 'contacts', 'quiz', 'boshlash', 'xabar', 'matnli_savol', 'shart', 'custom_html'].includes(b.type) && (
         <div>
           <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#e2e8f0' }}>
             {b.title || 'Qo\'shimcha blok'}{' '}

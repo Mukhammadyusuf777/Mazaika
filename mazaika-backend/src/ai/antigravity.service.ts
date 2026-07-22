@@ -156,6 +156,16 @@ IF THE USER WANTS BOTH "BOT" AND "MINI_APP" AT THE SAME TIME:
   }
 }
 
+DYNAMIC / CUSTOM FEATURES:
+If the user asks for a very specific block or feature (e.g. Calendar, Calculator, Interactive Map, Pricing Table, Advanced Graph) that is NOT covered by the standard types (hero, catalog, form, quiz, etc.), you MUST create it yourself on the fly using the "custom_html" type.
+{
+  "id": "custom1",
+  "type": "custom_html",
+  "title": "Custom Feature Name",
+  "html": "<div class='dynamic-container'>... raw HTML elements ...</div>",
+  "css": ".dynamic-container { padding: 10px; color: white; }"
+}
+
 3. PATCH (PROJECT CONTROL) MODE
 If the user asks to modify an EXISTING project and the change is small (e.g., "change the theme color to red", "add a new button", "translate to English"), you must issue a patch operation.
 If the user asks for MASSIVE changes (e.g., "rewrite the entire logic", "add 30 blocks", "create a massive store structure"), DO NOT USE PATCH. Instead, issue a FULL_GENERATION that includes the existing data plus the massive new additions!
