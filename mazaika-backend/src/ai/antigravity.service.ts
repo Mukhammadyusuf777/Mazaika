@@ -251,13 +251,49 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
         };
       });
       const makeRequest = async () => {
-        const googleKey = (process.env.GOOGLE_AI_STUDIO_KEY || process.env.GEMINI_API_KEY || '').trim();
         const openRouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
+        const googleKey = (process.env.GOOGLE_AI_STUDIO_KEY || process.env.GEMINI_API_KEY || '').trim();
 
         let historyText = formattedHistory.map(h => `${h.role === 'assistant' ? 'AI' : 'User'}: ${h.content}`).join('\n\n');
         const finalPrompt = `${systemInstruction}\n\n=== CHAT HISTORY ===\n${historyText}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
 
+        // 1. TRY OPENROUTER FIRST
+        if (openRouterKey) {
+          this.logger.log('Attempting generation via OpenRouter...');
+          try {
+            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${openRouterKey}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://mazaika.uz',
+                'X-Title': 'Mazaika AI Platform',
+              },
+              body: JSON.stringify({
+                model: 'google/gemini-2.0-flash-exp:free',
+                messages: [{ role: 'user', content: finalPrompt }],
+              }),
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              const content = data.choices?.[0]?.message?.content;
+              if (content) {
+                this.logger.log('OpenRouter response generated successfully.');
+                return { choices: [{ message: { content } }] };
+              }
+            } else {
+              const errorBody = await res.text();
+              this.logger.error(`OpenRouter Error (${res.status}): ${errorBody}`);
+            }
+          } catch (err: any) {
+            this.logger.error(`OpenRouter Exception: ${err.message}`);
+          }
+        }
+
+        // 2. FALLBACK TO DIRECT GOOGLE API
         if (googleKey) {
+          this.logger.log('Attempting generation via Google Direct API...');
           try {
             const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -283,39 +319,14 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
               if (responseText) return { choices: [{ message: { content: responseText } }] };
             } else {
               const errText = await res.text();
-              this.logger.warn(`Google Direct API failed (${res.status}): ${errText}. Trying OpenRouter...`);
+              this.logger.warn(`Google Direct API failed (${res.status}): ${errText}`);
             }
           } catch (err: any) {
-            this.logger.warn(`Google Direct API Error: ${err.message}. Switching to fallback...`);
+            this.logger.warn(`Google Direct API Error: ${err.message}`);
           }
         }
 
-        if (openRouterKey) {
-          try {
-            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${openRouterKey}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                model: 'google/gemini-2.0-flash-exp:free',
-                messages: [{ role: 'user', content: finalPrompt }],
-                response_format: { type: 'json_object' }
-              }),
-            });
-
-            if (res.ok) {
-              const data = await res.json();
-              const content = data.choices?.[0]?.message?.content;
-              if (content) return { choices: [{ message: { content } }] };
-            }
-          } catch (err: any) {
-            this.logger.error(`OpenRouter Fallback Failed: ${err.message}`);
-          }
-        }
-
-        throw new Error('AI Generation Failed. Please check if Generative Language API is ENABLED in Google Cloud Console or add OPENROUTER_API_KEY.');
+        throw new Error('AI Generation Failed. Please check backend logs in Render or verify OPENROUTER_API_KEY.');
       };
 
       let completion;
@@ -387,12 +398,48 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
 
     try {
       const makeRequest = async () => {
-        const googleKey = (process.env.GOOGLE_AI_STUDIO_KEY || process.env.GEMINI_API_KEY || '').trim();
         const openRouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
+        const googleKey = (process.env.GOOGLE_AI_STUDIO_KEY || process.env.GEMINI_API_KEY || '').trim();
 
         const finalPrompt = `${systemInstruction}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
 
+        // 1. TRY OPENROUTER FIRST
+        if (openRouterKey) {
+          this.logger.log('Attempting patch generation via OpenRouter...');
+          try {
+            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${openRouterKey}`,
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://mazaika.uz',
+                'X-Title': 'Mazaika AI Platform',
+              },
+              body: JSON.stringify({
+                model: 'google/gemini-2.0-flash-exp:free',
+                messages: [{ role: 'user', content: finalPrompt }],
+              }),
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              const content = data.choices?.[0]?.message?.content;
+              if (content) {
+                this.logger.log('OpenRouter patch generated successfully.');
+                return { choices: [{ message: { content } }] };
+              }
+            } else {
+              const errorBody = await res.text();
+              this.logger.error(`OpenRouter Error (${res.status}): ${errorBody}`);
+            }
+          } catch (err: any) {
+            this.logger.error(`OpenRouter Exception: ${err.message}`);
+          }
+        }
+
+        // 2. FALLBACK TO DIRECT GOOGLE API
         if (googleKey) {
+          this.logger.log('Attempting patch generation via Google Direct API...');
           try {
             const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
             const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -418,39 +465,14 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
               if (responseText) return { choices: [{ message: { content: responseText } }] };
             } else {
               const errText = await res.text();
-              this.logger.warn(`Google Direct API failed (${res.status}): ${errText}. Trying OpenRouter...`);
+              this.logger.warn(`Google Direct API failed (${res.status}): ${errText}`);
             }
           } catch (err: any) {
-            this.logger.warn(`Google Direct API Error: ${err.message}. Switching to fallback...`);
+            this.logger.warn(`Google Direct API Error: ${err.message}`);
           }
         }
 
-        if (openRouterKey) {
-          try {
-            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${openRouterKey}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                model: 'google/gemini-2.0-flash-exp:free',
-                messages: [{ role: 'user', content: finalPrompt }],
-                response_format: { type: 'json_object' }
-              }),
-            });
-
-            if (res.ok) {
-              const data = await res.json();
-              const content = data.choices?.[0]?.message?.content;
-              if (content) return { choices: [{ message: { content } }] };
-            }
-          } catch (err: any) {
-            this.logger.error(`OpenRouter Fallback Failed: ${err.message}`);
-          }
-        }
-
-        throw new Error('AI Generation Failed. Please check if Generative Language API is ENABLED in Google Cloud Console or add OPENROUTER_API_KEY.');
+        throw new Error('AI Generation Failed. Please check backend logs in Render or verify OPENROUTER_API_KEY.');
       };
 
       let completion;
