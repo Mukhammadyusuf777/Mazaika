@@ -270,20 +270,29 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
 
       const makeRequest = async (modelName: string) => {
         if (this.genAI) {
-          // Use Google Gemini (no strict TPM limits)
-          const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+          const modelsToTry = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro"];
           
           let historyText = formattedHistory.map(h => `${h.role === 'assistant' ? 'AI' : 'User'}: ${h.content}`).join('\n\n');
           const finalPrompt = `${systemInstruction}\n\n=== CHAT HISTORY ===\n${historyText}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
           
-          const result = await model.generateContent({
-            contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
-            generationConfig: {
-              temperature: 0.5,
-              responseMimeType: "application/json"
+          let lastError: any = null;
+          for (const modelName of modelsToTry) {
+            try {
+              const model = this.genAI.getGenerativeModel({ model: modelName });
+              const result = await model.generateContent({
+                contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
+                generationConfig: {
+                  temperature: 0.5,
+                  responseMimeType: "application/json"
+                }
+              });
+              return { choices: [{ message: { content: result.response.text() } }] };
+            } catch (err: any) {
+              lastError = err;
+              this.logger.warn(`Gemini model ${modelName} failed: ${err.message}. Trying next model...`);
             }
-          });
-          return { choices: [{ message: { content: result.response.text() } }] };
+          }
+          throw lastError;
         } else {
           // Use Groq
           return await this.groq.chat.completions.create({
@@ -375,19 +384,28 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
     try {
       const makeRequest = async (modelName: string) => {
         if (this.genAI) {
-          // Use Google Gemini (no strict TPM limits)
-          const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+          const modelsToTry = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro"];
           
           const finalPrompt = `${systemInstruction}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
           
-          const result = await model.generateContent({
-            contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
-            generationConfig: {
-              temperature: 0.5,
-              responseMimeType: "application/json"
+          let lastError: any = null;
+          for (const modelName of modelsToTry) {
+            try {
+              const model = this.genAI.getGenerativeModel({ model: modelName });
+              const result = await model.generateContent({
+                contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
+                generationConfig: {
+                  temperature: 0.5,
+                  responseMimeType: "application/json"
+                }
+              });
+              return { choices: [{ message: { content: result.response.text() } }] };
+            } catch (err: any) {
+              lastError = err;
+              this.logger.warn(`Gemini model ${modelName} failed for patch: ${err.message}. Trying next model...`);
             }
-          });
-          return { choices: [{ message: { content: result.response.text() } }] };
+          }
+          throw lastError;
         } else {
           // Use Groq
           return await this.groq.chat.completions.create({
