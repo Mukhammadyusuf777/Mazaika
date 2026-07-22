@@ -1,5 +1,4 @@
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
-import Groq from 'groq-sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export interface PatchOperation {
@@ -25,22 +24,16 @@ export interface PatchResponse {
 @Injectable()
 export class AntigravityService {
   private readonly logger = new Logger(AntigravityService.name);
-  private groq: Groq;
   private genAI: GoogleGenerativeAI | null = null;
 
   constructor() {
-    const groqKey = process.env.GROQ_API_KEY;
-    const geminiKey = process.env.GEMINI_API_KEY;
+    const geminiKey = process.env.GOOGLE_AI_STUDIO_KEY;
     
     if (geminiKey) {
       this.genAI = new GoogleGenerativeAI(geminiKey);
-      this.logger.log("Initialized Gemini AI (No TPM Limits!)");
-    } else if (groqKey) {
-      this.groq = new Groq({ apiKey: groqKey });
-      this.logger.log("Initialized Groq AI (Warning: strict TPM limits)");
+      this.logger.log("Initialized Gemini AI (Pure Google AI Studio implementation)");
     } else {
-      this.logger.warn("No API Keys found! AI features will fail.");
-      this.groq = new Groq({ apiKey: 'dummy-key-to-avoid-crash' });
+      this.logger.warn("GOOGLE_AI_STUDIO_KEY is missing! AI features will fail.");
     }
   }
 
@@ -267,69 +260,33 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
           content: content
         };
       });
-      const makeRequest = async (modelName: string) => {
-        if (this.genAI) {
-          const modelsToTry = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro"];
-          
-          let historyText = formattedHistory.map(h => `${h.role === 'assistant' ? 'AI' : 'User'}: ${h.content}`).join('\n\n');
-          const finalPrompt = `${systemInstruction}\n\n=== CHAT HISTORY ===\n${historyText}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
-          
-          let lastError: any = null;
-          for (const modelName of modelsToTry) {
-            try {
-              const model = this.genAI.getGenerativeModel({ model: modelName });
-              const result = await model.generateContent({
-                contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
-                generationConfig: {
-                  temperature: 0.5,
-                  responseMimeType: "application/json"
-                }
-              });
-              return { choices: [{ message: { content: result.response.text() } }] };
-            } catch (err: any) {
-              lastError = err;
-              this.logger.warn(`Gemini model ${modelName} failed: ${err.message}. Trying next model...`);
-            }
-          }
-          
-          this.logger.warn(`All Gemini models failed. Falling back to Groq...`);
-          // Fall through to Groq if Gemini fails
-        }
-        
-        // Use Groq (Either genAI is null, or it failed)
-        return await this.groq.chat.completions.create({
-          messages: [
-            { role: 'system', content: systemInstruction },
-            ...formattedHistory,
-            { role: 'user', content: userPrompt }
-          ],
-          model: 'llama-3.3-70b-versatile',
-          temperature: 0.5,
-          max_tokens: 8000,
-          response_format: { type: 'json_object' },
+      const makeRequest = async () => {
+        if (!this.genAI) throw new Error("Google AI Studio Key not provided");
+
+        const model = this.genAI.getGenerativeModel({ 
+          model: "gemini-1.5-flash-latest",
+          generationConfig: { responseMimeType: "application/json" }
         });
+        
+        let historyText = formattedHistory.map(h => `${h.role === 'assistant' ? 'AI' : 'User'}: ${h.content}`).join('\n\n');
+        const finalPrompt = `${systemInstruction}\n\n=== CHAT HISTORY ===\n${historyText}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
+        
+        const result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
+          generationConfig: {
+            temperature: 0.5,
+            responseMimeType: "application/json"
+          }
+        });
+        return { choices: [{ message: { content: result.response.text() } }] };
       };
 
       let completion;
       try {
-        completion = await makeRequest('llama-3.3-70b-versatile');
+        completion = await makeRequest();
       } catch (e: any) {
-        if (e?.status === 413 || e?.status === 429 || e?.message?.includes('too large') || e?.message?.includes('tokens')) {
-          this.logger.warn(`Llama-3.3-70b rate limit exceeded (TPM). Falling back to llama-3.1-8b-instant which has a higher 30,000 TPM limit...`);
-          completion = await this.groq.chat.completions.create({
-            messages: [
-              { role: 'system', content: systemInstruction },
-              ...formattedHistory,
-              { role: 'user', content: userPrompt }
-            ],
-            model: 'llama-3.1-8b-instant',
-            temperature: 0.5,
-            max_tokens: 8000,
-            response_format: { type: 'json_object' },
-          });
-        } else {
-          throw e;
-        }
+        this.logger.error(`Gemini Generation Error: ${e.message}`);
+        throw new InternalServerErrorException(`Gemini Error: ${e.message}`);
       }
 
       const rawText = completion.choices[0]?.message?.content || '';
@@ -392,64 +349,32 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
 `;
 
     try {
-      const makeRequest = async (modelName: string) => {
-        if (this.genAI) {
-          const modelsToTry = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro"];
-          
-          const finalPrompt = `${systemInstruction}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
-          
-          let lastError: any = null;
-          for (const modelName of modelsToTry) {
-            try {
-              const model = this.genAI.getGenerativeModel({ model: modelName });
-              const result = await model.generateContent({
-                contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
-                generationConfig: {
-                  temperature: 0.5,
-                  responseMimeType: "application/json"
-                }
-              });
-              return { choices: [{ message: { content: result.response.text() } }] };
-            } catch (err: any) {
-              lastError = err;
-              this.logger.warn(`Gemini model ${modelName} failed for patch: ${err.message}. Trying next model...`);
-            }
-          }
-          
-          this.logger.warn(`All Gemini models failed for patch. Falling back to Groq...`);
-          // Fall through to Groq
-        }
-        
-        // Use Groq
-        return await this.groq.chat.completions.create({
-          messages: [
-            { role: 'system', content: systemInstruction },
-            { role: 'user', content: userPrompt }
-          ],
-          model: 'llama-3.3-70b-versatile',
-          temperature: 0.5,
-          response_format: { type: 'json_object' },
+      const makeRequest = async () => {
+        if (!this.genAI) throw new Error("Google AI Studio Key not provided");
+
+        const model = this.genAI.getGenerativeModel({ 
+          model: "gemini-1.5-flash-latest",
+          generationConfig: { responseMimeType: "application/json" }
         });
+        
+        const finalPrompt = `${systemInstruction}\n\nUser: ${userPrompt}\n\nOUTPUT ONLY VALID JSON:`;
+        
+        const result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
+          generationConfig: {
+            temperature: 0.5,
+            responseMimeType: "application/json"
+          }
+        });
+        return { choices: [{ message: { content: result.response.text() } }] };
       };
 
       let completion;
       try {
-        completion = await makeRequest('llama-3.3-70b-versatile');
+        completion = await makeRequest();
       } catch (e: any) {
-        if (e?.status === 413 || e?.status === 429 || e?.message?.includes('too large') || e?.message?.includes('tokens')) {
-          this.logger.warn(`Llama-3.3-70b rate limit exceeded for patch. Falling back to llama-3.1-8b-instant...`);
-          completion = await this.groq.chat.completions.create({
-            messages: [
-              { role: 'system', content: systemInstruction },
-              { role: 'user', content: userPrompt }
-            ],
-            model: 'llama-3.1-8b-instant',
-            temperature: 0.5,
-            response_format: { type: 'json_object' },
-          });
-        } else {
-          throw e;
-        }
+        this.logger.error(`Gemini Patch Error: ${e.message}`);
+        throw new InternalServerErrorException(`Gemini Error: ${e.message}`);
       }
 
       const rawText = completion.choices[0]?.message?.content || '';
