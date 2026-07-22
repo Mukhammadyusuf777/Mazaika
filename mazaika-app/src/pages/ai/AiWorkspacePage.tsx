@@ -137,6 +137,28 @@ const renderCanvasBlock = (b: any, bIdx: number, activeConfig: any) => {
           </div>
         </div>
       )}
+
+      {/* Fallback for unknown AI generated types so they don't appear as empty boxes */}
+      {!['hero', 'about', 'catalog', 'form', 'voting', 'loyalty', 'contacts', 'quiz', 'boshlash', 'xabar', 'matnli_savol', 'shart'].includes(b.type) && (
+        <div>
+          <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#e2e8f0' }}>
+            {b.title || 'Qo\'shimcha blok'}{' '}
+            <span style={{ fontSize: 9, opacity: 0.6, background: '#334155', padding: '2px 4px', borderRadius: 4, marginLeft: 4 }}>{b.type}</span>
+          </h4>
+          {(b.text || b.desc || b.subtitle || b.content) && (
+            <p style={{ fontSize: 11, color: '#94a3b8', margin: '6px 0 0 0' }}>{b.text || b.desc || b.subtitle || b.content}</p>
+          )}
+          {Array.isArray(b.items) && b.items.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
+              {b.items.map((item: any, idx: number) => (
+                <div key={idx} style={{ fontSize: 10, padding: 6, background: 'rgba(255,255,255,0.02)', borderRadius: 4 }}>
+                  {item.name || item.title || item.text || JSON.stringify(item)}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
