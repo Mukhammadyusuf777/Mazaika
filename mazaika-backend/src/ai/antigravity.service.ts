@@ -29,7 +29,6 @@ export class AntigravityService {
     'google/gemini-2.0-flash-exp:free',
     'google/gemini-2.0-flash-lite-preview-02-05:free',
     'qwen/qwen-2.5-coder-32b-instruct:free',
-    'google/gemini-exp-1206:free',
   ];
 
   constructor() {
@@ -302,12 +301,14 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
                 }
               } else {
                 const errText = await res.text();
-                lastErrorMessage = `OpenRouter (${modelName}) [${res.status}]: ${errText}`;
-                this.logger.warn(lastErrorMessage);
+                lastErrorMessage = `[${modelName}] HTTP ${res.status}: ${errText}`;
+                this.logger.warn(`Model ${modelName} failed (${res.status}), trying next model...`);
+                continue;
               }
             } catch (err: any) {
-              lastErrorMessage = `OpenRouter (${modelName}) Exception: ${err.message}`;
-              this.logger.warn(lastErrorMessage);
+              lastErrorMessage = `[${modelName}] Exception: ${err.message}`;
+              this.logger.warn(`Model ${modelName} exception, trying next model...`);
+              continue;
             }
           }
         }
@@ -460,12 +461,14 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
                 }
               } else {
                 const errText = await res.text();
-                lastErrorMessage = `OpenRouter (${modelName}) [${res.status}]: ${errText}`;
-                this.logger.warn(lastErrorMessage);
+                lastErrorMessage = `[${modelName}] HTTP ${res.status}: ${errText}`;
+                this.logger.warn(`Model ${modelName} failed (${res.status}), trying next model...`);
+                continue;
               }
             } catch (err: any) {
-              lastErrorMessage = `OpenRouter (${modelName}) Exception: ${err.message}`;
-              this.logger.warn(lastErrorMessage);
+              lastErrorMessage = `[${modelName}] Exception: ${err.message}`;
+              this.logger.warn(`Model ${modelName} exception, trying next model...`);
+              continue;
             }
           }
         }
