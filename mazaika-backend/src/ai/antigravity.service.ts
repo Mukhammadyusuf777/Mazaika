@@ -24,12 +24,12 @@ export interface PatchResponse {
 export class AntigravityService {
   private readonly logger = new Logger(AntigravityService.name);
 
-  // Array of top free models on OpenRouter to try in order of preference
+  // Strictly active FREE model slugs on OpenRouter
   private readonly openRouterModels = [
     'google/gemini-2.0-flash-exp:free',
     'google/gemini-2.0-flash-lite-preview-02-05:free',
     'qwen/qwen-2.5-coder-32b-instruct:free',
-    'meta-llama/llama-3.3-70b-instruct:free',
+    'google/gemini-exp-1206:free',
   ];
 
   constructor() {
@@ -274,7 +274,7 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
             this.logger.log(`Attempting OpenRouter generation with model: ${modelName}`);
             try {
               const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout for large JSON
+              const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for large JSON
 
               const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
@@ -432,7 +432,7 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
             this.logger.log(`Attempting patch generation with model: ${modelName}`);
             try {
               const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 45000);
+              const timeoutId = setTimeout(() => controller.abort(), 60000);
 
               const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
