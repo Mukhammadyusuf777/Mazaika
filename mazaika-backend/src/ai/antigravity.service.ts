@@ -75,16 +75,15 @@ DO NOT include markdown backticks (\`\`\`json) or any other text. Output ONLY th
         } else {
           const errText = await res.text();
           this.logger.error(`Google AI Studio Error (${res.status}): ${errText}`);
+          throw new Error(`Google API Error (${res.status}): ${errText}`);
         }
       } catch (err: any) {
         this.logger.error(`Google API Exception: ${err.message}`);
+        throw new Error(`AI API Error: ${err.message}`);
       }
+    } else {
+      throw new Error(`API Key not found. Please provide a valid GOOGLE_AI_STUDIO_KEY.`);
     }
-
-    // 2. GUARANTEED FAILSAFE FALLBACK (Smart Mock Generation)
-    // If AI fails or API key is missing/invalid, return a rich structure so the user is never blocked.
-    this.logger.warn('AI APIs unreachable/failed. Executing Failsafe Intelligent Generator...');
-    return this.generateFailsafeArchitecture(promptText);
   }
 
   async generatePatch(promptText: string, currentPageUrl?: string, selectedBlockId?: string | null, currentConfig?: any) {
@@ -93,26 +92,6 @@ DO NOT include markdown backticks (\`\`\`json) or any other text. Output ONLY th
       explanation: "Fallback patch generation (no changes made).",
       execution_mode: "PATCH",
       patch_operations: []
-    };
-  }
-
-  private generateFailsafeArchitecture(prompt: string) {
-    const isFitness = prompt.toLowerCase().includes('фитнес') || prompt.toLowerCase().includes('fitness');
-    return {
-      execution_mode: "FULL_GENERATION",
-      target_entity: "bot_and_mini_app",
-      project_data: {
-        appName: isFitness ? "Элитный Фитнес-Клуб «Apex Fitness»" : "Автоматизированная Платформа",
-        theme: "glassmorphism",
-        themeColor: "#10b981",
-        bot_blocks: [
-          { id: "start", type: "message", title: "Начало", text: "Добро пожаловать в систему!", next: "main_menu" },
-          { id: "main_menu", type: "menu", title: "Меню", text: "Выберите действие:", options: ["Опция 1", "Опция 2"] }
-        ],
-        site_blocks: [
-          { id: "header", type: "hero", title: "Apex Platform", subtitle: "Система временно перегружена", img: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80" }
-        ]
-      }
     };
   }
 }
