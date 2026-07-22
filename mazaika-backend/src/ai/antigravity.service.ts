@@ -1,5 +1,5 @@
 import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
-import Groq from 'groq-sdk';
+import Anthropic from '@anthropic-ai/sdk';
 
 export interface PatchOperation {
   op: 'replace' | 'add' | 'remove';
@@ -24,17 +24,16 @@ export interface PatchResponse {
 @Injectable()
 export class AntigravityService {
   private readonly logger = new Logger(AntigravityService.name);
-  private groq: Groq;
+  private anthropic: Anthropic;
 
   constructor() {
-    // We use the Groq API key provided by the user via environment variables
-    const apiKey = process.env.GROQ_API_KEY;
+    const apiKey = process.env.ANTHROPIC_API_KEY;
     
     if (!apiKey) {
-      this.logger.warn("GROQ_API_KEY is missing! AI features will fail.");
+      this.logger.warn("ANTHROPIC_API_KEY is missing! AI features will fail.");
     }
     
-    this.groq = new Groq({ apiKey: apiKey || 'dummy-key-to-avoid-crash' });
+    this.anthropic = new Anthropic({ apiKey: apiKey || 'dummy-key-to-avoid-crash' });
   }
 
   /**
@@ -176,25 +175,24 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
         content: msg.content
       }));
 
-      const completion = await this.groq.chat.completions.create({
+      const completion = await this.anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 8192,
+        temperature: 0.5,
+        system: systemInstruction,
         messages: [
-          { role: 'system', content: systemInstruction },
           ...formattedHistory,
           { role: 'user', content: userPrompt }
         ],
-        model: 'llama-3.3-70b-versatile',
-        temperature: 0.5,
-        max_tokens: 8000,
-        response_format: { type: 'json_object' },
       });
 
-      const rawText = completion.choices[0]?.message?.content || '';
+      const rawText = (completion.content[0] as any).text || '';
       const cleanedJson = this.cleanJsonResponse(rawText);
 
       return JSON.parse(cleanedJson);
     } catch (error: any) {
       this.logger.error(`AI Generation Failed: ${error.message}`);
-      throw new InternalServerErrorException(`Не удалось сгенерировать ответ через ИИ. Ошибка от Groq: ${error.message}`);
+      throw new InternalServerErrorException(`Не удалось сгенерировать ответ через ИИ. Ошибка от Anthropic: ${error.message}`);
     }
   }
   /**
@@ -234,23 +232,23 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
 `;
 
     try {
-      const completion = await this.groq.chat.completions.create({
+      const completion = await this.anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 4096,
+        temperature: 0.5,
+        system: systemInstruction,
         messages: [
-          { role: 'system', content: systemInstruction },
           { role: 'user', content: userPrompt }
         ],
-        model: 'llama-3.3-70b-versatile',
-        temperature: 0.5,
-        response_format: { type: 'json_object' },
       });
 
-      const rawText = completion.choices[0]?.message?.content || '';
+      const rawText = (completion.content[0] as any).text || '';
       const cleanedJson = this.cleanJsonResponse(rawText);
 
       return JSON.parse(cleanedJson) as PatchResponse;
     } catch (error: any) {
       this.logger.error(`AI Generation Failed: ${error.message}`);
-      throw new InternalServerErrorException(`Не удалось обновить проект через ИИ. Ошибка от Groq: ${error.message}`);
+      throw new InternalServerErrorException(`Не удалось обновить проект через ИИ. Ошибка от Anthropic: ${error.message}`);
     }
   }
 
