@@ -128,7 +128,8 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 if (text.startsWith('btn_') && currentNode?.data?.buttons) {
                     const idx = parseInt(text.split('_')[1]);
                     if (!isNaN(idx) && currentNode.data.buttons[idx]) {
-                        answer = currentNode.data.buttons[idx];
+                        const btn = currentNode.data.buttons[idx];
+                        answer = typeof btn === 'string' ? btn : (btn.text || 'Tugma');
                     }
                 }
                 state.variables[varName] = answer;
@@ -362,7 +363,8 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 const mediaUrl = node.data?.mediaUrl;
                 const buttons = node.data?.buttons || [];
                 const inlineKeyboard = buttons.map((btn, idx) => {
-                    const parts = btn.split('|');
+                    const btnText = typeof btn === 'string' ? btn : (btn.text || 'Tugma');
+                    const parts = btnText.split('|');
                     if (parts.length > 1) {
                         const label = parts[0].trim();
                         const urlVal = parts[1].trim();
@@ -373,7 +375,7 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                             return [{ text: label, url: urlVal }];
                         }
                     }
-                    return [{ text: btn, callback_data: `btn_${idx}` }];
+                    return [{ text: btnText, callback_data: `btn_${idx}` }];
                 });
                 const extra = inlineKeyboard.length > 0 ? {
                     reply_markup: {
@@ -406,6 +408,20 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 return { wait: false };
             }
             if (node.type === 'chain') {
+                return { wait: false };
+            }
+            if (node.type === 'custom_code') {
+                const code = node.data?.code;
+                if (code) {
+                    try {
+                        const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
+                        const executor = new AsyncFunction('ctx', 'variables', 'botId', 'contactId', code);
+                        await executor(ctx, variables, botId, contactId);
+                    }
+                    catch (err) {
+                        this.logger.error(`Custom code execution failed for node ${node.id}: ${err.message}`);
+                    }
+                }
                 return { wait: false };
             }
             if (node.type === 'subscription') {
@@ -470,7 +486,8 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 const mediaUrl = node.data?.mediaUrl;
                 const buttons = node.data?.buttons || [];
                 const inlineKeyboard = buttons.map((btn, idx) => {
-                    return [{ text: btn, callback_data: `btn_${idx}` }];
+                    const btnText = typeof btn === 'string' ? btn : (btn.text || 'Tugma');
+                    return [{ text: btnText, callback_data: `btn_${idx}` }];
                 });
                 const extra = inlineKeyboard.length > 0 ? {
                     reply_markup: {

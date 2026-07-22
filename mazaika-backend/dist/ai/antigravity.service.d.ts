@@ -1,28 +1,10 @@
-export interface PatchOperation {
-    op: 'replace' | 'add' | 'remove';
-    path: string;
-    value: any;
-}
-export interface FullGenerationResponse {
-    explanation: string;
-    appName: string;
-    theme: string;
-    themeColor: string;
-    blocks: any[];
-}
-export interface PatchResponse {
-    explanation: string;
-    execution_mode: 'PATCH';
-    patch_operations: PatchOperation[];
-}
 export declare class AntigravityService {
     private readonly logger;
-    private groq;
-    constructor();
-    generateFullProject(userPrompt: string, chatHistory?: {
-        role: string;
-        content: string;
-    }[]): Promise<any>;
-    generatePatch(userPrompt: string, currentPageUrl?: string, selectedBlockId?: string | null, currentConfig?: any): Promise<PatchResponse>;
-    private cleanJsonResponse;
+    generateFullProject(promptText: string, chatHistory?: any[], currentConfig?: any): Promise<any>;
+    generatePatch(promptText: string, currentPageUrl?: string, selectedBlockId?: string | null, currentConfig?: any): Promise<{
+        explanation: string;
+        execution_mode: string;
+        patch_operations: never[];
+    }>;
+    private generateFailsafeArchitecture;
 }

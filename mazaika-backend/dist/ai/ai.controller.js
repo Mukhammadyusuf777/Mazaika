@@ -18,6 +18,7 @@ const antigravity_service_1 = require("./antigravity.service");
 class GenerateDto {
     prompt;
     chatHistory;
+    currentConfig;
 }
 exports.GenerateDto = GenerateDto;
 class PatchDto {
@@ -33,7 +34,7 @@ let AiController = class AiController {
         this.antigravityService = antigravityService;
     }
     async generateFullProject(dto) {
-        return this.antigravityService.generateFullProject(dto.prompt, dto.chatHistory);
+        return this.antigravityService.generateFullProject(dto.prompt, dto.chatHistory, dto.currentConfig);
     }
     async generatePatch(dto) {
         return this.antigravityService.generatePatch(dto.prompt, dto.currentPage, dto.selectedBlockId, dto.currentConfig);

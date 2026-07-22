@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Sparkles, Send, Bot, RefreshCw, Save, Globe, Menu, X, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Sparkles, Send, Bot, Save, Globe, Menu, X, MessageSquare, Trash2 } from 'lucide-react'
 import { useAICopilot } from '../../context/AICopilotContext'
 import { useAuthStore } from '../../store/useAuthStore'
 import { createBot, saveSiteConfig, getBotsByUser } from '../../api/firestore'
@@ -206,14 +206,13 @@ const renderCanvasBlock = (b: any, bIdx: number, activeConfig: any, onEditClick?
 export default function AiWorkspacePage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { messages, isGenerating, sendMessage, activeConfig, startNewProject, activeProjectId } = useAICopilot()
+  const { messages, isGenerating, sendMessage, activeConfig, clearChat, activeProjectId, switchProject } = useAICopilot()
 
   const [promptInput, setPromptInput] = useState('')
   const [savingBot, setSavingBot] = useState(false)
 
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [projects, setProjects] = useState<any[]>([])
-  const { switchProject } = useAICopilot()
   
   const handleEditBlockClick = (b: any) => {
     setPromptInput(`Ushbu blokni o'zgartiring (ID: ${b.id}, Tip: ${b.type}): `);
@@ -225,15 +224,9 @@ export default function AiWorkspacePage() {
 
   useEffect(() => {
     if (user) {
-      getBotsByUser(user.id).then(projs => {
-        setProjects(projs)
-        // If there are absolutely no projects, ensure the chat is clean
-        if (projs.length === 0 && activeProjectId === 'default') {
-          startNewProject()
-        }
-      })
+      getBotsByUser(user.id).then(setProjects)
     }
-  }, [user, activeProjectId, startNewProject])
+  }, [user])
 
   const handleSelectProject = (proj: any) => {
     const siteConfig = localStorage.getItem(`mazaika_site_${proj.id}`)
@@ -409,9 +402,9 @@ export default function AiWorkspacePage() {
           <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
             <div 
               style={{ padding: 12, borderRadius: 8, background: 'rgba(255,255,255,0.05)', cursor: 'pointer', marginBottom: 8, border: '1px dashed rgba(255,255,255,0.2)' }}
-              onClick={() => { startNewProject(); setDrawerOpen(false); }}
+              onClick={() => { switchProject('default', null); setDrawerOpen(false); }}
             >
-              <div style={{ fontSize: 13, fontWeight: 700 }}>+ Yangi Loyiha</div>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>+ Yangi Loyiha (Qoralama)</div>
             </div>
             {projects.map(p => (
               <div 
@@ -449,13 +442,27 @@ export default function AiWorkspacePage() {
               <Sparkles size={16} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>Mazaika AI Workspace</h3>
+              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>
+                Mazaika AI Workspace 
+                {activeProjectId === 'default' && (
+                  <span style={{ marginLeft: 8, background: '#1e293b', padding: '2px 6px', borderRadius: 4, fontSize: 10, color: '#94a3b8', fontWeight: 500 }}>
+                    Qoralama
+                  </span>
+                )}
+              </h3>
               <span style={{ fontSize: 11, color: '#94a3b8' }}>Generativ AI Arxitektor</span>
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button 
+            className="btn btn-ghost btn-sm" 
+            onClick={clearChat}
+            style={{ gap: 6, color: '#ef4444', fontSize: 12, padding: '6px 12px' }}
+          >
+            <Trash2 size={14} /> Tozalash
+          </button>
           {activeConfig && (
             <button 
               className="btn btn-primary" 

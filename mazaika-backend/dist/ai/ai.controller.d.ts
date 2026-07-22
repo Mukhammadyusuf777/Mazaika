@@ -5,6 +5,7 @@ export declare class GenerateDto {
         role: string;
         content: string;
     }[];
+    currentConfig?: any;
 }
 export declare class PatchDto {
     prompt: string;
@@ -16,5 +17,9 @@ export declare class AiController {
     private readonly antigravityService;
     constructor(antigravityService: AntigravityService);
     generateFullProject(dto: GenerateDto): Promise<any>;
-    generatePatch(dto: PatchDto): Promise<import("./antigravity.service").PatchResponse>;
+    generatePatch(dto: PatchDto): Promise<{
+        explanation: string;
+        execution_mode: string;
+        patch_operations: never[];
+    }>;
 }

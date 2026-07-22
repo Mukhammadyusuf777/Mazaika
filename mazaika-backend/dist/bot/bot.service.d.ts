@@ -15,8 +15,8 @@ export declare class BotService {
         workflows: {
             updatedAt: Date;
             createdAt: Date;
-            id: string;
             botId: string;
+            id: string;
             nodes: string;
             edges: string;
             name: string;
@@ -72,10 +72,10 @@ export declare class BotService {
         active: boolean;
         updatedAt: Date;
         createdAt: Date;
+        botId: string;
         method: string;
         url: string;
         id: string;
-        botId: string;
         name: string;
     }[]>;
     createWebhook(botId: string, data: {
@@ -87,20 +87,20 @@ export declare class BotService {
         active: boolean;
         updatedAt: Date;
         createdAt: Date;
+        botId: string;
         method: string;
         url: string;
         id: string;
-        botId: string;
         name: string;
     }>;
     deleteWebhook(id: string): Promise<{
         active: boolean;
         updatedAt: Date;
         createdAt: Date;
+        botId: string;
         method: string;
         url: string;
         id: string;
-        botId: string;
         name: string;
     }>;
 }
