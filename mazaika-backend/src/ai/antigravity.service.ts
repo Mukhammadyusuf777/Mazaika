@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 
 @Injectable()
 export class AntigravityService {
@@ -75,14 +75,15 @@ DO NOT include markdown backticks (\`\`\`json) or any other text. Output ONLY th
         } else {
           const errText = await res.text();
           this.logger.error(`Google AI Studio Error (${res.status}): ${errText}`);
-          throw new Error(`Google API Error (${res.status}): ${errText}`);
+          throw new InternalServerErrorException(`Google API Error (${res.status}): ${errText}`);
         }
       } catch (err: any) {
         this.logger.error(`Google API Exception: ${err.message}`);
-        throw new Error(`AI API Error: ${err.message}`);
+        if (err instanceof InternalServerErrorException) throw err;
+        throw new InternalServerErrorException(`AI API Error: ${err.message}`);
       }
     } else {
-      throw new Error(`API Key not found. Please provide a valid GOOGLE_AI_STUDIO_KEY.`);
+      throw new InternalServerErrorException(`API Key not found. Please provide a valid GOOGLE_AI_STUDIO_KEY.`);
     }
   }
 
