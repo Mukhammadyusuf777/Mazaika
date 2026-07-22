@@ -175,11 +175,25 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
 `;
 
     try {
-      // Map frontend history to Groq history format
-      const formattedHistory: any[] = chatHistory.map(msg => ({
-        role: msg.role === 'agent' ? 'assistant' : 'user',
-        content: msg.content
-      }));
+      // Keep only last 4 messages and strip huge JSON payloads from assistant to avoid TPM limits
+      const formattedHistory: any[] = chatHistory.slice(-4).map(msg => {
+        let content = msg.content;
+        if (msg.role === 'agent') {
+          try {
+            // Extract only the explanation to save thousands of tokens
+            const parsed = JSON.parse(content);
+            if (parsed.explanation) {
+              content = `{"explanation": "${parsed.explanation}", "note": "[Project data omitted to save tokens. Refer to CURRENT CONFIGURATION for the active state.]"}`;
+            }
+          } catch (e) {
+            if (content.length > 500) content = content.substring(0, 500) + '...';
+          }
+        }
+        return {
+          role: msg.role === 'agent' ? 'assistant' : 'user',
+          content: content
+        };
+      });
 
       const completion = await this.groq.chat.completions.create({
         messages: [
