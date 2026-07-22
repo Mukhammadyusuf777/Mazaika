@@ -24,9 +24,11 @@ export interface PatchResponse {
 export class AntigravityService {
   private readonly logger = new Logger(AntigravityService.name);
 
-  // Strictly active FREE model slugs on OpenRouter
+  // Exact model slugs for Gemini Flash on OpenRouter
   private readonly openRouterModels = [
     'google/gemini-2.0-flash-exp:free',
+    'google/gemini-2.0-flash:free',
+    'google/gemini-2.0-flash-001',
     'google/gemini-2.0-flash-lite-preview-02-05:free',
     'qwen/qwen-2.5-coder-32b-instruct:free',
   ];
@@ -296,18 +298,18 @@ If you fail to return perfectly parsable JSON, the entire system will crash.
                 const data = await res.json();
                 const content = data.choices?.[0]?.message?.content;
                 if (content) {
-                  this.logger.log(`Success using model ${modelName}`);
+                  this.logger.log(`Successfully generated architecture using model: ${modelName}`);
                   return { choices: [{ message: { content } }] };
                 }
               } else {
                 const errText = await res.text();
                 lastErrorMessage = `[${modelName}] HTTP ${res.status}: ${errText}`;
-                this.logger.warn(`Model ${modelName} failed (${res.status}), trying next model...`);
+                this.logger.warn(`Model ${modelName} returned ${res.status}, skipping to next...`);
                 continue;
               }
             } catch (err: any) {
               lastErrorMessage = `[${modelName}] Exception: ${err.message}`;
-              this.logger.warn(`Model ${modelName} exception, trying next model...`);
+              this.logger.warn(`Model ${modelName} exception, skipping to next...`);
               continue;
             }
           }
@@ -456,18 +458,18 @@ DO NOT include markdown backticks like \`\`\`json. Output ONLY raw JSON matching
                 const data = await res.json();
                 const content = data.choices?.[0]?.message?.content;
                 if (content) {
-                  this.logger.log(`Success using model ${modelName}`);
+                  this.logger.log(`Successfully generated architecture using model: ${modelName}`);
                   return { choices: [{ message: { content } }] };
                 }
               } else {
                 const errText = await res.text();
                 lastErrorMessage = `[${modelName}] HTTP ${res.status}: ${errText}`;
-                this.logger.warn(`Model ${modelName} failed (${res.status}), trying next model...`);
+                this.logger.warn(`Model ${modelName} returned ${res.status}, skipping to next...`);
                 continue;
               }
             } catch (err: any) {
               lastErrorMessage = `[${modelName}] Exception: ${err.message}`;
-              this.logger.warn(`Model ${modelName} exception, trying next model...`);
+              this.logger.warn(`Model ${modelName} exception, skipping to next...`);
               continue;
             }
           }
