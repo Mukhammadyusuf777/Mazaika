@@ -1,6 +1,9 @@
 import { AntigravityService } from './antigravity.service';
 export declare class GenerateDto {
-    prompt: string;
+    prompt?: string;
+    message?: string;
+    text?: string;
+    promptText?: string;
     chatHistory?: {
         role: string;
         content: string;
@@ -9,15 +12,16 @@ export declare class GenerateDto {
     targetEntity?: 'bot_and_mini_app' | 'site_only';
 }
 export declare class PatchDto {
-    prompt: string;
+    prompt?: string;
     currentPage?: string;
     selectedBlockId?: string | null;
     currentConfig?: any;
 }
 export declare class AiController {
     private readonly antigravityService;
+    private readonly logger;
     constructor(antigravityService: AntigravityService);
-    generateFullProject(dto: GenerateDto): Promise<{
+    generateFullProject(body: any): Promise<{
         type: string;
         execution_mode: string;
         target_entity: any;
@@ -104,8 +108,30 @@ export declare class AiController {
         website_html?: undefined;
         site_code?: undefined;
         code?: undefined;
+    } | {
+        type: string;
+        execution_mode: string;
+        target_entity: string;
+        title: string;
+        explanation: string;
+        html: string;
+        source_code: string;
+        website_html: string;
+        site_code: string;
+        code: string;
+        project_data: {
+            target_entity: string;
+            appName: string;
+            theme: string;
+            themeColor: string;
+            source_code: string;
+            html: string;
+            website_html: string;
+            site_code: string;
+            code: string;
+        };
     }>;
-    generatePatch(dto: PatchDto): Promise<{
+    generatePatch(body: any): Promise<{
         type: string;
         execution_mode: string;
         target_entity: any;
@@ -128,31 +154,6 @@ export declare class AiController {
             blocks: any;
             bot_blocks: any;
             site_blocks: any;
-        };
-    } | {
-        type: string;
-        execution_mode: string;
-        target_entity: string;
-        title: string;
-        explanation: string;
-        html: string;
-        source_code: string;
-        website_html: string;
-        site_code: string;
-        code: string;
-        project_data: {
-            target_entity: string;
-            appName: string;
-            theme: string;
-            themeColor: string;
-            source_code: string;
-            html: string;
-            website_html: string;
-            site_code: string;
-            code: string;
-            blocks: never[];
-            bot_blocks?: undefined;
-            bot_edges?: undefined;
         };
     } | {
         type: string;
@@ -192,5 +193,27 @@ export declare class AiController {
         website_html?: undefined;
         site_code?: undefined;
         code?: undefined;
+    } | {
+        type: string;
+        execution_mode: string;
+        target_entity: string;
+        title: string;
+        explanation: string;
+        html: string;
+        source_code: string;
+        website_html: string;
+        site_code: string;
+        code: string;
+        project_data: {
+            target_entity: string;
+            appName: string;
+            theme: string;
+            themeColor: string;
+            source_code: string;
+            html: string;
+            website_html: string;
+            site_code: string;
+            code: string;
+        };
     }>;
 }
