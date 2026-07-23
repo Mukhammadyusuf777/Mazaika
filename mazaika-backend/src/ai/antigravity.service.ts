@@ -61,11 +61,79 @@ export class AntigravityService {
       } catch (err: any) {
         this.logger.error(`Gemini API Exception: ${err.message}`);
       }
-    } else {
-      this.logger.warn('No valid GOOGLE_AI_STUDIO_KEY set. Trying Cloudflare fallback.');
+    // 2. TRY OPENROUTER API
+    const openrouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
+    if (openrouterKey && openrouterKey.length > 10) {
+      this.logger.log(`Attempting OpenRouter API generation...`);
+      try {
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + openrouterKey,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://mazaika.uz',
+            'X-Title': 'Mazaika AI Platform'
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-2.5-flash:free',
+            messages: [
+              { role: 'system', content: systemInstruction },
+              { role: 'user', content: promptText }
+            ],
+            temperature: 0.7,
+            max_tokens: 8192
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          let text = data.choices?.[0]?.message?.content;
+          if (text) {
+            text = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              this.logger.log('Successfully generated via OpenRouter!');
+              return JSON.parse(jsonMatch[0]);
+            }
+          }
+        } else {
+          const errText = await res.text();
+          this.logger.error(`OpenRouter API Error (${res.status}): ${errText.substring(0, 300)}`);
+          // Try fallback model on OpenRouter if free model failed
+          const resFallback = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + openrouterKey,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              model: 'meta-llama/llama-3.3-70b-instruct:free',
+              messages: [
+                { role: 'system', content: systemInstruction },
+                { role: 'user', content: promptText }
+              ],
+              max_tokens: 8192
+            })
+          });
+          if (resFallback.ok) {
+            const dataF = await resFallback.json();
+            let textF = dataF.choices?.[0]?.message?.content;
+            if (textF) {
+              textF = textF.replace(/```json/gi, '').replace(/```/gi, '').trim();
+              const jsonMatchF = textF.match(/\{[\s\S]*\}/);
+              if (jsonMatchF) {
+                this.logger.log('Successfully generated via OpenRouter Fallback Model!');
+                return JSON.parse(jsonMatchF[0]);
+              }
+            }
+          }
+        }
+      } catch (err: any) {
+        this.logger.error(`OpenRouter API Exception: ${err.message}`);
+      }
     }
 
-    // 2. FALLBACK TO CLOUDFLARE AI
+    // 3. FALLBACK TO CLOUDFLARE AI
     const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || '';
     const token = process.env.CLOUDFLARE_API_TOKEN || '';
 
