@@ -30,22 +30,27 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
         const ensureValidParsed = (parsed) => {
             if (!parsed)
                 return null;
-            if (isSiteOnly) {
+            const isRu = /[а-яА-ЯёЁ]/.test(promptText);
+            const isEn = /^[a-zA-Z0-9\s.,!?'"\-]+$/.test(promptText.trim());
+            if (isSiteOnly || parsed.target_entity === 'site_only' || parsed.project_data?.source_code) {
                 parsed.target_entity = 'site_only';
                 if (parsed.project_data)
                     parsed.project_data.target_entity = 'site_only';
             }
-            if (!parsed.explanation || parsed.explanation.includes('YOUR_EXPLANATION')) {
-                const isRu = /[а-яА-ЯёЁ]/.test(promptText);
-                if (isSiteOnly) {
+            if (!parsed.explanation || parsed.explanation.includes('YOUR_EXPLANATION') || parsed.explanation.includes('WRITE_EXPLANATION') || parsed.explanation.includes('bot') && isSiteOnly) {
+                if (parsed.target_entity === 'site_only' || parsed.project_data?.source_code) {
                     parsed.explanation = isRu
-                        ? "Ваш сайт успешно создан! 🚀 Вы можете просмотреть готовый интерактивный сайт в панели справа."
-                        : "Siz so'ragan veb-sayt muvaffaqiyatli yaratildi! 🚀 O'ng tomonda jonli natijani ko'rishingiz mumkin.";
+                        ? "Привет! Я создала для вас полноценный интерактивный веб-сайт с современным анимированным дизайном и адаптивной версткой. Вы можете сразу просмотреть его в панели справа. Что мы добавим дальше?"
+                        : isEn
+                            ? "Hello! I have designed and generated a complete, interactive website for you with modern animations and responsive design. You can preview it live on the right. What shall we customize next?"
+                            : "Salom! Siz uchun zamonaviy va interaktiv veb-sayt yaratdim. Uni o'ng tomondagi jonli oynada ko'rishingiz mumkin. Qanday yangi bo'limlar qo'shamiz?";
                 }
                 else {
                     parsed.explanation = isRu
-                        ? "Логика бота и Mini App успешно создана! 🤖 Вы можете просмотреть результат справа."
-                        : "Bot va Mini App mantig'i muvaffaqiyatli yaratildi! 🤖 O'ng tomonda ko'rishingiz mumkin.";
+                        ? "Привет! Я построила логику Telegram-бота и сценарии взаимодействия. Вы можете просмотреть готовую структуру справа. Что будем расширять дальше?"
+                        : isEn
+                            ? "Hello! I have constructed the Telegram bot workflow and Mini App structure for you. Check out the live preview on the right. What would you like to add next?"
+                            : "Salom! Telegram bot va Mini App mantig'ini muvaffaqiyatli sozlab berdim. O'ng tomonda ko'rishingiz mumkin. Yana nima qo'shamiz?";
                 }
             }
             return parsed;
