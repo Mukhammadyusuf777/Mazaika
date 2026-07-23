@@ -208,13 +208,8 @@ export default function AiWorkspacePage() {
   const { user } = useAuthStore()
   const { messages, isGenerating, sendMessage, activeConfig, clearChat, activeProjectId, switchProject } = useAICopilot()
 
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('')
-  const [creationType, setCreationType] = useState<'bot_only' | 'bot_and_webapp'>('bot_and_webapp')
-  
   // NEW STATE: AI Target Entity
   const [aiTargetEntity, setAiTargetEntity] = useState<'bot_and_mini_app' | 'site_only'>('bot_and_mini_app')
-
-  const { getBackendUrl } = useAICopilot()
   const [promptInput, setPromptInput] = useState('')
   const [savingBot, setSavingBot] = useState(false)
 
@@ -370,8 +365,6 @@ export default function AiWorkspacePage() {
           }
         });
       }
-
-      const isSite = (activeConfig.target_entity === 'site' || activeConfig.target_entity === 'site_only' || activeConfig.target_entity === 'webapp');
 
       const newBot = await createBot(user.id, {
         name: activeConfig.appName || 'AI Generated Project',
