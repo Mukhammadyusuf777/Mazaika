@@ -250,11 +250,11 @@ NOTE: Only include "source_code" in project_data if the bot explicitly needs a M
     async generateViaCloudflare(promptText, systemInstruction, accountId, token) {
         const modelsToTry = [
             process.env.CLOUDFLARE_MODEL,
-            '@cf/google/gemini-3.6-flash',
+            '@cf/meta/llama-3.3-70b-instruct',
             '@cf/google/gemini-1.5-flash',
+            '@cf/google/gemini-3.6-flash',
             '@cf/google/gemini-3.5-flash-lite',
             '@cf/xai/grok-4.5',
-            '@cf/meta/llama-3.3-70b-instruct',
             '@cf/meta/llama-3.1-8b-instruct'
         ].filter(Boolean);
         let lastError = '';
@@ -262,27 +262,39 @@ NOTE: Only include "source_code" in project_data if the bot explicitly needs a M
             try {
                 this.logger.log(`Attempting Cloudflare AI generation with model: ${model}...`);
                 const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
+                const bodyPayload = {
+                    messages: [
+                        { role: 'system', content: systemInstruction },
+                        { role: 'user', content: promptText }
+                    ],
+                    prompt: systemInstruction + '\n\n--- USER REQUEST ---\n' + promptText,
+                    max_tokens: 8192
+                };
                 const res = await fetch(url, {
                     method: 'POST',
                     headers: {
                         'Authorization': 'Bearer ' + token,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        prompt: systemInstruction + '\n\n--- USER REQUEST ---\n' + promptText,
-                        max_tokens: 8192
-                    })
+                    body: JSON.stringify(bodyPayload)
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    let textOrObject = data.result?.response || data.result;
+                    let textOrObject = data.result?.response || data.result?.choices?.[0]?.message?.content || data.result;
                     if (textOrObject) {
                         this.logger.log(`Successfully generated via Cloudflare Workers AI (${model})!`);
-                        if (typeof textOrObject === 'object' && !Array.isArray(textOrObject))
+                        if (typeof textOrObject === 'object' && !Array.isArray(textOrObject)) {
+                            if (!textOrObject.explanation) {
+                                textOrObject.explanation = "Siz so'ragan loyiha muvaffaqiyatli yaratildi! 🚀 O'ng tomonda jonli natijani ko'rishingiz mumkin.";
+                            }
                             return textOrObject;
+                        }
                         let text = typeof textOrObject === 'string' ? textOrObject : JSON.stringify(textOrObject);
                         const parsed = this.extractJsonObject(text);
                         if (parsed) {
+                            if (!parsed.explanation) {
+                                parsed.explanation = "Siz so'ragan loyiha muvaffaqiyatli yaratildi! 🚀 O'ng tomonda jonli natijani ko'rishingiz mumkin.";
+                            }
                             return parsed;
                         }
                         throw new Error('Cloudflare AI returned invalid JSON format: ' + text.substring(0, 100));

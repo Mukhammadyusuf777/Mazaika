@@ -67,16 +67,16 @@ export async function queryAntigravityAgent(
 
     if (executionMode === 'PATCH') {
       return {
-        explanation: data.explanation || 'Element updated via Mazaika AI!',
+        explanation: data.explanation || 'Element muvaffaqiyatli yangilandi! ✨',
         execution_mode: 'PATCH',
         target_entity: 'none',
         patch_operations: data.patch_operations || []
       }
     } else if (executionMode === 'FULL_GENERATION') {
       const projectData = data.project_data || {};
-      const targetEntity = data.target_entity || 'mini_app';
+      const targetEntity = data.target_entity || 'site_only';
       return {
-        explanation: data.explanation || 'Project generated via Mazaika AI!',
+        explanation: data.explanation || 'Sayt va loyihangiz muvaffaqiyatli yaratildi! 🚀 O\'ng tomonda ko\'rishingiz mumkin.',
         execution_mode: 'FULL_GENERATION',
         target_entity: targetEntity,
         project_data: {
@@ -84,6 +84,7 @@ export async function queryAntigravityAgent(
           appName: projectData.appName || prompt,
           theme: projectData.theme || 'glassmorphism',
           themeColor: projectData.themeColor || '#1e90ff',
+          source_code: projectData.source_code || '',
           blocks: projectData.blocks || [],
           bot_blocks: projectData.bot_blocks || [],
           site_blocks: projectData.site_blocks || []
@@ -92,7 +93,7 @@ export async function queryAntigravityAgent(
     } else {
       // DISCUSSION MODE
       return {
-        explanation: data.explanation || 'Mazaika AI is responding...',
+        explanation: data.explanation || "Loyiha va javob tayyorlandi! Qanday yangi bo'lim yoki o'zgartirish qo'shishni xohlaysiz?",
         execution_mode: 'DISCUSSION',
         target_entity: 'none'
       }
