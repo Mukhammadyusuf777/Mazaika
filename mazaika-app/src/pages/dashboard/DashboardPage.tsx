@@ -508,14 +508,16 @@ export default function DashboardPage() {
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Yangi bot yaratish {selectedTemplate && `(${selectedTemplate} shabloni)`}</h2>
+              <h2>{modalType === 'site' ? 'Yangi sayt yaratish' : 'Yangi bot yaratish'} {selectedTemplate && `(${selectedTemplate} shabloni)`}</h2>
               <button className="btn btn-ghost btn-icon" onClick={() => setShowCreateModal(false)}>✕</button>
             </div>
             <div className="modal-body">
-              <div className="token-hint">
-                <div className="hint-icon">ℹ</div>
-                <p>Token olish uchun <strong>@BotFather</strong> ga boring va <code>/newbot</code> buyrug'ini yuboring</p>
-              </div>
+              {modalType === 'bot' && (
+                <div className="token-hint">
+                  <div className="hint-icon">ℹ</div>
+                  <p>Token olish uchun <strong>@BotFather</strong> ga boring va <code>/newbot</code> buyrug'ini yuboring</p>
+                </div>
+              )}
               <form onSubmit={handleCreateBot}>
                 <div className="input-group" style={{ marginBottom: '16px' }}>
                   <label className="input-label">{modalType === 'site' ? 'Sayt nomi' : 'Bot nomi'}</label>
