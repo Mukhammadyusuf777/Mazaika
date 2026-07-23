@@ -191,7 +191,7 @@ export default function AppLayout() {
       </div>
 
       {/* Global Floating AI Contextual Widget */}
-      <FloatingAICopilot projectType={projectType} />
+      {projectType === 'bot' && <FloatingAICopilot projectType={projectType} />}
     </div>
   )
 }

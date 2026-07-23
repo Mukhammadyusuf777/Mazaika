@@ -96,7 +96,15 @@ export default function SiteBuilderPage() {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>('1')
   const [projectType, setProjectType] = useState<'bot' | 'site'>('bot')
   
-  const { activeConfig } = useAICopilot()
+  const { activeConfig, messages, sendMessage, isGenerating } = useAICopilot()
+  const [promptInput, setPromptInput] = useState('')
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (projectType === 'site') {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages, projectType])
   
   // Google Sites layout states
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop')
@@ -142,19 +150,18 @@ export default function SiteBuilderPage() {
 
   // Sync AI changes from the floating widget
   useEffect(() => {
-    if (activeConfig && (activeConfig.site_blocks || activeConfig.blocks)) {
-      const newBlocks = activeConfig.site_blocks || activeConfig.blocks;
-      if (Array.isArray(newBlocks)) {
-        setConfig(prev => ({
-          ...prev,
-          theme: activeConfig.theme || prev.theme,
-          themeColor: activeConfig.themeColor || prev.themeColor,
-          appName: activeConfig.appName || prev.appName,
-          blocks: newBlocks
-        }));
-        if (newBlocks.length > 0) {
-          setSelectedBlockId(newBlocks[0].id || null);
-        }
+    if (activeConfig) {
+      const newBlocks = activeConfig.site_blocks || activeConfig.blocks || [];
+      setConfig(prev => ({
+        ...prev,
+        theme: activeConfig.theme || prev.theme,
+        themeColor: activeConfig.themeColor || prev.themeColor,
+        appName: activeConfig.appName || prev.appName,
+        blocks: Array.isArray(newBlocks) ? newBlocks : prev.blocks,
+        source_code: activeConfig.source_code || prev.source_code
+      }));
+      if (Array.isArray(newBlocks) && newBlocks.length > 0) {
+        setSelectedBlockId(newBlocks[0].id || null);
       }
     }
   }, [activeConfig])
@@ -291,6 +298,150 @@ export default function SiteBuilderPage() {
 
   const selectedBlock = config.blocks.find(b => b.id === selectedBlockId)
   const liveUrl = `https://mazaika.pages.dev/site/${botId}`
+
+  const handleSend = async () => {
+    if (!promptInput.trim() || isGenerating) return
+    const text = promptInput
+    setPromptInput('')
+    await sendMessage(text, 'PATCH', 'site_only')
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
+  if (projectType === 'site') {
+    return (
+      <div style={{ display: 'flex', height: '100%', background: '#090d16', color: '#fff', width: '100%' }}>
+        {/* Left Side: AI Chat (Gemini Style) */}
+        <div style={{ width: '400px', borderRight: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', background: '#0a0f1c' }}>
+          <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 100%)', padding: 8, borderRadius: 12 }}>
+              <Sparkles size={18} color="#fff" />
+            </div>
+            <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Mazaika AI Architect</h2>
+          </div>
+          
+          <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {messages.length === 0 && (
+              <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: 40, fontSize: 14 }}>
+                <Sparkles size={32} style={{ opacity: 0.5, margin: '0 auto 12px' }} />
+                <p>Mazaika AI'ga xush kelibsiz!</p>
+                <p>Saytingizni qanday yaratishni xohlaysiz? Menga tushuntiring.</p>
+              </div>
+            )}
+            {messages.map((m) => (
+              <div key={m.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                {m.sender === 'agent' && (
+                  <div style={{ background: '#a855f7', borderRadius: '50%', padding: 6, flexShrink: 0 }}>
+                    <Bot size={14} color="#fff" />
+                  </div>
+                )}
+                <div style={{ 
+                  background: m.sender === 'user' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.03)',
+                  padding: '12px 16px',
+                  borderRadius: 16,
+                  borderBottomRightRadius: m.sender === 'user' ? 4 : 16,
+                  borderBottomLeftRadius: m.sender === 'agent' ? 4 : 16,
+                  fontSize: 14,
+                  lineHeight: 1.5,
+                  marginLeft: m.sender === 'user' ? 'auto' : 0,
+                  maxWidth: '85%',
+                  border: m.sender === 'user' ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(255,255,255,0.05)'
+                }}>
+                  {m.text}
+                </div>
+              </div>
+            ))}
+            {isGenerating && (
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <div style={{ background: '#a855f7', borderRadius: '50%', padding: 6 }}><Bot size={14} color="#fff" /></div>
+                <div style={{ color: 'var(--text-muted)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Loader2 size={14} className="animate-spin" /> O'ylanmoqda...
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div style={{ padding: '20px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ 
+              background: 'rgba(255,255,255,0.03)', 
+              borderRadius: 16, 
+              border: '1px solid rgba(255,255,255,0.1)',
+              padding: '8px 12px',
+              display: 'flex',
+              alignItems: 'flex-end',
+              gap: 8,
+              transition: 'all 0.2s'
+            }}>
+              <textarea
+                value={promptInput}
+                onChange={e => setPromptInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isGenerating}
+                placeholder="Saytga nimalar qo'shamiz?"
+                style={{ 
+                  flex: 1, background: 'transparent', border: 'none', color: '#fff', 
+                  fontSize: 14, resize: 'none', outline: 'none', maxHeight: 150, minHeight: 40, padding: '8px 0' 
+                }}
+              />
+              <button 
+                onClick={handleSend}
+                disabled={!promptInput.trim() || isGenerating}
+                style={{
+                  background: promptInput.trim() ? '#3b82f6' : 'rgba(255,255,255,0.1)',
+                  color: '#fff', border: 'none', borderRadius: '50%', width: 36, height: 36,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: promptInput.trim() ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <Send size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side: Live Web Preview */}
+        <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: 20, background: '#050810' }}>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Globe size={20} color="var(--accent-blue)" />
+              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Sayt Peryu (Live Preview)</h1>
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              {saveSuccess && <span style={{ color: '#10d974', display: 'flex', alignItems: 'center', fontSize: 14, gap: 6 }}><CheckCircle size={16} /> Saqlandi!</span>}
+              <button onClick={handleSave} disabled={isLoading} className="btn btn-primary" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <Save size={16} /> {isLoading ? 'Saqlanmoqda...' : 'Saqlash'}
+              </button>
+              <a href={`/site/${botId}`} target="_blank" rel="noreferrer" className="btn btn-ghost" style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.05)' }}>
+                <Eye size={16} /> Ochish
+              </a>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, background: '#fff', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+            {!config.source_code ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b', flexDirection: 'column', gap: 16 }}>
+                <Globe size={48} style={{ opacity: 0.3 }} />
+                <p>AI orqali sayt yarating. Natija shu yerda paydo bo'ladi.</p>
+              </div>
+            ) : (
+              <iframe 
+                srcDoc={config.source_code} 
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                title="Live Preview"
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="builder-container" style={{ background: '#090d16' }}>
