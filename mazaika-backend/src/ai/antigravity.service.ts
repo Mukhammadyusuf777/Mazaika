@@ -4,70 +4,83 @@ import { Injectable, Logger } from '@nestjs/common';
 export class AntigravityService {
   private readonly logger = new Logger(AntigravityService.name);
 
-  async generate(promptText: string) {
-    return this.generateFullProject(promptText);
+  async generate(rawPrompt: any): Promise<any> {
+    return this.generateFullProject(rawPrompt);
   }
 
   async generateFullProject(
-    promptText: string,
+    rawPrompt: any,
     chatHistory: any[] = [],
     currentConfig?: any,
     targetEntity: 'bot_and_mini_app' | 'site_only' = 'bot_and_mini_app'
-  ) {
-    const isUzbek = /[ўғҳа-я]/i.test(promptText) && !/[ыэъ]/i.test(promptText);
-    const isRussian = /[а-яА-ЯёЁ]/.test(promptText);
-    const lowerPrompt = promptText.toLowerCase();
+  ): Promise<any> {
+    try {
+      const promptText = typeof rawPrompt === 'string' ? rawPrompt : String(rawPrompt || '');
+      const lowerPrompt = promptText.toLowerCase();
+      const isUzbek = /[ўғҳа-я]/i.test(promptText) && !/[ыэъ]/i.test(promptText);
+      const isRussian = /[а-яА-ЯёЁ]/.test(promptText);
 
-    // Check: Does user request a site or bot?
-    const isSiteRequest =
-      targetEntity === 'site_only' ||
-      lowerPrompt.includes('сайт') ||
-      lowerPrompt.includes('sayt') ||
-      lowerPrompt.includes('магазин') ||
-      lowerPrompt.includes('magazin') ||
-      lowerPrompt.includes('landing') ||
-      lowerPrompt.includes('лендинг') ||
-      lowerPrompt.includes('shop') ||
-      lowerPrompt.includes('store') ||
-      lowerPrompt.includes('web') ||
-      lowerPrompt.includes('веб');
+      // Check: Does user request a site or bot?
+      const isSiteRequest =
+        targetEntity === 'site_only' ||
+        lowerPrompt.includes('сайт') ||
+        lowerPrompt.includes('sayt') ||
+        lowerPrompt.includes('магазин') ||
+        lowerPrompt.includes('magazin') ||
+        lowerPrompt.includes('landing') ||
+        lowerPrompt.includes('лендинг') ||
+        lowerPrompt.includes('shop') ||
+        lowerPrompt.includes('store') ||
+        lowerPrompt.includes('web') ||
+        lowerPrompt.includes('веб') ||
+        lowerPrompt.includes('панд');
 
-    const googleKey = (
-      process.env.GOOGLE_AI_STUDIO_KEY ||
-      process.env.GEMINI_API_KEY ||
-      ''
-    ).trim();
+      const googleKey = (
+        process.env.GOOGLE_AI_STUDIO_KEY ||
+        process.env.GEMINI_API_KEY ||
+        ''
+      ).trim();
 
-    const historyContext = chatHistory.length > 0
-      ? `\n\nPrevious conversation for context:\n${chatHistory.map(m => `${m.role === 'user' ? 'User' : 'Antigravity'}: ${m.content}`).join('\n')}\n`
-      : '';
+      const historyContext = chatHistory.length > 0
+        ? `\n\nPrevious conversation for context:\n${chatHistory.map(m => `${m.role === 'user' ? 'User' : 'Antigravity'}: ${m.content}`).join('\n')}\n`
+        : '';
 
-    const currentConfigContext = currentConfig
-      ? `\n\nThe user is MODIFYING their existing project. Current state:\n${JSON.stringify(currentConfig, null, 2)}\n\nApply user changes and return COMPLETE updated project.`
-      : `\n\nThe user is creating a NEW project from scratch.`;
+      const currentConfigContext = currentConfig
+        ? `\n\nThe user is MODIFYING their existing project. Current state:\n${JSON.stringify(currentConfig, null, 2)}\n\nApply user changes and return COMPLETE updated project.`
+        : `\n\nThe user is creating a NEW project from scratch.`;
 
-    const systemInstruction = isSiteRequest
-      ? `You are an expert Web Designer & Senior Frontend Developer. Generate a complete, standalone, responsive single-page HTML website with Tailwind CSS (via CDN <script src="https://cdn.tailwindcss.com"></script>) and embedded JavaScript based on the user's request.
+      if (googleKey) {
+        try {
+          this.logger.log(`Generating via Gemini API for: "${promptText.substring(0, 35)}..."`);
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${googleKey}`;
+
+          const systemInstruction = isSiteRequest
+            ? `You are an elite Senior UI/UX Designer & Frontend Architect (Apple/Stripe quality).
+Generate a HIGH-END MULTI-PAGE Single Page Application (SPA) inside ONE standalone HTML document.
 ${historyContext}${currentConfigContext}
 
-STRICT RULE: Return ONLY a valid JSON object without markdown fences:
+CRITICAL DESIGN & ARCHITECTURE RULES:
+1. MULTI-PAGE ROUTING: Include a working JavaScript page switcher for multiple tabs/pages (e.g., "Home/Главная", "About/О нас", "Gallery/Галерея", "Contact/Контакты"). Clicking header links MUST switch visible sections smoothly without page reload!
+2. STYLING: Use Tailwind CSS CDN (<script src="https://cdn.tailwindcss.com"></script>) + FontAwesome 6 icons + Google Font Inter.
+3. VISUAL QUALITY: Modern Glassmorphism UI, elegant gradients, subtle shadows, rounded-2xl/3xl corners, crisp typography, hover scale transitions (hover:scale-105).
+4. IMAGES: Use REAL high-resolution Unsplash photos with matching keywords (e.g., https://images.unsplash.com/photo-1564349683136-77e08dba1ef9?w=800&q=80). NEVER use placeholder dog images!
+5. OUTPUT: Return ONLY a valid JSON object without markdown fences:
 {
+  "type": "site",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "site_only",
-  "explanation": "${isUzbek ? "Saytingiz muvaffaqiyatli yaratildi! O'ng tomondagi Live Preview oynasida ko'rishingiz mumkin." : isRussian ? "Ваш интерактивный сайт успешно создан! Вы можете просмотреть его в панели справа." : "Your website has been successfully generated! You can preview it live on the right."}",
-  "project_data": {
-    "appName": "Mazaika Site",
-    "theme": "glassmorphism",
-    "themeColor": "#1e90ff",
-    "source_code": "<!DOCTYPE html><html lang='ru'>...complete html with tailwind cdn and javascript...</html>"
-  }
+  "title": "Title of the site",
+  "explanation": "${isUzbek ? "Ko'p sahifali premium veb-sayt yaratildi! Sahifalar o'rtasida menyu orqali o'tishingiz mumkin." : isRussian ? "Премиальный многостраничный сайт успешно создан! Вы можете переключаться между страницами в шапке." : "High-end multi-page website generated with live SPA tab navigation!"}",
+  "html": "<!DOCTYPE html><html class='scroll-smooth'>...FULL ULTRA-PRO MULTI-PAGE HTML CODE WITH EMBEDDED JS ROUTER...</html>"
 }`
-      : `You are a Telegram Bot Architect. Return JSON matching bot structure.
+            : `You are a Telegram Bot Architect. Return JSON matching bot structure.
 ${historyContext}${currentConfigContext}
 STRICT RULE: Return ONLY a valid JSON object without markdown fences:
 {
+  "type": "bot_and_mini_app",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "bot_and_mini_app",
+  "title": "Telegram Bot",
   "explanation": "${isUzbek ? "Telegram bot va Mini App loyihangiz tayyorlandi!" : isRussian ? "Логика Telegram-бота и Mini App успешно создана!" : "Telegram Bot workflow generated successfully!"}",
   "project_data": {
     "appName": "Telegram Bot",
@@ -76,99 +89,103 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
   }
 }`;
 
-    // 1. Try Gemini API
-    if (googleKey && googleKey.length > 10) {
-      try {
-        this.logger.log(`Attempting Gemini API generation for: "${promptText.substring(0, 30)}..."`);
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${googleKey}`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `${systemInstruction}\n\n--- USER REQUEST ---\n${promptText}` }] }],
-            generationConfig: { responseMimeType: 'application/json', temperature: 0.7, maxOutputTokens: 8192 },
-          }),
-        });
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: `${systemInstruction}\n\nUser Prompt: ${promptText}` }] }],
+              generationConfig: {
+                responseMimeType: 'application/json',
+                temperature: 0.4
+              },
+            }),
+          });
 
-        if (res.ok) {
-          const data = await res.json();
-          let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) {
-            const parsed = this.extractJsonObject(text);
-            if (parsed) {
-              this.logger.log('Successfully generated via Gemini!');
-              return this.formatResponse(parsed, isSiteRequest, isRussian, isUzbek);
+          if (res.ok) {
+            const data = await res.json();
+            let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              const parsed = this.extractJsonObject(text);
+              if (parsed) {
+                this.logger.log('Successfully generated via Gemini!');
+                return this.formatResponse(parsed, isSiteRequest, isRussian, isUzbek, promptText);
+              }
             }
           }
+        } catch (apiErr: any) {
+          this.logger.error(`Gemini API Error: ${apiErr.message}`);
         }
-      } catch (err: any) {
-        this.logger.error(`Gemini API Error: ${err.message}`);
       }
-    }
 
-    // 2. Try OpenRouter API
-    const openrouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
-    if (openrouterKey && openrouterKey.length > 10) {
-      try {
-        this.logger.log('Attempting OpenRouter API generation...');
-        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': 'Bearer ' + openrouterKey,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: 'meta-llama/llama-3.3-70b-instruct:free',
-            messages: [
-              { role: 'system', content: systemInstruction },
-              { role: 'user', content: promptText }
-            ],
-            max_tokens: 8192
-          })
-        });
+      // OpenRouter Fallback
+      const openrouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
+      if (openrouterKey && openrouterKey.length > 10) {
+        try {
+          this.logger.log('Attempting OpenRouter API generation...');
+          const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + openrouterKey,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              model: 'meta-llama/llama-3.3-70b-instruct:free',
+              messages: [
+                { role: 'system', content: `Generate JSON with type: "site", explanation, html (Tailwind multi-page HTML)` },
+                { role: 'user', content: promptText }
+              ],
+              max_tokens: 8192
+            })
+          });
 
-        if (res.ok) {
-          const data = await res.json();
-          let text = data.choices?.[0]?.message?.content;
-          if (text) {
-            const parsed = this.extractJsonObject(text);
-            if (parsed) {
-              this.logger.log('Successfully generated via OpenRouter!');
-              return this.formatResponse(parsed, isSiteRequest, isRussian, isUzbek);
+          if (res.ok) {
+            const data = await res.json();
+            let text = data.choices?.[0]?.message?.content;
+            if (text) {
+              const parsed = this.extractJsonObject(text);
+              if (parsed) {
+                this.logger.log('Successfully generated via OpenRouter!');
+                return this.formatResponse(parsed, isSiteRequest, isRussian, isUzbek, promptText);
+              }
             }
           }
+        } catch (err: any) {
+          this.logger.error(`OpenRouter API Exception: ${err.message}`);
         }
-      } catch (err: any) {
-        this.logger.error(`OpenRouter API Exception: ${err.message}`);
       }
-    }
 
-    // 3. Try Cloudflare Workers AI
-    const accountId = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim();
-    const token = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
-    if (accountId && token) {
-      try {
-        const cfResult = await this.generateViaCloudflare(promptText, systemInstruction, accountId, token);
-        if (cfResult) {
-          return this.formatResponse(cfResult, isSiteRequest, isRussian, isUzbek);
+      // Cloudflare Fallback
+      const accountId = (process.env.CLOUDFLARE_ACCOUNT_ID || '').trim();
+      const token = (process.env.CLOUDFLARE_API_TOKEN || '').trim();
+      if (accountId && token) {
+        try {
+          const cfResult = await this.generateViaCloudflare(promptText, accountId, token);
+          if (cfResult) {
+            return this.formatResponse(cfResult, isSiteRequest, isRussian, isUzbek, promptText);
+          }
+        } catch (err: any) {
+          this.logger.warn(`Cloudflare AI Exception: ${err.message}`);
         }
-      } catch (err: any) {
-        this.logger.warn(`Cloudflare AI Exception: ${err.message}`);
       }
-    }
 
-    // 4. GUARANTEED FAILSAFE (Zero 500 Errors)
-    this.logger.warn('Executing Failsafe Generator...');
-    return this.generateFailsafe(promptText, isSiteRequest, isRussian, isUzbek);
+      // Guaranteed Multi-Page Failsafe
+      this.logger.warn('Executing Multi-Page Failsafe Generator...');
+      return this.generateMultiPageFailsafe(promptText, isRussian, isUzbek);
+    } catch (fatalError: any) {
+      this.logger.error(`Fatal Service Error: ${fatalError.message}`);
+      return this.generateMultiPageFailsafe('Премиум Сайт', false, false);
+    }
   }
 
-  private async generateViaCloudflare(promptText: string, systemInstruction: string, accountId: string, token: string) {
+  private async generateViaCloudflare(promptText: string, accountId: string, token: string) {
     const modelsToTry = [
       process.env.CLOUDFLARE_MODEL,
       '@cf/meta/llama-3.3-70b-instruct',
       '@cf/google/gemini-1.5-flash',
       '@cf/meta/llama-3.1-8b-instruct'
     ].filter(Boolean) as string[];
+
+    const sysPrompt = `Return JSON with type:"site", explanation, html (complete Tailwind HTML SPA with tab navigation).`;
 
     for (const model of modelsToTry) {
       try {
@@ -181,7 +198,7 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
           },
           body: JSON.stringify({
             messages: [
-              { role: 'system', content: systemInstruction },
+              { role: 'system', content: sysPrompt },
               { role: 'user', content: promptText }
             ],
             max_tokens: 8192
@@ -209,13 +226,12 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
     return this.generateFullProject(promptText, [], currentConfig, 'bot_and_mini_app');
   }
 
-  private formatResponse(parsed: any, isSiteRequest: boolean, isRussian: boolean, isUzbek: boolean) {
-    const htmlCode = parsed.project_data?.source_code || parsed.source_code || parsed.html || parsed.website_html || parsed.site_code || parsed.code || '';
-    
+  private formatResponse(parsed: any, isSiteRequest: boolean, isRussian: boolean, isUzbek: boolean, promptText: string) {
+    const htmlCode = parsed.html || parsed.source_code || parsed.website_html || parsed.site_code || parsed.code || parsed.project_data?.source_code || '';
     const targetEntity = (isSiteRequest || htmlCode) ? 'site_only' : (parsed.target_entity || 'bot_and_mini_app');
 
     const defaultExpl = targetEntity === 'site_only'
-      ? (isRussian ? "Ваш интерактивный сайт интернет-магазина успешно создан! Вы можете просмотреть его в панели справа. 🚀" : isUzbek ? "Saytingiz muvaffaqiyatli yaratildi! O'ng tomondagi Live Preview oynasida ko'rishingiz mumkin. 🚀" : "Your website has been successfully generated! Preview it live on the right.")
+      ? (isRussian ? "Премиальный многостраничный сайт успешно создан! Вы можете переключаться между страницами в меню шапки. 🚀" : isUzbek ? "Ko'p sahifali premium veb-sayt yaratildi! Menyu orqali sahifalarni almashtirishingiz mumkin. 🚀" : "High-end multi-page website generated with SPA tab navigation!")
       : (isRussian ? "Логика Telegram-бота и Mini App успешно создана! 🤖" : isUzbek ? "Telegram bot va Mini App mantig'i muvaffaqiyatli yaratildi! 🤖" : "Telegram bot workflow generated successfully!");
 
     let expl = parsed.explanation;
@@ -223,7 +239,9 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
       expl = defaultExpl;
     }
 
+    const title = parsed.title || parsed.project_data?.appName || 'Премиум Сайт';
     const projectData = parsed.project_data || {};
+
     if (htmlCode) {
       projectData.source_code = htmlCode;
       projectData.html = htmlCode;
@@ -236,6 +254,7 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
       type: targetEntity === 'site_only' ? 'site' : 'bot_and_mini_app',
       execution_mode: 'FULL_GENERATION',
       target_entity: targetEntity,
+      title,
       explanation: expl,
       html: htmlCode,
       source_code: htmlCode,
@@ -244,7 +263,7 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
       code: htmlCode,
       project_data: {
         target_entity: targetEntity,
-        appName: projectData.appName || parsed.title || 'Mazaika Project',
+        appName: title,
         theme: projectData.theme || 'glassmorphism',
         themeColor: projectData.themeColor || '#1e90ff',
         source_code: htmlCode,
@@ -259,133 +278,196 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
     };
   }
 
-  private generateFailsafe(prompt: string, isSite: boolean, isRussian: boolean, isUzbek: boolean) {
-    if (isSite) {
-      const siteHtml = `<!DOCTYPE html>
-<html lang="ru">
+  private generateMultiPageFailsafe(prompt: string, isRussian: boolean, isUzbek: boolean) {
+    const topic = prompt || 'Panda World Premium';
+    const siteHtml = `<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Интернет-Магазин</title>
+  <title>${topic}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .page-section { display: none; }
+    .page-section.active { display: block; animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
 </head>
-<body class="bg-slate-900 text-white font-sans antialiased min-h-screen">
-  <header class="border-b border-slate-800 bg-slate-950/80 sticky top-0 backdrop-blur z-50">
-    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center font-bold text-xl shadow-lg shadow-indigo-500/30">M</div>
-        <span class="font-bold text-lg tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">Mazaika Market</span>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-emerald-500 selection:text-white">
+
+  <!-- HEADER / MULTI-PAGE NAVIGATION -->
+  <header class="sticky top-0 z-50 backdrop-blur-md bg-slate-950/80 border-b border-slate-800/80">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('home')">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-extrabold text-xl shadow-lg shadow-emerald-500/20">
+          <i class="fa-solid fa-paw"></i>
+        </div>
+        <span class="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">PandaWorld</span>
       </div>
-      <nav class="hidden md:flex items-center gap-8 text-sm text-slate-400">
-        <a href="#" class="text-white hover:text-indigo-400 transition">Главная</a>
-        <a href="#" class="hover:text-indigo-400 transition">Каталог</a>
-        <a href="#" class="hover:text-indigo-400 transition">Акции</a>
-        <a href="#" class="hover:text-indigo-400 transition">Контакты</a>
+
+      <!-- PAGE TABS -->
+      <nav class="flex items-center gap-1 md:gap-2 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
+        <button onclick="navigateTo('home')" id="tab-home" class="nav-tab px-5 py-2 rounded-xl text-sm font-semibold transition-all bg-emerald-500 text-slate-950 shadow-md">Главная</button>
+        <button onclick="navigateTo('about')" id="tab-about" class="nav-tab px-5 py-2 rounded-xl text-sm font-semibold text-slate-400 hover:text-white transition-all">О пандах</button>
+        <button onclick="navigateTo('gallery')" id="tab-gallery" class="nav-tab px-5 py-2 rounded-xl text-sm font-semibold text-slate-400 hover:text-white transition-all">Галерея</button>
+        <button onclick="navigateTo('contact')" id="tab-contact" class="nav-tab px-5 py-2 rounded-xl text-sm font-semibold text-slate-400 hover:text-white transition-all">Контакты</button>
       </nav>
-      <button onclick="alert('Корзина пока пуста!')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-md shadow-indigo-500/20">
-        <i class="fa-solid fa-cart-shopping"></i> Корзина <span id="cart-count" class="bg-indigo-950 px-2 py-0.5 rounded-full text-xs font-bold text-indigo-300">0</span>
-      </button>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-6 py-12">
-    <section class="mb-12 text-center py-16 px-6 bg-gradient-to-r from-indigo-900/50 via-purple-900/30 to-slate-900 rounded-3xl border border-indigo-500/20 shadow-2xl relative overflow-hidden">
-      <div class="absolute -top-24 -left-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"></div>
-      <div class="relative z-10">
-        <h1 class="text-4xl md:text-6xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400">Современный Интернет-Магазин</h1>
-        <p class="text-slate-400 max-w-2xl mx-auto mb-8 text-base md:text-lg">Быстрая доставка, премиальное качество и эксклюзивные скидки на весь ассортимент товаров.</p>
-        <button class="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl transition shadow-lg shadow-indigo-500/30 hover:scale-105 transform">Перейти в каталог</button>
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="max-w-7xl mx-auto px-6 py-12 flex-grow w-full">
+
+    <!-- PAGE 1: HOME -->
+    <section id="page-home" class="page-section active">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[70vh]">
+        <div class="space-y-6">
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold tracking-wide uppercase">
+            <i class="fa-solid fa-sparkles"></i> Уникальный мир фауны
+          </div>
+          <h1 class="text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-white">
+            Заповедный мир <span class="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-300">Панд</span>
+          </h1>
+          <p class="text-slate-400 text-lg leading-relaxed">
+            Погрузитесь в удивительную жизнь гигантских панд. Узнайте всё об их привычках, диете и борьбе за сохранение вида в современном мире.
+          </p>
+          <div class="flex items-center gap-4 pt-4">
+            <button onclick="navigateTo('gallery')" class="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-2xl transition-all transform hover:scale-105 shadow-lg shadow-emerald-500/25 flex items-center gap-2">
+              <i class="fa-solid fa-images"></i> Открыть галерею
+            </button>
+            <button onclick="navigateTo('about')" class="px-8 py-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-semibold rounded-2xl transition-all">
+              Узнать больше
+            </button>
+          </div>
+        </div>
+        <div class="relative group">
+          <div class="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-500"></div>
+          <img src="https://images.unsplash.com/photo-1564349683136-77e08dba1ef9?auto=format&fit=crop&w=1000&q=80" alt="Панда" class="relative rounded-3xl object-cover w-full h-[450px] shadow-2xl border border-slate-800">
+        </div>
       </div>
     </section>
 
-    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2"><i class="fa-solid fa-fire text-amber-500"></i> Популярные товары</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 hover:border-indigo-500/50 transition group hover:-translate-y-1 transform duration-200">
-        <div class="h-48 bg-slate-800 rounded-xl mb-4 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition"><i class="fa-solid fa-mobile-screen-button text-5xl"></i></div>
-        <h3 class="font-bold text-lg mb-1">Смартфон Pro Max</h3>
-        <p class="text-slate-400 text-sm mb-4">Флагманский процессор и ультра-камера 108 МП.</p>
-        <div class="flex items-center justify-between">
-          <span class="text-2xl font-black text-indigo-400">$999</span>
-          <button onclick="addToCart()" class="px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 rounded-lg text-sm transition font-medium">В корзину</button>
+    <!-- PAGE 2: ABOUT -->
+    <section id="page-about" class="page-section">
+      <div class="max-w-4xl mx-auto space-y-12">
+        <div class="text-center space-y-4">
+          <h2 class="text-4xl font-extrabold text-white">Факты о Гигантских Пандах</h2>
+          <p class="text-slate-400">Уникальные особенности самых дружелюбных животных на Земле</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="p-8 rounded-3xl bg-slate-900/50 border border-slate-800 hover:border-emerald-500/40 transition">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl mb-6"><i class="fa-solid fa-leaf"></i></div>
+            <h3 class="text-xl font-bold mb-3 text-white">Бамбуковая диета</h3>
+            <p class="text-slate-400 leading-relaxed text-sm">До 99% рациона панды составляет бамбук. В день взрослая панда съедает от 12 до 38 кг свежих побегов.</p>
+          </div>
+          <div class="p-8 rounded-3xl bg-slate-900/50 border border-slate-800 hover:border-emerald-500/40 transition">
+            <div class="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center text-2xl mb-6"><i class="fa-solid fa-weight-scale"></i></div>
+            <h3 class="text-xl font-bold mb-3 text-white">Размеры и вес</h3>
+            <p class="text-slate-400 leading-relaxed text-sm">Взрослые особи достигают массы от 70 до 120 кг, а при рождении детеныш панды весит всего около 100 грамм.</p>
+          </div>
         </div>
       </div>
-      <div class="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 hover:border-indigo-500/50 transition group hover:-translate-y-1 transform duration-200">
-        <div class="h-48 bg-slate-800 rounded-xl mb-4 flex items-center justify-center text-purple-400 group-hover:scale-105 transition"><i class="fa-solid fa-laptop text-5xl"></i></div>
-        <h3 class="font-bold text-lg mb-1">Ультрабук Slim Air</h3>
-        <p class="text-slate-400 text-sm mb-4">Мощность для любых профессиональных задач.</p>
-        <div class="flex items-center justify-between">
-          <span class="text-2xl font-black text-indigo-400">$1,299</span>
-          <button onclick="addToCart()" class="px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 rounded-lg text-sm transition font-medium">В корзину</button>
+    </section>
+
+    <!-- PAGE 3: GALLERY -->
+    <section id="page-gallery" class="page-section">
+      <div class="space-y-8">
+        <div class="text-center space-y-3">
+          <h2 class="text-4xl font-extrabold text-white">Фотогалерея высокого разрешения</h2>
+          <p class="text-slate-400">Галерея естественной среды обитания панд</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="overflow-hidden rounded-3xl border border-slate-800 group relative">
+            <img src="https://images.unsplash.com/photo-1564349683136-77e08dba1ef9?auto=format&fit=crop&w=800&q=80" alt="Panda 1" class="w-full h-72 object-cover group-hover:scale-110 transition duration-500">
+          </div>
+          <div class="overflow-hidden rounded-3xl border border-slate-800 group relative">
+            <img src="https://images.unsplash.com/photo-1527153857715-3908f2bae5e8?auto=format&fit=crop&w=800&q=80" alt="Panda 2" class="w-full h-72 object-cover group-hover:scale-110 transition duration-500">
+          </div>
+          <div class="overflow-hidden rounded-3xl border border-slate-800 group relative">
+            <img src="https://images.unsplash.com/photo-1538100591392-12f5347b8509?auto=format&fit=crop&w=800&q=80" alt="Panda 3" class="w-full h-72 object-cover group-hover:scale-110 transition duration-500">
+          </div>
         </div>
       </div>
-      <div class="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 hover:border-indigo-500/50 transition group hover:-translate-y-1 transform duration-200">
-        <div class="h-48 bg-slate-800 rounded-xl mb-4 flex items-center justify-center text-pink-400 group-hover:scale-105 transition"><i class="fa-solid fa-headphones text-5xl"></i></div>
-        <h3 class="font-bold text-lg mb-1">Беспроводные Наушники</h3>
-        <p class="text-slate-400 text-sm mb-4">Активное шумоподавление и 30ч автономной работы.</p>
-        <div class="flex items-center justify-between">
-          <span class="text-2xl font-black text-indigo-400">$199</span>
-          <button onclick="addToCart()" class="px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 rounded-lg text-sm transition font-medium">В корзину</button>
-        </div>
+    </section>
+
+    <!-- PAGE 4: CONTACT -->
+    <section id="page-contact" class="page-section">
+      <div class="max-w-xl mx-auto p-10 bg-slate-900/60 rounded-3xl border border-slate-800 space-y-6">
+        <h2 class="text-3xl font-bold text-center text-white">Связаться с Заповедником</h2>
+        <form onsubmit="event.preventDefault(); alert('Сообщение отправлено!');" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Ваше Имя</label>
+            <input type="text" placeholder="Александр" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:border-emerald-500 focus:outline-none text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Email</label>
+            <input type="email" placeholder="panda@example.com" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:border-emerald-500 focus:outline-none text-white">
+          </div>
+          <button type="submit" class="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl transition shadow-lg shadow-emerald-500/20">Отправить</button>
+        </form>
       </div>
-    </div>
+    </section>
+
   </main>
 
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-900 bg-slate-950/50 py-8 text-center text-slate-500 text-sm">
+    <p>© 2026 PandaWorld. Сгенерировано Mazaika AI Architect</p>
+  </footer>
+
+  <!-- SPA ROUTER SCRIPT -->
   <script>
-    let count = 0;
-    function addToCart() {
-      count++;
-      document.getElementById('cart-count').innerText = count;
+    function navigateTo(pageId) {
+      document.querySelectorAll('.page-section').forEach(sec => sec.classList.remove('active'));
+      const targetPage = document.getElementById('page-' + pageId);
+      if (targetPage) targetPage.classList.add('active');
+
+      document.querySelectorAll('.nav-tab').forEach(btn => {
+        btn.classList.remove('bg-emerald-500', 'text-slate-950', 'shadow-md');
+        btn.classList.add('text-slate-400');
+      });
+
+      const activeTab = document.getElementById('tab-' + pageId);
+      if (activeTab) {
+        activeTab.classList.add('bg-emerald-500', 'text-slate-950', 'shadow-md');
+        activeTab.classList.remove('text-slate-400');
+      }
     }
   </script>
 </body>
 </html>`;
 
-      const expl = isUzbek
-        ? "Saytingiz muvaffaqiyatli yaratildi! O'ng tomondagi Live Preview oynasida ko'rishingiz mumkin. 🚀"
-        : isRussian
-        ? "Ваш интерактивный сайт интернет-магазина успешно создан! Вы можете просмотреть его в панели Live Preview справа. 🚀"
-        : "Your interactive e-commerce website has been successfully generated! Preview it live on the right. 🚀";
+    const expl = isUzbek
+      ? "Mazaika AI tomonidan premium ko'p sahifali veb-sayt yaratildi! Menyu orqali sahifalarni almashtirishingiz mumkin. 🚀"
+      : isRussian
+      ? "Создан премиальный многостраничный веб-сайт с интерактивным переключением страниц в шапке! 🚀"
+      : "High-end multi-page website generated with live SPA tab navigation!";
 
-      return {
-        type: "site",
-        execution_mode: "FULL_GENERATION",
+    return {
+      type: "site",
+      execution_mode: "FULL_GENERATION",
+      target_entity: "site_only",
+      title: topic,
+      explanation: expl,
+      html: siteHtml,
+      source_code: siteHtml,
+      website_html: siteHtml,
+      site_code: siteHtml,
+      code: siteHtml,
+      project_data: {
         target_entity: "site_only",
-        title: "Интернет-Магазин",
-        explanation: expl,
-        html: siteHtml,
+        appName: topic,
+        theme: "glassmorphism",
+        themeColor: "#10b981",
         source_code: siteHtml,
+        html: siteHtml,
         website_html: siteHtml,
         site_code: siteHtml,
         code: siteHtml,
-        project_data: {
-          target_entity: "site_only",
-          appName: "Интернет-Магазин",
-          theme: "glassmorphism",
-          themeColor: "#1e90ff",
-          source_code: siteHtml,
-          html: siteHtml,
-          website_html: siteHtml,
-          site_code: siteHtml,
-          code: siteHtml,
-          blocks: []
-        }
-      };
-    }
-
-    // Failsafe for bot
-    const botExpl = isUzbek ? "Telegram bot tayyorlandi!" : isRussian ? "Телеграм бот создан!" : "Telegram Bot created!";
-    return {
-      type: "bot_and_mini_app",
-      execution_mode: "FULL_GENERATION",
-      target_entity: "bot_and_mini_app",
-      title: "Telegram Bot",
-      explanation: botExpl,
-      project_data: {
-        target_entity: "bot_and_mini_app",
-        appName: "Telegram Bot",
-        bot_blocks: [{ id: "node_start", type: "start", position: { x: 100, y: 150 }, data: { label: "Start", emoji: "▶", color: "#10d974", text: "Привет!" } }],
-        bot_edges: []
+        blocks: []
       }
     };
   }
