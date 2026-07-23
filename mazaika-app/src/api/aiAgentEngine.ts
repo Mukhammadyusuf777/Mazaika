@@ -63,7 +63,7 @@ export async function queryAntigravityAgent(
 
     const data = await res.json()
     
-    const executionMode = data.execution_mode || 'DISCUSSION'
+    const executionMode = data.execution_mode || (data.type === 'site' || data.html || data.source_code || data.website_html ? 'FULL_GENERATION' : 'DISCUSSION')
 
     if (executionMode === 'PATCH') {
       return {
@@ -72,19 +72,22 @@ export async function queryAntigravityAgent(
         target_entity: 'none',
         patch_operations: data.patch_operations || []
       }
-    } else if (executionMode === 'FULL_GENERATION') {
-      const projectData = data.project_data || {};
-      const targetEntity = data.target_entity || 'site_only';
+    } else if (executionMode === 'FULL_GENERATION' || data.type === 'site' || data.html || data.source_code || data.website_html) {
+      const projectData = data.project_data || data;
+      const htmlCode = projectData.source_code || projectData.html || projectData.website_html || projectData.site_code || projectData.code || data.html || data.source_code || data.website_html || data.site_code || data.code || '';
+      const targetEntity = (htmlCode || data.type === 'site') ? 'site_only' : (data.target_entity || 'site_only');
+      const isRu = /[а-яА-ЯёЁ]/.test(prompt);
+
       return {
-        explanation: data.explanation || 'Sayt va loyihangiz muvaffaqiyatli yaratildi! 🚀 O\'ng tomonda ko\'rishingiz mumkin.',
+        explanation: data.explanation || (isRu ? "Ваш сайт успешно создан! 🚀 Вы можете просмотреть его в панели справа." : "Sayt muvaffaqiyatli yaratildi! 🚀 O'ng tomondagi jonli oynada ko'rishingiz mumkin."),
         execution_mode: 'FULL_GENERATION',
         target_entity: targetEntity,
         project_data: {
           target_entity: targetEntity,
-          appName: projectData.appName || prompt,
+          appName: projectData.appName || projectData.title || prompt,
           theme: projectData.theme || 'glassmorphism',
           themeColor: projectData.themeColor || '#1e90ff',
-          source_code: projectData.source_code || '',
+          source_code: htmlCode,
           blocks: projectData.blocks || [],
           bot_blocks: projectData.bot_blocks || [],
           site_blocks: projectData.site_blocks || []
@@ -92,8 +95,9 @@ export async function queryAntigravityAgent(
       }
     } else {
       // DISCUSSION MODE
+      const isRu = /[а-яА-ЯёЁ]/.test(prompt);
       return {
-        explanation: data.explanation || "Loyiha va javob tayyorlandi! Qanday yangi bo'lim yoki o'zgartirish qo'shishni xohlaysiz?",
+        explanation: data.explanation || (isRu ? "Ответ готов! Что мы добавим или изменим дальше?" : "Javob tayyor! Qanday yangi bo'lim qo'shamiz?"),
         execution_mode: 'DISCUSSION',
         target_entity: 'none'
       }
