@@ -354,8 +354,8 @@ export default function DashboardPage() {
               <div style={{ display: 'flex', gap: 10 }}>
                 <button 
                   className="btn btn-primary" 
-                  onClick={() => navigate('/dashboard/ai-workspace')} 
-                  style={{ gap: 8, background: 'linear-gradient(135deg, #00f5c4, #1e90ff)', border: 'none' }}
+                  onClick={() => { setSelectedTemplate(''); setNewBotName('Yangi AI Sayt'); setNewBotToken(''); setModalType('site'); setShowCreateModal(true); }} 
+                  style={{ gap: 8, background: 'linear-gradient(135deg, #00f5c4, #1e90ff)', border: 'none', color: '#090d16', fontWeight: 700 }}
                 >
                   <Sparkles size={16} /> ✨ AI Sayt Yaratish
                 </button>

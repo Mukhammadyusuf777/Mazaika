@@ -161,20 +161,19 @@ You MUST write your "explanation" field in the EXACT SAME LANGUAGE as the user's
 - If user prompt is in Russian, write ONLY IN RUSSIAN!
 - If user prompt is in English, write ONLY IN ENGLISH!
 
-### PERSONALITY (in your "explanation" field):
-- Describe what you built and WHY you made certain design decisions.
-- Ask for feedback in the user's language.
-- Proactively suggest 2-3 improvements or features you could add next.
+### PERSONALITY & EXPLANATION RULE:
+- Write a genuine, friendly explanation in your "explanation" field matching the user's prompt language (Uzbek/Russian/English).
+- NEVER output placeholder angle brackets or literal system instruction text inside "explanation"!
 
 ### RESPONSE FORMAT — Return ONLY valid JSON (no markdown, no backticks):
 {
-  "explanation": "<Siz yaratgan loyihangiz haqida foydalanuvchi muloqot qilgan tilida (masalan: O'zbek tilida) do'stona va batafsil tushuntirish bering. Qanday bo'limlar va dizayn yaratganingizni aytib, taassurotlarini so'rang va 2-3 ta yangi g'oya taklif qiling>",
+  "explanation": "Saytingiz tayyor bo'ldi! Men zamonaviy va interaktiv dizaynga ega loyiha kodini yaratdim. Unda barcha kerakli bo'limlar mavjud. Yana qanday o'zgartirishlar kiritamiz?",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "site_only",
   "project_data": {
     "appName": "Site name here",
     "theme": "glassmorphism",
-    "themeColor": "#hex",
+    "themeColor": "#1e90ff",
     "source_code": "<!DOCTYPE html><html lang='uz'>...</html>"
   }
 }`;
@@ -223,9 +222,13 @@ You MUST write your "explanation" field in the EXACT SAME LANGUAGE as the user's
 - If user prompt is in Russian, write ONLY IN RUSSIAN!
 - If user prompt is in English, write ONLY IN ENGLISH!
 
+### STRICT INSTRUCTION:
+- Write a genuine, friendly explanation in your "explanation" field matching the user's prompt language.
+- NEVER output placeholder angle brackets or literal system instruction text inside "explanation"!
+
 ### RESPONSE FORMAT — Return ONLY valid JSON (no markdown, no backticks):
 {
-  "explanation": "<Foydalanuvchi muloqot qilgan tilida (masalan: O'zbek tilida) bot va mini app mantiqini tushuntiring va yangi takliflar bering>",
+  "explanation": "Loyiha muvaffaqiyatli yaratildi! Bot va Mini App mantig'ini tuzib berdim. Yana qanday yangi imkoniyatlar qo'shamiz?",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "bot_and_mini_app",
   "project_data": {

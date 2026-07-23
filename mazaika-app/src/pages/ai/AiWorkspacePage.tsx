@@ -589,13 +589,23 @@ export default function AiWorkspacePage() {
                 <span>Live AI Dynamic Canvas (Mazaika Generative Engine)</span>
               </div>
 
-              {activeConfig.target_entity === 'bot_and_mini_app' ? (
+              {activeConfig.source_code ? (
+                <div style={{ width: '100%', flex: 1, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 20px 40px rgba(0,0,0,0.5)', background: '#fff' }}>
+                  <iframe
+                    key={activeConfig.source_code.length}
+                    srcDoc={activeConfig.source_code}
+                    style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
+                    title="Live AI Generated Site Preview"
+                    sandbox="allow-scripts allow-same-origin"
+                  />
+                </div>
+              ) : activeConfig.target_entity === 'bot_and_mini_app' ? (
                 <div style={{ display: 'flex', gap: 24, flex: 1, width: '100%', justifyContent: 'center' }}>
                   {/* Left Shell: BOT CONSTRUCTOR */}
                   <div className="ai-constructor-shell" style={{ height: '100%', flex: 1, maxWidth: 400, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ height: 40, background: '#1e293b', display: 'flex', alignItems: 'center', padding: '0 16px', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                       <div style={{ fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Bot size={14} style={{ color: '#a855f7' }} /> Bot Constructor
+                        <Bot size={14} style={{ color: '#a855f7' }} /> Bot Flow
                       </div>
                     </div>
                     <div style={{ flex: 1, padding: 16, overflowY: 'auto', background: activeConfig.theme === 'minimalist' ? '#f8fafc' : activeConfig.theme === 'neon' ? '#05050d' : '#090d16', color: activeConfig.theme === 'minimalist' ? '#0f172a' : '#fff' }}>
@@ -638,8 +648,7 @@ export default function AiWorkspacePage() {
                   )}
                   {activeConfig.target_entity === 'bot' && (
                     <div style={{ height: 40, background: '#1e293b', display: 'flex', alignItems: 'center', padding: '0 16px', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}><Bot size={14} style={{ color: '#a855f7' }} /> Bot Constructor Board</div>
-                      <div style={{ fontSize: 10, color: '#94a3b8' }}>Drag & Drop Nodes Enabled</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}><Bot size={14} style={{ color: '#a855f7' }} /> Bot Flow Board</div>
                     </div>
                   )}
                   <div style={{ flex: 1, padding: 16, overflowY: 'auto', background: activeConfig.theme === 'minimalist' ? '#f8fafc' : activeConfig.theme === 'neon' ? '#05050d' : '#090d16', color: activeConfig.theme === 'minimalist' ? '#0f172a' : '#fff' }}>
