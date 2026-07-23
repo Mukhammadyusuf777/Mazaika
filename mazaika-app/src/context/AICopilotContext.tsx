@@ -52,7 +52,14 @@ const [isWidgetOpen, setWidgetOpen] = useState(false)
       {
         id: 'welcome_1',
         sender: 'agent',
-        text: 'Salom! Men sizning Mazaika AI Агентингизман 🤖. Istalgan g\'oyangizni yozing va men uni lahzalarda tayyor loyihaga aylantirib beraman!',
+        text: `Salom! Men **Mazaika AI** — sizning shaxsiy AI developeringizman! 🚀
+
+Men quyidagilarda yordam bera olaman:
+- 🤖 **Telegram bot** yaratish yoki takomillashtirish
+- 🌐 **Sayt** yaratish — to'liq HTML/CSS/JS
+- ✨ Mavjud loyihani o'zgartirish yoki kengaytirish
+
+G'oyangizni yozing va men uni lahzalarda tayyor loyihaga aylantirib beraman!`,
         timestamp: new Date()
       }
     ]
@@ -60,7 +67,16 @@ const [isWidgetOpen, setWidgetOpen] = useState(false)
 
   const switchProject = (projectId: string, config: any) => {
     setActiveProjectId(projectId)
-    setActiveConfig(config)
+    // Only override config if a non-null config was explicitly passed
+    if (config !== null) {
+      setActiveConfig(config)
+    }
+    
+    // Load project-specific saved config from localStorage
+    const savedConfig = localStorage.getItem('mazaika_ai_config_' + projectId)
+    if (savedConfig) {
+      try { setActiveConfig(JSON.parse(savedConfig)) } catch {}
+    }
     
     // Load project messages
     const savedMessages = localStorage.getItem('mazaika_ai_messages_' + projectId)
@@ -72,7 +88,7 @@ const [isWidgetOpen, setWidgetOpen] = useState(false)
         {
           id: 'welcome_' + projectId,
           sender: 'agent',
-          text: `Salom! Bu loyiha uchun yordam berishga tayyorman.`,
+          text: `Bu loyiha uchun AI tayyor! ✨\n\nBotni yaxshilash, yangi bloklar qo'shish yoki Mini App yaratish uchun yozing.`,
           timestamp: new Date()
         }
       ])
@@ -81,11 +97,12 @@ const [isWidgetOpen, setWidgetOpen] = useState(false)
 
   const clearChat = () => {
     setActiveConfig(null);
+    const welcomeText = `Salom! Men **Mazaika AI** — sizning shaxsiy AI developeringizman! 🚀\n\nChat tozalandi. Yangi g'oyangizni yozing!`;
     setMessages([
       {
-        id: 'welcome_' + activeProjectId,
+        id: 'welcome_' + Date.now(),
         sender: 'agent',
-        text: 'Salom! Men sizning Mazaika AI Агентингизман 🤖. Istalgan g\'oyangizni yozing va men uni lahzalarda tayyor loyihaga aylantirib beraman!',
+        text: welcomeText,
         timestamp: new Date()
       }
     ]);

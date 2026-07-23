@@ -227,7 +227,13 @@ export default function SiteRendererPage() {
   }
 
   if (loading) {
-    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0b0f19', color: '#fff' }}>Yuklanmoqda...</div>
+    return (
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'100vh', background:'#0a0f1e', gap:16 }}>
+        <div style={{ width:48, height:48, border:'3px solid rgba(30,144,255,0.3)', borderTop:'3px solid #1e90ff', borderRadius:'50%', animation:'spin 1s linear infinite' }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        <p style={{ color:'#64748b', fontSize:14 }}>Yuklanmoqda...</p>
+      </div>
+    )
   }
 
   if (!config || !Array.isArray(config.blocks)) {

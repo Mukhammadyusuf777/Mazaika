@@ -5,6 +5,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPhoneNumber,
   RecaptchaVerifier,
+  sendPasswordResetEmail,
 } from 'firebase/auth'
 import type { ConfirmationResult } from 'firebase/auth'
 import { auth, googleProvider } from '../../api/firebase'
@@ -104,9 +105,11 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true); setError(''); setInfo('')
     try {
-      if (!window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' })
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = null as any;
       }
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' })
       const result = await signInWithPhoneNumber(auth, phone, window.recaptchaVerifier)
       setConfirmation(result)
       setOtpSent(true)
@@ -192,7 +195,18 @@ export default function LoginPage() {
                 <span className="input-icon">🔒</span>
                 <input type="password" className="input input-padded" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
               </div>
-              <a href="#" className="auth-forgot">{txt.forgot}</a>
+              <a href="#" className="auth-forgot" onClick={async (e) => {
+                e.preventDefault();
+                const resetEmail = prompt("Email manzilini kiriting / Введите email:", email);
+                if (resetEmail) {
+                  try {
+                    await sendPasswordResetEmail(auth, resetEmail);
+                    alert("Parolni tiklash havolasi emailga yuborildi!");
+                  } catch (err: any) {
+                    alert("Xatolik: " + err.message);
+                  }
+                }
+              }}>{txt.forgot}</a>
             </div>
             {error && <div className="auth-error">{error}</div>}
             <button type="submit" className="btn btn-primary w-full btn-lg auth-submit" disabled={isLoading}>

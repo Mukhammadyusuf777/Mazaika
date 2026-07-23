@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -24,12 +25,13 @@ export class AuthService {
       }
     }
 
+    const hashedPassword = await bcrypt.hash(data.password, 10);
     const user = await this.prisma.user.create({
       data: {
         name: data.name,
         email: data.email || null,
         phone: data.phone || null,
-        password: data.password,
+        password: hashedPassword,
       },
     });
 
@@ -51,7 +53,12 @@ export class AuthService {
       user = await this.prisma.user.findUnique({ where: { phone: identifier } });
     }
 
-    if (!user || user.password !== data.password) {
+    if (!user || !user.password) {
+      return { success: false, message: 'Login yoki parol xato' };
+    }
+    
+    const isPasswordValid = await bcrypt.compare(data.password, user.password);
+    if (!isPasswordValid) {
       return { success: false, message: 'Login yoki parol xato' };
     }
 
