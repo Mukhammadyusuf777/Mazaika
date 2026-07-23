@@ -163,15 +163,21 @@ Generate a COMPLETE, PRODUCTION-QUALITY standalone website as raw HTML/CSS/JS so
 6. MUST be fully mobile-responsive.
 7. The user NEVER sees your code — only the rendered iframe result. Quality is everything.
 
+### CRITICAL LANGUAGE RULE:
+Detect the language used in the user's prompt (Uzbek, Russian, English, etc.).
+You MUST write your "explanation" field in the EXACT SAME LANGUAGE as the user's prompt!
+- If user prompt is in Uzbek (e.g., "tailand haqida lending sayt yaratib ber"), write your explanation ONLY IN UZBEK!
+- If user prompt is in Russian, write ONLY IN RUSSIAN!
+- If user prompt is in English, write ONLY IN ENGLISH!
+
 ### PERSONALITY (in your "explanation" field):
 - Describe what you built and WHY you made certain design decisions.
-- Ask for feedback: "Как вам такой дизайн?"
+- Ask for feedback in the user's language.
 - Proactively suggest 2-3 improvements or features you could add next.
-- Be conversational and enthusiastic in Russian.
 
 ### RESPONSE FORMAT — Return ONLY valid JSON (no markdown, no backticks):
 {
-  "explanation": "Ваш реальный дружелюбный ответ на русском языке. Подробно расскажите пользователю, какой именно сайт вы создали, задайте вопрос о впечатлениях и предложите 2-3 идеи для улучшения.",
+  "explanation": "<Siz yaratgan loyihangiz haqida foydalanuvchi muloqot qilgan tilida (masalan: O'zbek tilida) do'stona va batafsil tushuntirish bering. Qanday bo'limlar va dizayn yaratganingizni aytib, taassurotlarini so'rang va 2-3 ta yangi g'oya taklif qiling>",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "site_only",
   "project_data": {
@@ -220,9 +226,16 @@ Generate a COMPLETE, WORKING Telegram bot workflow as ReactFlow nodes and edges.
 5. For all other transitions: use "sourceHandle":"out"
 6. Edge id format: "edge_sourceId_targetId"
 
+### CRITICAL LANGUAGE RULE:
+Detect the language used in the user's prompt (Uzbek, Russian, English, etc.).
+You MUST write your "explanation" field in the EXACT SAME LANGUAGE as the user's prompt!
+- If user prompt is in Uzbek (e.g., "tailand haqida lending sayt yaratib ber"), write your explanation ONLY IN UZBEK!
+- If user prompt is in Russian, write ONLY IN RUSSIAN!
+- If user prompt is in English, write ONLY IN ENGLISH!
+
 ### RESPONSE FORMAT — Return ONLY valid JSON (no markdown, no backticks):
 {
-  "explanation": "Ваш реальный дружелюбный ответ на русском языке. Расскажите логику созданного бота по шагам, спросите впечатления и предложите новые функции.",
+  "explanation": "<Foydalanuvchi muloqot qilgan tilida (masalan: O'zbek tilida) bot va mini app mantiqini tushuntiring va yangi takliflar bering>",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "bot_and_mini_app",
   "project_data": {
