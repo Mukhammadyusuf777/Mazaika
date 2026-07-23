@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useParams, useLocation } from 'react-router-dom'
 import {
   LayoutGrid, MessageSquare, Megaphone, Users, BarChart2,
@@ -6,6 +6,7 @@ import {
   AppWindow, Globe, Menu, Sparkles
 } from 'lucide-react'
 import FloatingAICopilot from '../ai/FloatingAICopilot'
+import { getBotById } from '../../api/firestore'
 import './AppLayout.css'
 
 const NAV_ITEMS = [
@@ -26,8 +27,33 @@ export default function AppLayout() {
   const location = useLocation()
   
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+  const [projectType, setProjectType] = useState<'bot' | 'site'>('bot')
+  const [projectName, setProjectName] = useState('Mazaika Bot')
+
+  useEffect(() => {
+    const fetchBot = async () => {
+      if (!botId) return
+      try {
+        const bot = await getBotById(botId)
+        if (bot) {
+          setProjectType(bot.projectType || 'bot')
+          setProjectName(bot.name || (bot.projectType === 'site' ? 'Mening Saytim' : 'Mazaika Bot'))
+        }
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    fetchBot()
+  }, [botId])
 
   const currentPath = location.pathname.split('/').pop()
+
+  const currentNavItems = projectType === 'site' 
+    ? [
+        { icon: Globe, label: 'Konstruktor', path: 'sitebuilder', tooltip: 'No-code Sayt Konstruktori' },
+        { icon: Settings, label: 'Sozlama', path: 'settings', tooltip: 'Sayt sozlamalari' }
+      ]
+    : NAV_ITEMS
 
   return (
     <div className="app-layout">
@@ -62,7 +88,7 @@ export default function AppLayout() {
 
         {/* Nav items */}
         <nav className="sidebar-nav">
-          {NAV_ITEMS.map(item => {
+          {currentNavItems.map(item => {
             const Icon = item.icon
             const active = currentPath === item.path
             return (
@@ -112,17 +138,29 @@ export default function AppLayout() {
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 8 }}>
-              <Bot size={18} style={{ color: 'var(--accent-blue)' }} />
-              <span style={{ fontWeight: 600, fontSize: '13px' }}>Mazaika Bot</span>
-              <span className="badge badge-aqua" style={{ fontSize: '9px', padding: '1px 6px' }}>Faol</span>
+              {projectType === 'site' ? (
+                <>
+                  <Globe size={18} style={{ color: 'var(--accent-blue)' }} />
+                  <span style={{ fontWeight: 600, fontSize: '13px' }}>{projectName}</span>
+                  <span className="badge badge-aqua" style={{ fontSize: '9px', padding: '1px 6px' }}>Sayt</span>
+                </>
+              ) : (
+                <>
+                  <Bot size={18} style={{ color: 'var(--accent-blue)' }} />
+                  <span style={{ fontWeight: 600, fontSize: '13px' }}>{projectName}</span>
+                  <span className="badge badge-aqua" style={{ fontSize: '9px', padding: '1px 6px' }}>Faol</span>
+                </>
+              )}
             </div>
           </div>
 
           <div className="topbar-center">
-            <div className="scenario-selector">
-              <span>Asosiy ssenariy</span>
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-            </div>
+            {projectType === 'bot' && (
+              <div className="scenario-selector">
+                <span>Asosiy ssenariy</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              </div>
+            )}
           </div>
 
           <div className="topbar-right" style={{ gap: 8 }}>
@@ -133,13 +171,16 @@ export default function AppLayout() {
             >
               <Sparkles size={14} /> AI Workspace
             </button>
-            <button className="btn btn-ghost btn-sm mobile-hide">
-              <AlertCircle size={14} /> Tekshirish
-            </button>
-            <button className="btn btn-primary btn-sm" style={{ padding: '6px 12px', fontSize: 12 }}>
-              <Play size={14} /> Ishga tushirish
-            </button>
-          </div>
+            {projectType === 'bot' && (
+              <>
+                <button className="btn btn-ghost btn-sm mobile-hide">
+                  <AlertCircle size={14} /> Tekshirish
+                </button>
+                <button className="btn btn-primary btn-sm" style={{ padding: '6px 12px', fontSize: 12 }}>
+                  <Play size={14} /> Ishga tushirish
+                </button>
+              </>
+            )}
         </header>
 
         {/* Page content */}

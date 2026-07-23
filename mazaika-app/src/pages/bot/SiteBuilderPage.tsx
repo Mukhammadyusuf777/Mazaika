@@ -8,7 +8,7 @@ import {
 
 import { Reorder } from 'framer-motion'
 import BuilderBlock from './BuilderBlock'
-import { getSiteConfig, saveSiteConfig, updateBot } from '../../api/firestore'
+import { getSiteConfig, saveSiteConfig, updateBot, getBotById } from '../../api/firestore'
 
 export interface Block {
   id: string
@@ -83,6 +83,7 @@ export default function SiteBuilderPage() {
   const [config, setConfig] = useState<SiteConfig>(DEFAULT_CONFIG)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>('1')
+  const [projectType, setProjectType] = useState<'bot' | 'site'>('bot')
   
   // Google Sites layout states
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop')
@@ -114,6 +115,13 @@ export default function SiteBuilderPage() {
         console.error(e)
       } finally {
         setIsLoading(false)
+      }
+
+      try {
+        const botData = await getBotById(botId)
+        if (botData) setProjectType(botData.projectType || 'bot')
+      } catch (e) {
+        console.error(e)
       }
     }
     fetchConfig()
@@ -265,7 +273,9 @@ export default function SiteBuilderPage() {
             <Globe size={18} style={{ color: 'var(--accent-blue)' }} />
             <div>
               <h3 style={{ fontWeight: 700, fontSize: '15px', color: '#fff', margin: 0 }}>Mazaika Builder</h3>
-              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Site & Telegram Mini App constructor</span>
+              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                {projectType === 'site' ? 'No-code Sayt Konstruktori' : 'Site & Telegram Mini App constructor'}
+              </span>
             </div>
           </div>
 
@@ -282,17 +292,19 @@ export default function SiteBuilderPage() {
             >
               <Laptop size={14} /> Desktop (Veb-sayt)
             </button>
-            <button 
-              onClick={() => setViewMode('mobile')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: 'none',
-                background: viewMode === 'mobile' ? 'var(--bg-card)' : 'transparent',
-                color: viewMode === 'mobile' ? '#fff' : 'var(--text-muted)',
-                cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.2s'
-              }}
-            >
-              <Smartphone size={14} /> Mobile (Mini App)
-            </button>
+            {projectType !== 'site' && (
+              <button 
+                onClick={() => setViewMode('mobile')}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: 'none',
+                  background: viewMode === 'mobile' ? 'var(--bg-card)' : 'transparent',
+                  color: viewMode === 'mobile' ? '#fff' : 'var(--text-muted)',
+                  cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.2s'
+                }}
+              >
+                <Smartphone size={14} /> Mobile (Mini App)
+              </button>
+            )}
           </div>
 
           {/* Save & Live Links */}
