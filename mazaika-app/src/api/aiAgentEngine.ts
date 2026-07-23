@@ -42,6 +42,9 @@ export async function queryAntigravityAgent(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         prompt,
+        currentHtml: contextMeta?.currentConfig?.source_code || contextMeta?.currentConfig?.html || '',
+        html: contextMeta?.currentConfig?.source_code || contextMeta?.currentConfig?.html || '',
+        siteHtml: contextMeta?.currentConfig?.source_code || contextMeta?.currentConfig?.html || '',
         currentPage: contextMeta?.currentPage,
         selectedBlockId: contextMeta?.selectedElementId,
         currentConfig: contextMeta?.currentConfig,
