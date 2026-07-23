@@ -5,4 +5,5 @@ export declare class AntigravityService {
     private buildBotPrompt;
     private generateViaCloudflare;
     generatePatch(promptText: string, currentPageUrl?: string, selectedBlockId?: string | null, currentConfig?: any): Promise<any>;
+    private extractJsonObject;
 }

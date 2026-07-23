@@ -46,10 +46,11 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                     const data = await res.json();
                     let text = data.candidates?.[0]?.content?.parts?.[0]?.text;
                     if (text) {
-                        text = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
-                        const parsed = JSON.parse(text);
-                        this.logger.log('Successfully generated via Gemini Pro!');
-                        return parsed;
+                        const parsed = this.extractJsonObject(text);
+                        if (parsed) {
+                            this.logger.log('Successfully generated via Gemini Pro!');
+                            return parsed;
+                        }
                     }
                 }
                 else {
@@ -87,11 +88,10 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                     const data = await res.json();
                     let text = data.choices?.[0]?.message?.content;
                     if (text) {
-                        text = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
-                        const jsonMatch = text.match(/\{[\s\S]*\}/);
-                        if (jsonMatch) {
+                        const parsed = this.extractJsonObject(text);
+                        if (parsed) {
                             this.logger.log('Successfully generated via OpenRouter!');
-                            return JSON.parse(jsonMatch[0]);
+                            return parsed;
                         }
                     }
                 }
@@ -117,11 +117,10 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                         const dataF = await resFallback.json();
                         let textF = dataF.choices?.[0]?.message?.content;
                         if (textF) {
-                            textF = textF.replace(/```json/gi, '').replace(/```/gi, '').trim();
-                            const jsonMatchF = textF.match(/\{[\s\S]*\}/);
-                            if (jsonMatchF) {
+                            const parsedF = this.extractJsonObject(textF);
+                            if (parsedF) {
                                 this.logger.log('Successfully generated via OpenRouter Fallback Model!');
-                                return JSON.parse(jsonMatchF[0]);
+                                return parsedF;
                             }
                         }
                     }
@@ -266,11 +265,11 @@ NOTE: Only include "source_code" in project_data if the bot explicitly needs a M
                         if (typeof textOrObject === 'object' && !Array.isArray(textOrObject))
                             return textOrObject;
                         let text = typeof textOrObject === 'string' ? textOrObject : JSON.stringify(textOrObject);
-                        text = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
-                        const jsonMatch = text.match(/\{[\s\S]*\}/);
-                        if (jsonMatch) {
-                            return JSON.parse(jsonMatch[0]);
+                        const parsed = this.extractJsonObject(text);
+                        if (parsed) {
+                            return parsed;
                         }
+                        throw new Error('Cloudflare AI returned invalid JSON format: ' + text.substring(0, 100));
                     }
                 }
                 else {
@@ -289,6 +288,61 @@ NOTE: Only include "source_code" in project_data if the bot explicitly needs a M
     async generatePatch(promptText, currentPageUrl, selectedBlockId, currentConfig) {
         this.logger.log('Patch mode: delegating to full generation for reliability.');
         return this.generateFullProject(promptText, [], currentConfig, 'bot_and_mini_app');
+    }
+    extractJsonObject(text) {
+        if (!text)
+            return null;
+        let cleanText = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
+        try {
+            return JSON.parse(cleanText);
+        }
+        catch (e) { }
+        const startIdx = cleanText.indexOf('{');
+        if (startIdx === -1)
+            return null;
+        let braceCount = 0;
+        let inString = false;
+        let isEscaped = false;
+        for (let i = startIdx; i < cleanText.length; i++) {
+            const char = cleanText[i];
+            if (inString) {
+                if (char === '\\' && !isEscaped) {
+                    isEscaped = true;
+                }
+                else {
+                    if (char === '"' && !isEscaped) {
+                        inString = false;
+                    }
+                    isEscaped = false;
+                }
+            }
+            else {
+                if (char === '"') {
+                    inString = true;
+                }
+                else if (char === '{') {
+                    braceCount++;
+                }
+                else if (char === '}') {
+                    braceCount--;
+                    if (braceCount === 0) {
+                        const candidate = cleanText.substring(startIdx, i + 1);
+                        try {
+                            return JSON.parse(candidate);
+                        }
+                        catch (e) { }
+                    }
+                }
+            }
+        }
+        const match = cleanText.match(/\{[\s\S]*?\}/);
+        if (match) {
+            try {
+                return JSON.parse(match[0]);
+            }
+            catch (e) { }
+        }
+        return null;
     }
 };
 exports.AntigravityService = AntigravityService;
