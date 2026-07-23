@@ -181,6 +181,7 @@ export default function AppLayout() {
                 </button>
               </>
             )}
+          </div>
         </header>
 
         {/* Page content */}
