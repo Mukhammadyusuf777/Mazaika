@@ -297,7 +297,7 @@ export default function SiteBuilderPage() {
     if (!promptInput.trim() || isGenerating) return
     const text = promptInput
     setPromptInput('')
-    await sendMessage(text, 'PATCH', 'site_only')
+    await sendMessage(text, 'FULL_GENERATION', 'site_only')
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

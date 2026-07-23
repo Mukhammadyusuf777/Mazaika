@@ -46,7 +46,7 @@ Return ONLY a valid JSON object matching this schema:
     "theme": "neon | minimalist | glassmorphism",
     "themeColor": "#hexcode",
     ${isSiteOnly ? '' : `"bot_blocks": [{ "id": "...", "type": "message | question | condition | custom_code | http", "title": "...", "text": "...", "variable": "...", "next": "...", "options": [], "code": "..." }],`}
-    "source_code": "<!DOCTYPE html><html><head><script src=\\"https://cdn.tailwindcss.com\\"></script></head><body class=\\"bg-gray-900 text-white\\">...</body></html>"
+    "source_code": "// YOUR GENERATED RAW HTML CODE HERE. YOU MUST OUTPUT THE ACTUAL FULL HTML CODE."
   }
 }
 DO NOT include markdown backticks (\`\`\`json) or any other text. Output ONLY the raw JSON object.
