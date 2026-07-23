@@ -15,7 +15,8 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
         const googleKey = (process.env.GOOGLE_AI_STUDIO_KEY ||
             process.env.GEMINI_API_KEY ||
             '').trim();
-        const isSiteOnly = targetEntity === 'site_only' || /sayt|сайт|landing|лендинг|web|веб/i.test(promptText);
+        const isSiteOnly = targetEntity === 'site_only' || /sayt|сайт|landing|лендинг|web|веб|magazin|магазин|shop|store|page|страница|онлайн/i.test(promptText);
+        const effectiveTargetEntity = isSiteOnly ? 'site_only' : targetEntity;
         const historyContext = chatHistory.length > 0
             ? `\n\nPrevious conversation for context:\n${chatHistory.map(m => `${m.role === 'user' ? 'User' : 'Antigravity'}: ${m.content}`).join('\n')}\n`
             : '';
@@ -25,7 +26,30 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
         const systemInstruction = isSiteOnly
             ? this.buildSitePrompt(historyContext, currentConfigContext)
             : this.buildBotPrompt(historyContext, currentConfigContext);
-        this.logger.log(`Generating for target: ${targetEntity}, mode: ${currentConfig ? 'MODIFY' : 'CREATE'}`);
+        this.logger.log(`Generating for target: ${effectiveTargetEntity}, isSiteOnly: ${isSiteOnly}, mode: ${currentConfig ? 'MODIFY' : 'CREATE'}`);
+        const ensureValidParsed = (parsed) => {
+            if (!parsed)
+                return null;
+            if (isSiteOnly) {
+                parsed.target_entity = 'site_only';
+                if (parsed.project_data)
+                    parsed.project_data.target_entity = 'site_only';
+            }
+            if (!parsed.explanation || parsed.explanation.includes('YOUR_EXPLANATION')) {
+                const isRu = /[а-яА-ЯёЁ]/.test(promptText);
+                if (isSiteOnly) {
+                    parsed.explanation = isRu
+                        ? "Ваш сайт успешно создан! 🚀 Вы можете просмотреть готовый интерактивный сайт в панели справа."
+                        : "Siz so'ragan veb-sayt muvaffaqiyatli yaratildi! 🚀 O'ng tomonda jonli natijani ko'rishingiz mumkin.";
+                }
+                else {
+                    parsed.explanation = isRu
+                        ? "Логика бота и Mini App успешно создана! 🤖 Вы можете просмотреть результат справа."
+                        : "Bot va Mini App mantig'i muvaffaqiyatli yaratildi! 🤖 O'ng tomonda ko'rishingiz mumkin.";
+                }
+            }
+            return parsed;
+        };
         if (googleKey && googleKey.length > 20) {
             this.logger.log(`Attempting Gemini API generation...`);
             try {
@@ -49,7 +73,7 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                         const parsed = this.extractJsonObject(text);
                         if (parsed) {
                             this.logger.log('Successfully generated via Gemini Pro!');
-                            return parsed;
+                            return ensureValidParsed(parsed);
                         }
                     }
                 }
@@ -91,7 +115,7 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                         const parsed = this.extractJsonObject(text);
                         if (parsed) {
                             this.logger.log('Successfully generated via OpenRouter!');
-                            return parsed;
+                            return ensureValidParsed(parsed);
                         }
                     }
                 }
@@ -120,7 +144,7 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                             const parsedF = this.extractJsonObject(textF);
                             if (parsedF) {
                                 this.logger.log('Successfully generated via OpenRouter Fallback Model!');
-                                return parsedF;
+                                return ensureValidParsed(parsedF);
                             }
                         }
                     }
@@ -133,7 +157,8 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
         const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || '';
         const token = process.env.CLOUDFLARE_API_TOKEN || '';
         if (accountId && token) {
-            return this.generateViaCloudflare(promptText, systemInstruction, accountId, token);
+            const cfResult = await this.generateViaCloudflare(promptText, systemInstruction, accountId, token);
+            return ensureValidParsed(cfResult);
         }
         throw new common_1.InternalServerErrorException('No AI API keys configured. Please set GOOGLE_AI_STUDIO_KEY or CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN in .env');
     }
@@ -157,24 +182,20 @@ Generate a COMPLETE, PRODUCTION-QUALITY standalone website as raw HTML/CSS/JS so
 ### CRITICAL LANGUAGE RULE:
 Detect the language used in the user's prompt (Uzbek, Russian, English, etc.).
 You MUST write your "explanation" field in the EXACT SAME LANGUAGE as the user's prompt!
-- If user prompt is in Uzbek (e.g., "tailand haqida lending sayt yaratib ber"), write your explanation ONLY IN UZBEK!
-- If user prompt is in Russian, write ONLY IN RUSSIAN!
+- If user prompt is in Russian (e.g. "зделай сайт для интернет магазина"), write your explanation ONLY IN RUSSIAN!
+- If user prompt is in Uzbek (e.g. "internet magazin uchun sayt yaratib ber"), write your explanation ONLY IN UZBEK!
 - If user prompt is in English, write ONLY IN ENGLISH!
-
-### PERSONALITY & EXPLANATION RULE:
-- Write a genuine, friendly explanation in your "explanation" field matching the user's prompt language (Uzbek/Russian/English).
-- NEVER output placeholder angle brackets or literal system instruction text inside "explanation"!
 
 ### RESPONSE FORMAT — Return ONLY valid JSON (no markdown, no backticks):
 {
-  "explanation": "Saytingiz tayyor bo'ldi! Men zamonaviy va interaktiv dizaynga ega loyiha kodini yaratdim. Unda barcha kerakli bo'limlar mavjud. Yana qanday o'zgartirishlar kiritamiz?",
+  "explanation": "YOUR_EXPLANATION_HERE_IN_USER_PROMPT_LANGUAGE",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "site_only",
   "project_data": {
     "appName": "Site name here",
     "theme": "glassmorphism",
     "themeColor": "#1e90ff",
-    "source_code": "<!DOCTYPE html><html lang='uz'>...</html>"
+    "source_code": "<!DOCTYPE html><html lang='ru'>...</html>"
   }
 }`;
     }
@@ -218,17 +239,13 @@ Generate a COMPLETE, WORKING Telegram bot workflow as ReactFlow nodes and edges.
 ### CRITICAL LANGUAGE RULE:
 Detect the language used in the user's prompt (Uzbek, Russian, English, etc.).
 You MUST write your "explanation" field in the EXACT SAME LANGUAGE as the user's prompt!
-- If user prompt is in Uzbek (e.g., "tailand haqida lending sayt yaratib ber"), write your explanation ONLY IN UZBEK!
-- If user prompt is in Russian, write ONLY IN RUSSIAN!
+- If user prompt is in Russian (e.g., "сделай бота"), write your explanation ONLY IN RUSSIAN!
+- If user prompt is in Uzbek, write ONLY IN UZBEK!
 - If user prompt is in English, write ONLY IN ENGLISH!
-
-### STRICT INSTRUCTION:
-- Write a genuine, friendly explanation in your "explanation" field matching the user's prompt language.
-- NEVER output placeholder angle brackets or literal system instruction text inside "explanation"!
 
 ### RESPONSE FORMAT — Return ONLY valid JSON (no markdown, no backticks):
 {
-  "explanation": "Loyiha muvaffaqiyatli yaratildi! Bot va Mini App mantig'ini tuzib berdim. Yana qanday yangi imkoniyatlar qo'shamiz?",
+  "explanation": "YOUR_EXPLANATION_HERE_IN_USER_PROMPT_LANGUAGE",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "bot_and_mini_app",
   "project_data": {
