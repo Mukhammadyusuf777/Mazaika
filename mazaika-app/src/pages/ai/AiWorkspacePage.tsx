@@ -269,7 +269,8 @@ export default function AiWorkspacePage() {
     setSavingBot(true)
     try {
       const isBot = activeConfig.target_entity === 'bot' || activeConfig.target_entity === 'bot_and_mini_app'
-      const isSite = activeConfig.target_entity === 'site' || activeConfig.target_entity === 'mini_app' || activeConfig.target_entity === 'bot_and_mini_app'
+      const hasSite = activeConfig.target_entity === 'site' || activeConfig.target_entity === 'site_only' || activeConfig.target_entity === 'mini_app' || activeConfig.target_entity === 'bot_and_mini_app'
+      const isStandaloneSite = activeConfig.target_entity === 'site' || activeConfig.target_entity === 'site_only'
       
       let customNodes = undefined;
       let customEdges = undefined;
@@ -368,14 +369,14 @@ export default function AiWorkspacePage() {
 
       const newBot = await createBot(user.id, {
         name: activeConfig.appName || 'AI Generated Project',
-        token: isSite ? undefined : ('TEST_TOKEN_' + Date.now().toString().slice(-6)),
+        token: isStandaloneSite ? undefined : ('TEST_TOKEN_' + Date.now().toString().slice(-6)),
         creationType: (activeConfig.target_entity === 'bot') ? 'bot_only' : 'bot_and_webapp',
-        projectType: isSite ? 'site' : 'bot',
+        projectType: isStandaloneSite ? 'site' : 'bot',
         customNodes,
         customEdges
       })
 
-      if (isSite) {
+      if (hasSite) {
         const siteConfigToSave = activeConfig.target_entity === 'bot_and_mini_app' 
           ? { ...activeConfig, blocks: activeConfig.site_blocks }
           : activeConfig;
