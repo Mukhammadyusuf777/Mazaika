@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { 
   Globe, Save, Eye, CheckCircle, Sparkles, Bot, Loader2, Send,
-  Copy, Check, RefreshCw, Zap, ExternalLink, Laptop, Smartphone
+  Copy, Check, RefreshCw, Zap, ExternalLink, Laptop, Smartphone, Sliders, X
 } from 'lucide-react'
 
 import { getSiteConfig, saveSiteConfig, updateBot } from '../../api/firestore'
@@ -42,6 +42,21 @@ export default function SiteBuilderPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>('desktop')
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [siteTitle, setSiteTitle] = useState('Panda World')
+  const [siteSlug, setSiteSlug] = useState('panda-world')
+  const [siteDesc, setSiteDesc] = useState('Заповедный мир панд...')
+
+  const handleOpenInNewTab = () => {
+    const htmlToOpen = config.source_code || ''
+    if (!htmlToOpen) {
+      alert("Sayt hali yaratilmagan!")
+      return
+    }
+    const blob = new Blob([htmlToOpen], { type: 'text/html;charset=utf-8' })
+    const blobUrl = URL.createObjectURL(blob)
+    window.open(blobUrl, '_blank')
+  }
   
   const { activeConfig, messages, sendMessage, isGenerating, clearChat } = useAICopilot()
   const [promptInput, setPromptInput] = useState('')
@@ -291,16 +306,42 @@ export default function SiteBuilderPage() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#334155', marginTop: 8, paddingLeft: 4 }}>
             <ExternalLink size={9} />
+            <button
+              onClick={() => handleSend()}
+              disabled={!promptInput.trim() || isGenerating}
+              style={{
+                position: 'absolute',
+                right: 8,
+                bottom: 8,
+                width: 34,
+                height: 34,
+                borderRadius: 10,
+                background: promptInput.trim() && !isGenerating ? '#1e90ff' : 'rgba(255,255,255,0.05)',
+                color: promptInput.trim() && !isGenerating ? '#fff' : '#64748b',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: promptInput.trim() && !isGenerating ? 'pointer' : 'not-allowed',
+                transition: 'all 0.2s'
+              }}
+            >
+              <Send size={15} />
+            </button>
+          </div>
+          <div style={{ fontSize: 10, color: '#475569', marginTop: 8, textAlign: 'center' }}>
             AI yaratgan sayt o'ng tomonda ko'rinadi
           </div>
         </div>
       </div>
 
-      <div style={{ flex: 1, padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16, background: '#050810', minWidth: 0 }}>
+      {/* Right Canvas / Live Preview */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#020617', padding: 16, gap: 12, position: 'relative' }}>
+        {/* Top Preview Controls */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Globe size={20} color="var(--accent-blue)" />
-            <h1 style={{ margin: 0, fontSize: 17, fontWeight: 600 }}>Live Preview</h1>
+            <Globe size={20} color="#1e90ff" />
+            <h1 style={{ margin: 0, fontSize: 17, fontWeight: 600, color: '#fff' }}>Live Preview</h1>
             {config.source_code && (
               <span style={{ fontSize: 10, color: '#10d974', background: 'rgba(16,217,116,0.1)', border: '1px solid rgba(16,217,116,0.2)', borderRadius: 20, padding: '2px 8px' }}>
                 ● Tayyor
@@ -313,24 +354,35 @@ export default function SiteBuilderPage() {
               onClick={() => setDeviceMode('desktop')} 
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, border: 'none', background: deviceMode === 'desktop' ? 'rgba(30,144,255,0.2)' : 'transparent', color: deviceMode === 'desktop' ? '#1e90ff' : '#94a3b8', cursor: 'pointer', fontWeight: deviceMode === 'desktop' ? 600 : 400 }}
             >
-              <Laptop size={14} /> Desktop (Veb-sayt)
+              <Laptop size={14} /> Desktop
             </button>
             <button 
               onClick={() => setDeviceMode('mobile')} 
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, border: 'none', background: deviceMode === 'mobile' ? 'rgba(168,85,247,0.2)' : 'transparent', color: deviceMode === 'mobile' ? '#a855f7' : '#94a3b8', cursor: 'pointer', fontWeight: deviceMode === 'mobile' ? 600 : 400 }}
             >
-              <Smartphone size={14} /> Mobile (Mini App)
+              <Smartphone size={14} /> Mobile
             </button>
           </div>
 
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             {saveSuccess && <span style={{ color: '#10d974', display: 'flex', alignItems: 'center', fontSize: 13, gap: 5 }}><CheckCircle size={14} /> Saqlandi!</span>}
-            <button onClick={handleSave} disabled={isLoading} className="btn btn-primary" style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
+            <button 
+              onClick={() => setIsSettingsOpen(true)}
+              className="btn btn-ghost" 
+              style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.05)', fontSize: 13, color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}
+            >
+              <Sliders size={14} /> Sozlamalar
+            </button>
+            <button onClick={handleSave} disabled={isLoading} className="btn btn-primary" style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, background: '#1e90ff', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}>
               <Save size={14} /> {isLoading ? 'Saqlanmoqda...' : 'Saqlash'}
             </button>
-            <a href={`/site/${botId}`} target="_blank" rel="noreferrer" className="btn btn-ghost" style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.05)', fontSize: 13 }}>
+            <button 
+              onClick={handleOpenInNewTab} 
+              className="btn btn-ghost" 
+              style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.05)', fontSize: 13, color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}
+            >
               <Eye size={14} /> Ochish
-            </a>
+            </button>
           </div>
         </div>
 
@@ -367,7 +419,6 @@ export default function SiteBuilderPage() {
                 sandbox="allow-scripts allow-same-origin"
               />
             ) : (
-              /* Mobile Phone Frame Simulator */
               <div style={{
                 width: 360,
                 height: '92%',
@@ -380,7 +431,6 @@ export default function SiteBuilderPage() {
                 flexDirection: 'column',
                 overflow: 'hidden'
               }}>
-                {/* Phone Notch & Status bar */}
                 <div style={{ height: 24, background: '#000', display: 'flex', justifyContent: 'space-between', padding: '4px 20px', fontSize: 10, color: '#94a3b8', zIndex: 10 }}>
                   <span>9:41</span>
                   <div style={{ width: 80, height: 12, background: '#1e293b', borderRadius: 10, marginTop: 2 }} />
@@ -398,6 +448,81 @@ export default function SiteBuilderPage() {
             )
           )}
         </div>
+
+        {/* SITE SETTINGS SLIDE-OVER MODAL */}
+        {isSettingsOpen && (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(2, 6, 23, 0.85)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 100,
+            display: 'flex',
+            justifyContent: 'flex-end'
+          }}>
+            <div style={{
+              width: 320,
+              height: '100%',
+              background: '#0f172a',
+              borderLeft: '1px solid rgba(255,255,255,0.1)',
+              padding: 24,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: '#fff' }}>
+                    <Sliders size={18} style={{ color: '#1e90ff' }} /> Sayt Sozlamalari
+                  </h3>
+                  <button onClick={() => setIsSettingsOpen(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>Sayt Nomi (Title)</label>
+                    <input
+                      type="text"
+                      value={siteTitle}
+                      onChange={e => setSiteTitle(e.target.value)}
+                      style={{ width: '100%', background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>Domen / Slug</label>
+                    <input
+                      type="text"
+                      value={siteSlug}
+                      onChange={e => setSiteSlug(e.target.value)}
+                      style={{ width: '100%', background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>SEO Tavsifi (Description)</label>
+                    <textarea
+                      rows={4}
+                      value={siteDesc}
+                      onChange={e => setSiteDesc(e.target.value)}
+                      style={{ width: '100%', background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, outline: 'none', resize: 'none' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setConfig(prev => ({ ...prev, appName: siteTitle }));
+                  setIsSettingsOpen(false);
+                }}
+                style={{ width: '100%', padding: '12px', background: '#1e90ff', color: '#fff', fontWeight: 600, borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 13 }}
+              >
+                O'zgarishlarni Saqlash
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -55,23 +55,24 @@ export class AntigravityService {
           const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${googleKey}`;
 
           const systemInstruction = isSiteRequest
-            ? `You are an elite Senior UI/UX Designer & Frontend Architect (Apple/Stripe quality).
-Generate a HIGH-END MULTI-PAGE Single Page Application (SPA) inside ONE standalone HTML document.
+            ? `You are a Senior UI/UX Frontend Architect specializing in FULLY RESPONSIVE MOBILE-FIRST web design.
+Generate a high-end multi-page SPA inside ONE standalone HTML file.
 ${historyContext}${currentConfigContext}
 
-CRITICAL DESIGN & ARCHITECTURE RULES:
-1. MULTI-PAGE ROUTING: Include a working JavaScript page switcher for multiple tabs/pages (e.g., "Home/Главная", "About/О нас", "Gallery/Галерея", "Contact/Контакты"). Clicking header links MUST switch visible sections smoothly without page reload!
-2. STYLING: Use Tailwind CSS CDN (<script src="https://cdn.tailwindcss.com"></script>) + FontAwesome 6 icons + Google Font Inter.
-3. VISUAL QUALITY: Modern Glassmorphism UI, elegant gradients, subtle shadows, rounded-2xl/3xl corners, crisp typography, hover scale transitions (hover:scale-105).
-4. IMAGES: Use REAL high-resolution Unsplash photos with matching keywords (e.g., https://images.unsplash.com/photo-1564349683136-77e08dba1ef9?w=800&q=80). NEVER use placeholder dog images!
-5. OUTPUT: Return ONLY a valid JSON object without markdown fences:
+CRITICAL MOBILE & RESPONSIVE RULES:
+1. MOBILE MENU: Include a working Hamburger Menu button (<button id="hamburger-btn" onclick="toggleMobileMenu()">) for small screens (visible on mobile, hidden on md:).
+2. RESPONSIVE LAYOUTS: Use flex-col for mobile, flex-row for desktop (e.g. "flex flex-col md:flex-row"). Grid MUST be "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3".
+3. MULTI-PAGE ROUTING: Include a working JavaScript page switcher for multiple tabs/pages (e.g., "Home/Главная", "About/О нас", "Gallery/Галерея", "Contact/Контакты"). Clicking header links MUST switch visible sections smoothly without page reload!
+4. STYLING: Tailwind CSS + FontAwesome 6 icons + Google Font Inter + Glassmorphism UI.
+5. IMAGES: Use REAL high-resolution Unsplash photos with matching keywords. NEVER use placeholder dog images!
+6. JSON OUTPUT ONLY:
 {
   "type": "site",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "site_only",
-  "title": "Title of the site",
-  "explanation": "${isUzbek ? "Ko'p sahifali premium veb-sayt yaratildi! Sahifalar o'rtasida menyu orqali o'tishingiz mumkin." : isRussian ? "Премиальный многостраничный сайт успешно создан! Вы можете переключаться между страницами в шапке." : "High-end multi-page website generated with live SPA tab navigation!"}",
-  "html": "<!DOCTYPE html><html class='scroll-smooth'>...FULL ULTRA-PRO MULTI-PAGE HTML CODE WITH EMBEDDED JS ROUTER...</html>"
+  "title": "Site Title",
+  "explanation": "${isUzbek ? "Mobil va PC uchun moslashuvchan premium sayt yaratildi!" : isRussian ? "Адаптированный для телефонов и ПК многостраничный сайт успешно создан!" : "Responsive multi-page website generated!"}",
+  "html": "<!DOCTYPE html><html class='scroll-smooth'>...RESPONSIVE MULTI-PAGE HTML CODE WITH MOBILE HAMBURGER MENU JS...</html>"
 }`
             : `You are a Telegram Bot Architect. Return JSON matching bot structure.
 ${historyContext}${currentConfigContext}
