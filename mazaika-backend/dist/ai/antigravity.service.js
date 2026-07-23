@@ -37,7 +37,12 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                 if (parsed.project_data)
                     parsed.project_data.target_entity = 'site_only';
             }
-            if (!parsed.explanation || parsed.explanation.includes('YOUR_EXPLANATION') || parsed.explanation.includes('WRITE_EXPLANATION') || parsed.explanation.includes('bot') && isSiteOnly) {
+            const currentExpl = typeof parsed.explanation === 'string' ? parsed.explanation : '';
+            const isInvalidExpl = !currentExpl ||
+                currentExpl.includes('YOUR_EXPLANATION') ||
+                currentExpl.includes('WRITE_EXPLANATION') ||
+                (isSiteOnly && currentExpl.toLowerCase().includes('bot'));
+            if (isInvalidExpl) {
                 if (parsed.target_entity === 'site_only' || parsed.project_data?.source_code) {
                     parsed.explanation = isRu
                         ? "Привет! Я создала для вас полноценный интерактивный веб-сайт с современным анимированным дизайном и адаптивной версткой. Вы можете сразу просмотреть его в панели справа. Что мы добавим дальше?"
@@ -284,14 +289,19 @@ NOTE: Only include "source_code" in project_data if the bot explicitly needs a M
             try {
                 this.logger.log(`Attempting Cloudflare AI generation with model: ${model}...`);
                 const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
-                const bodyPayload = {
-                    messages: [
-                        { role: 'system', content: systemInstruction },
-                        { role: 'user', content: promptText }
-                    ],
-                    prompt: systemInstruction + '\n\n--- USER REQUEST ---\n' + promptText,
-                    max_tokens: 8192
-                };
+                const isChatModel = model.includes('llama') || model.includes('gemini') || model.includes('grok') || model.includes('mistral') || model.includes('instruct');
+                const bodyPayload = isChatModel
+                    ? {
+                        messages: [
+                            { role: 'system', content: systemInstruction },
+                            { role: 'user', content: promptText }
+                        ],
+                        max_tokens: 8192
+                    }
+                    : {
+                        prompt: systemInstruction + '\n\n--- USER REQUEST ---\n' + promptText,
+                        max_tokens: 8192
+                    };
                 const res = await fetch(url, {
                     method: 'POST',
                     headers: {
