@@ -24,7 +24,8 @@ Apply the user's requested changes to this structure and return the ENTIRE updat
 
 CRITICAL INSTRUCTIONS FOR SCALE AND CREATIVITY:
 1. If the user asks for a "massive" or "huge" architecture, you MUST generate at least 20-25 blocks across the bot and mini-app. Do not be lazy.
-2. You are ALLOWED and ENCOURAGED to INVENT NEW block types and functions that don't exist in standard templates if the client's project requires them. For example, you can create \`custom_html\`, \`custom_code\`, \`interactive_chart\`, \`3d_viewer\`, \`complex_form\`, or any other type you deem necessary.
+2. For the BOT LOGIC, you MUST build a truly interactive system. DO NOT just output a chain of "message" blocks. You MUST use a mix of "question", "condition", "custom_code", "variable", "http" and other nodes to create real working mechanics.
+3. You are ALLOWED and ENCOURAGED to INVENT NEW block types and functions that don't exist in standard templates if the client's project requires them. For example, you can create \`custom_html\`, \`custom_code\`, \`interactive_chart\`, \`3d_viewer\`, \`complex_form\`, or any other type you deem necessary.
 
 Return ONLY a valid JSON object matching this schema:
 {
@@ -35,7 +36,7 @@ Return ONLY a valid JSON object matching this schema:
     "appName": "Name",
     "theme": "neon | minimalist | glassmorphism",
     "themeColor": "#hexcode",
-    "bot_blocks": [{ "id": "...", "type": "message | custom_code | [ANY_INVENTED_TYPE]", "title": "...", "text": "...", "variable": "...", "next": "...", "options": [], "code": "..." }],
+    "bot_blocks": [{ "id": "...", "type": "message | question | condition | variable | custom_code | http | payme | orderList | cart | addTag | [ANY_INVENTED_TYPE]", "title": "...", "text": "...", "variable": "...", "next": "...", "options": [], "code": "..." }],
     "site_blocks": [{ "id": "...", "type": "hero | custom_html | [ANY_INVENTED_TYPE]", "title": "...", "subtitle": "...", "img": "...", "html": "...", "items": [] }]
   }
 }

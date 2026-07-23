@@ -288,7 +288,8 @@ export default function AiWorkspacePage() {
 
         
         botBlocks.forEach((block: any, index: number) => {
-          let nodeType = 'message';
+          let nodeType = block.type || 'message';
+          // Backward compatibility for old presets:
           if (block.type === 'boshlash') nodeType = 'start';
           if (block.type === 'xabar') nodeType = 'message';
           if (block.type === 'matnli_savol') nodeType = 'question';
