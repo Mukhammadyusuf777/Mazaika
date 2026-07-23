@@ -20,7 +20,7 @@ export default function FloatingAICopilot({ projectType = 'bot' }: { projectType
     const text = promptInput
     setPromptInput('')
     const targetEntity = projectType === 'site' ? 'site_only' : 'bot_and_mini_app'
-    await sendMessage(text, 'MODIFICATION', targetEntity)
+    await sendMessage(text, 'PATCH', targetEntity)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
