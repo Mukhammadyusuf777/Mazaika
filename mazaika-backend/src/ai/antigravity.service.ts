@@ -196,7 +196,11 @@ NOTE: Only include "source_code" in project_data if the bot explicitly needs a M
           this.logger.log('Successfully generated via Cloudflare Workers AI!');
           if (typeof textOrObject === 'object') return textOrObject;
           let text = textOrObject.replace(/```json/gi, '').replace(/```/gi, '').trim();
-          return JSON.parse(text);
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+          }
+          throw new Error('Cloudflare AI returned invalid JSON format: ' + text.substring(0, 100));
         }
       } else {
         const errText = await res.text();
@@ -204,10 +208,7 @@ NOTE: Only include "source_code" in project_data if the bot explicitly needs a M
       }
     } catch (err: any) {
       this.logger.error('Cloudflare API Exception: ' + err.message);
-      if (err.message.includes('Cloudflare API Error')) {
-        throw new InternalServerErrorException(err.message);
-      }
-      throw new InternalServerErrorException('AI Generation Failed. Please check your Cloudflare API keys in .env');
+      throw new InternalServerErrorException('AI Generation Failed: ' + err.message);
     }
   }
 
