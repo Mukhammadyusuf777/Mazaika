@@ -184,11 +184,8 @@ NOTE: Only include "source_code" in project_data if the bot explicitly needs a M
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemInstruction },
-            { role: 'user', content: promptText }
-          ],
-          max_tokens: 6000
+          prompt: systemInstruction + '\n\n--- USER REQUEST ---\n' + promptText,
+          max_tokens: 4000
         })
       });
 
