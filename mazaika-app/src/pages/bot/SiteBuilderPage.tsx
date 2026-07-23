@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { 
   Globe, Save, Eye, Trash2, ArrowUp, ArrowDown, Settings,
   Layout, FileText, ShoppingBag, AlignLeft, MessageSquare, CheckSquare, Wallet,
-  UserCheck, Laptop, Smartphone, Plus, Info, CheckCircle
+  UserCheck, Laptop, Smartphone, Plus, Info, CheckCircle, Sparkles, Bot, Loader2, Send
 } from 'lucide-react'
 
 import { Reorder } from 'framer-motion'
@@ -41,13 +41,6 @@ interface SiteConfig {
   source_code?: string
 }
 
-const DEFAULT_CONFIG: SiteConfig = {
-  theme: 'glassmorphism',
-  themeColor: '#3b82f6',
-  appName: 'Mazaika Store',
-  blocks: [],
-  source_code: ''
-}
 
 const DEFAULT_BLOCKS: Block[] = [
   {
@@ -86,7 +79,8 @@ const DEFAULT_CONFIG: SiteConfig = {
   appName: 'Mini App',
   theme: 'glassmorphism',
   themeColor: '#1e90ff',
-  blocks: DEFAULT_BLOCKS
+  blocks: DEFAULT_BLOCKS,
+  source_code: ''
 }
 
 export default function SiteBuilderPage() {
@@ -457,7 +451,7 @@ export default function SiteBuilderPage() {
             <div>
               <h3 style={{ fontWeight: 700, fontSize: '15px', color: '#fff', margin: 0 }}>Mazaika Builder</h3>
               <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                {projectType === 'site' ? 'No-code Sayt Konstruktori' : 'Site & Telegram Mini App constructor'}
+                Site & Telegram Mini App constructor
               </span>
             </div>
           </div>
@@ -475,19 +469,17 @@ export default function SiteBuilderPage() {
             >
               <Laptop size={14} /> Desktop (Veb-sayt)
             </button>
-            {projectType !== 'site' && (
-              <button 
-                onClick={() => setViewMode('mobile')}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: 'none',
-                  background: viewMode === 'mobile' ? 'var(--bg-card)' : 'transparent',
-                  color: viewMode === 'mobile' ? '#fff' : 'var(--text-muted)',
-                  cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.2s'
-                }}
-              >
-                <Smartphone size={14} /> Mobile (Mini App)
-              </button>
-            )}
+            <button 
+              onClick={() => setViewMode('mobile')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: 'none',
+                background: viewMode === 'mobile' ? 'var(--bg-card)' : 'transparent',
+                color: viewMode === 'mobile' ? '#fff' : 'var(--text-muted)',
+                cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.2s'
+              }}
+            >
+              <Smartphone size={14} /> Mobile (Mini App)
+            </button>
           </div>
 
           {/* Save & Live Links */}
@@ -872,7 +864,7 @@ export default function SiteBuilderPage() {
                     <select 
                       className="input" 
                       value={config.theme} 
-                      onChange={e => setConfig({ ...config, theme: e.target.value })}
+                      onChange={e => setConfig({ ...config, theme: e.target.value as 'glassmorphism' | 'minimalist' | 'neon' })}
                       style={{ width: '100%', padding: '6px 10px', fontSize: 11 }}
                     >
                       <option value="glassmorphism">Glassmorphism</option>
