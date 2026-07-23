@@ -37,6 +37,8 @@ let BotController = class BotController {
             return { error: 'Bot not found' };
         if (!bot.token)
             return { error: 'Bot token is empty' };
+        if (bot.token === 'TEST_TOKEN')
+            return { error: 'Bot token is empty' };
         return this.botManager.startBot(bot.id, bot.token);
     }
     async stopBot(id) {
