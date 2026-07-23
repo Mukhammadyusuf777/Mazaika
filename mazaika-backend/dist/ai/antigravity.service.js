@@ -15,7 +15,7 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
         const googleKey = (process.env.GOOGLE_AI_STUDIO_KEY ||
             process.env.GEMINI_API_KEY ||
             '').trim();
-        const isSiteOnly = targetEntity === 'site_only';
+        const isSiteOnly = targetEntity === 'site_only' || /sayt|сайт|landing|лендинг|web|веб/i.test(promptText);
         const historyContext = chatHistory.length > 0
             ? `\n\nPrevious conversation for context:\n${chatHistory.map(m => `${m.role === 'user' ? 'User' : 'Antigravity'}: ${m.content}`).join('\n')}\n`
             : '';
@@ -160,9 +160,9 @@ Generate a COMPLETE, PRODUCTION-QUALITY standalone website as raw HTML/CSS/JS so
 - Proactively suggest 2-3 improvements or features you could add next.
 - Be conversational and enthusiastic in Russian.
 
-### RESPONSE FORMAT — Return ONLY this valid JSON (no markdown, no backticks):
+### RESPONSE FORMAT — Return ONLY valid JSON (no markdown, no backticks):
 {
-  "explanation": "Detailed conversational response in Russian. Explain what was built, ask for impressions, propose next steps.",
+  "explanation": "Ваш реальный дружелюбный ответ на русском языке. Подробно расскажите пользователю, какой именно сайт вы создали, задайте вопрос о впечатлениях и предложите 2-3 идеи для улучшения.",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "site_only",
   "project_data": {
@@ -210,9 +210,9 @@ Generate a COMPLETE, WORKING Telegram bot workflow as ReactFlow nodes and edges.
 5. For all other transitions: use "sourceHandle":"out"
 6. Edge id format: "edge_sourceId_targetId"
 
-### RESPONSE FORMAT — Return ONLY this valid JSON (no markdown, no backticks):
+### RESPONSE FORMAT — Return ONLY valid JSON (no markdown, no backticks):
 {
-  "explanation": "Detailed conversational response in Russian. Explain the bot logic step by step, ask for feedback, suggest improvements.",
+  "explanation": "Ваш реальный дружелюбный ответ на русском языке. Расскажите логику созданного бота по шагам, спросите впечатления и предложите новые функции.",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "bot_and_mini_app",
   "project_data": {
