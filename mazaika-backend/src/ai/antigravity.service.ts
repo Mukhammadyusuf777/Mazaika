@@ -243,41 +243,59 @@ NOTE: Only include "source_code" in project_data if the bot explicitly needs a M
   }
 
   private async generateViaCloudflare(promptText: string, systemInstruction: string, accountId: string, token: string) {
-    try {
-      const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.1-8b-instruct`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          prompt: systemInstruction + '\n\n--- USER REQUEST ---\n' + promptText,
-          max_tokens: 4000
-        })
-      });
+    const modelsToTry = [
+      process.env.CLOUDFLARE_MODEL,
+      '@cf/google/gemini-3.6-flash',
+      '@cf/google/gemini-1.5-flash',
+      '@cf/google/gemini-3.5-flash-lite',
+      '@cf/xai/grok-4.5',
+      '@cf/meta/llama-3.3-70b-instruct',
+      '@cf/meta/llama-3.1-8b-instruct'
+    ].filter(Boolean) as string[];
 
-      if (res.ok) {
-        const data = await res.json();
-        let textOrObject = data.result?.response;
-        if (textOrObject) {
-          this.logger.log('Successfully generated via Cloudflare Workers AI!');
-          if (typeof textOrObject === 'object') return textOrObject;
-          let text = textOrObject.replace(/```json/gi, '').replace(/```/gi, '').trim();
-          const jsonMatch = text.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            return JSON.parse(jsonMatch[0]);
+    let lastError = '';
+
+    for (const model of modelsToTry) {
+      try {
+        this.logger.log(`Attempting Cloudflare AI generation with model: ${model}...`);
+        const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            prompt: systemInstruction + '\n\n--- USER REQUEST ---\n' + promptText,
+            max_tokens: 8192
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          let textOrObject = data.result?.response || data.result;
+          if (textOrObject) {
+            this.logger.log(`Successfully generated via Cloudflare Workers AI (${model})!`);
+            if (typeof textOrObject === 'object' && !Array.isArray(textOrObject)) return textOrObject;
+            let text = typeof textOrObject === 'string' ? textOrObject : JSON.stringify(textOrObject);
+            text = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              return JSON.parse(jsonMatch[0]);
+            }
           }
-          throw new Error('Cloudflare AI returned invalid JSON format: ' + text.substring(0, 100));
+        } else {
+          const errText = await res.text();
+          this.logger.warn(`Cloudflare model ${model} failed (${res.status}): ${errText.substring(0, 150)}`);
+          lastError = errText;
         }
-      } else {
-        const errText = await res.text();
-        throw new Error('Cloudflare API Error: ' + errText);
+      } catch (err: any) {
+        this.logger.warn(`Cloudflare model ${model} exception: ${err.message}`);
+        lastError = err.message;
       }
-    } catch (err: any) {
-      this.logger.error('Cloudflare API Exception: ' + err.message);
-      throw new InternalServerErrorException('AI Generation Failed: ' + err.message);
     }
+
+    throw new InternalServerErrorException('Cloudflare AI Generation Failed: ' + lastError);
   }
 
   async generatePatch(promptText: string, currentPageUrl?: string, selectedBlockId?: string | null, currentConfig?: any) {
