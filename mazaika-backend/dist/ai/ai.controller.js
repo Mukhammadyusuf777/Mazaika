@@ -19,6 +19,7 @@ class GenerateDto {
     prompt;
     chatHistory;
     currentConfig;
+    targetEntity;
 }
 exports.GenerateDto = GenerateDto;
 class PatchDto {
@@ -34,7 +35,7 @@ let AiController = class AiController {
         this.antigravityService = antigravityService;
     }
     async generateFullProject(dto) {
-        return this.antigravityService.generateFullProject(dto.prompt, dto.chatHistory, dto.currentConfig);
+        return this.antigravityService.generateFullProject(dto.prompt, dto.chatHistory, dto.currentConfig, dto.targetEntity);
     }
     async generatePatch(dto) {
         return this.antigravityService.generatePatch(dto.prompt, dto.currentPage, dto.selectedBlockId, dto.currentConfig);

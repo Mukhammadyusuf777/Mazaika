@@ -5,6 +5,7 @@ export class GenerateDto {
   prompt: string;
   chatHistory?: { role: string; content: string }[];
   currentConfig?: any;
+  targetEntity?: 'bot_and_mini_app' | 'site_only';
 }
 
 export class PatchDto {
@@ -20,7 +21,7 @@ export class AiController {
 
   @Post('generate')
   async generateFullProject(@Body() dto: GenerateDto) {
-    return this.antigravityService.generateFullProject(dto.prompt, dto.chatHistory, dto.currentConfig);
+    return this.antigravityService.generateFullProject(dto.prompt, dto.chatHistory, dto.currentConfig, dto.targetEntity);
   }
 
   @Post('patch')

@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'bots' | 'sites' | 'analytics' | 'templates' | 'settings'>('bots')
   const [language, setLanguage] = useState<'UZ' | 'RU' | 'EN'>('UZ')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [modalType, setModalType] = useState<'bot' | 'site'>('bot')
   const [newBotName, setNewBotName] = useState('')
   const [newBotToken, setNewBotToken] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState<string>('')
@@ -84,13 +85,18 @@ export default function DashboardPage() {
     try {
       const bot = await createBot(user.id, {
         name: newBotName,
-        token: newBotToken,
+        token: modalType === 'bot' ? newBotToken : undefined,
         template: selectedTemplate || undefined,
-        creationType
+        creationType: modalType === 'bot' ? creationType : undefined,
+        projectType: modalType
       })
       setShowCreateModal(false)
       setNewBotName(''); setNewBotToken(''); setSelectedTemplate('')
-      navigate(`/bot/${bot.id}/editor`)
+      if (modalType === 'site') {
+        navigate(`/bot/${bot.id}/sitebuilder`)
+      } else {
+        navigate(`/bot/${bot.id}/editor`)
+      }
     } catch (e: any) {
       alert('Botni yaratishda xatolik: ' + e.message)
     }
@@ -123,9 +129,12 @@ export default function DashboardPage() {
     setTimeout(() => setSettingsSaved(false), 2000)
   }
 
+  const botProjects = bots.filter(b => b.projectType !== 'site')
+  const siteProjects = bots.filter(b => b.projectType === 'site')
+
   const totalUsers = bots.reduce((a, b) => a + (b.users || 0), 0)
   const totalMessages = bots.reduce((a, b) => a + (b.messages || 0), 0)
-  const activeBots = bots.filter(b => b.status === 'active').length
+  const activeBots = botProjects.filter(b => b.status === 'active').length
 
   return (
     <div className="dashboard">
@@ -223,7 +232,7 @@ export default function DashboardPage() {
                   <Bot size={20} />
                 </div>
                 <div>
-                  <div className="stat-value">{bots.length}</div>
+                  <div className="stat-value">{botProjects.length}</div>
                   <div className="stat-label">Jami botlar</div>
                 </div>
               </div>
@@ -259,13 +268,13 @@ export default function DashboardPage() {
             <div className="bots-section">
               <h2 className="section-title">Botlarim</h2>
               <div className="bots-grid">
-                <div className="bot-card create-card" onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setShowCreateModal(true); }}>
+                <div className="bot-card create-card" onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setModalType('bot'); setShowCreateModal(true); }}>
                   <div className="create-icon"><Plus size={32} /></div>
                   <div className="create-label">Yangi bot yaratish</div>
                   <div className="create-sub">Token kiritib boshlang</div>
                 </div>
 
-                {bots.map(bot => (
+                {botProjects.map(bot => (
                   <div key={bot.id} className="bot-card" onClick={() => navigate(`/bot/${bot.id}/editor`)}
                     style={{ '--bot-color': bot.color || '#1e90ff' } as React.CSSProperties}>
                     <div className="bot-card-header" style={{ position: 'relative' }}>
@@ -333,7 +342,7 @@ export default function DashboardPage() {
                 >
                   <Sparkles size={16} /> ✨ AI Sayt Yaratish
                 </button>
-                <button className="btn btn-aqua" onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setShowCreateModal(true); }}>
+                <button className="btn btn-aqua" onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setModalType('site'); setShowCreateModal(true); }}>
                   <Plus size={16} /> Yangi sayt
                 </button>
               </div>
@@ -345,7 +354,7 @@ export default function DashboardPage() {
                   <Globe size={20} />
                 </div>
                 <div>
-                  <div className="stat-value">{bots.length}</div>
+                  <div className="stat-value">{siteProjects.length}</div>
                   <div className="stat-label">Jami saytlar</div>
                 </div>
               </div>
@@ -354,13 +363,13 @@ export default function DashboardPage() {
             <div className="bots-section">
               <h2 className="section-title">Saytlarim</h2>
               <div className="bots-grid">
-                <div className="bot-card create-card" onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setShowCreateModal(true); }}>
+                <div className="bot-card create-card" onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setModalType('site'); setShowCreateModal(true); }}>
                   <div className="create-icon"><Plus size={32} /></div>
                   <div className="create-label">Yangi sayt yaratish</div>
                   <div className="create-sub">Noldan boshlang</div>
                 </div>
 
-                {bots.map(bot => (
+                {siteProjects.map(bot => (
                   <div key={bot.id} className="bot-card" onClick={() => navigate(`/bot/${bot.id}/sitebuilder`)}
                     style={{ '--bot-color': bot.color || '#00f5c4' } as React.CSSProperties}>
                     <div className="bot-card-header" style={{ position: 'relative' }}>
@@ -377,10 +386,6 @@ export default function DashboardPage() {
                       <div className="bot-stat">
                         <Globe size={12} />
                         <span>Veb-sayt</span>
-                      </div>
-                      <div className="bot-stat">
-                        <TrendingUp size={12} />
-                        <span>Mini App</span>
                       </div>
                     </div>
                     <div className="bot-glow" style={{ background: bot.color || '#00f5c4' }} />
@@ -513,73 +518,78 @@ export default function DashboardPage() {
               </div>
               <form onSubmit={handleCreateBot}>
                 <div className="input-group" style={{ marginBottom: '16px' }}>
-                  <label className="input-label">Bot nomi</label>
-                  <input type="text" className="input" placeholder="Mening Do'konim Boti" value={newBotName} onChange={e => setNewBotName(e.target.value)} required />
+                  <label className="input-label">{modalType === 'site' ? 'Sayt nomi' : 'Bot nomi'}</label>
+                  <input type="text" className="input" placeholder={modalType === 'site' ? "Mening Saytim" : "Mening Do'konim Boti"} value={newBotName} onChange={e => setNewBotName(e.target.value)} required />
                 </div>
-                <div className="input-group" style={{ marginBottom: '16px' }}>
-                  <label className="input-label">Telegram API Token</label>
-                  <input type="text" className="input" placeholder="123456789:ABCdef..." value={newBotToken} onChange={e => setNewBotToken(e.target.value)} required />
-                </div>
+                
+                {modalType === 'bot' && (
+                  <>
+                    <div className="input-group" style={{ marginBottom: '16px' }}>
+                      <label className="input-label">Telegram API Token</label>
+                      <input type="text" className="input" placeholder="123456789:ABCdef..." value={newBotToken} onChange={e => setNewBotToken(e.target.value)} required />
+                    </div>
 
-                <div className="input-group" style={{ marginBottom: '24px' }}>
-                  <label className="input-label">Yaratish turi</label>
-                  <div style={{ display: 'flex', gap: '12px', marginTop: '6px' }}>
-                    <label style={{ 
-                      flex: 1,
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '8px', 
-                      background: creationType === 'bot_and_webapp' ? 'rgba(30,144,255,0.1)' : 'rgba(255,255,255,0.02)', 
-                      border: creationType === 'bot_and_webapp' ? '1.5px solid var(--accent-blue)' : '1.5px solid rgba(255,255,255,0.05)',
-                      padding: '10px 14px', 
-                      borderRadius: '8px', 
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      transition: 'all 0.2s'
-                    }}>
-                      <input 
-                        type="radio" 
-                        name="creationType" 
-                        value="bot_and_webapp" 
-                        checked={creationType === 'bot_and_webapp'} 
-                        onChange={() => setCreationType('bot_and_webapp')}
-                        style={{ accentColor: 'var(--accent-blue)' }}
-                      />
-                      <span>Bot + Mini App</span>
-                    </label>
+                    <div className="input-group" style={{ marginBottom: '24px' }}>
+                      <label className="input-label">Yaratish turi</label>
+                      <div style={{ display: 'flex', gap: '12px', marginTop: '6px' }}>
+                        <label style={{ 
+                          flex: 1,
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px', 
+                          background: creationType === 'bot_and_webapp' ? 'rgba(30,144,255,0.1)' : 'rgba(255,255,255,0.02)', 
+                          border: creationType === 'bot_and_webapp' ? '1.5px solid var(--accent-blue)' : '1.5px solid rgba(255,255,255,0.05)',
+                          padding: '10px 14px', 
+                          borderRadius: '8px', 
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          transition: 'all 0.2s'
+                        }}>
+                          <input 
+                            type="radio" 
+                            name="creationType" 
+                            value="bot_and_webapp" 
+                            checked={creationType === 'bot_and_webapp'} 
+                            onChange={() => setCreationType('bot_and_webapp')}
+                            style={{ accentColor: 'var(--accent-blue)' }}
+                          />
+                          <span>Bot + Mini App</span>
+                        </label>
 
-                    <label style={{ 
-                      flex: 1,
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '8px', 
-                      background: creationType === 'bot_only' ? 'rgba(30,144,255,0.1)' : 'rgba(255,255,255,0.02)', 
-                      border: creationType === 'bot_only' ? '1.5px solid var(--accent-blue)' : '1.5px solid rgba(255,255,255,0.05)',
-                      padding: '10px 14px', 
-                      borderRadius: '8px', 
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      transition: 'all 0.2s'
-                    }}>
-                      <input 
-                        type="radio" 
-                        name="creationType" 
-                        value="bot_only" 
-                        checked={creationType === 'bot_only'} 
-                        onChange={() => setCreationType('bot_only')}
-                        style={{ accentColor: 'var(--accent-blue)' }}
-                      />
-                      <span>Faqat Bot</span>
-                    </label>
-                  </div>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', display: 'block' }}>
-                    {creationType === 'bot_and_webapp' 
-                      ? '💡 Bot stsenariysi bilan birga vizual veb-ilova (katalog, buyurtma, forma, ovoz berish) ham tayyorlanadi.'
-                      : '💡 Faqat Telegram bot stsenariysi va matnli xabarlar yaratiladi (veb-ilova interfeysisiz).'}
-                  </span>
-                </div>
+                        <label style={{ 
+                          flex: 1,
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px', 
+                          background: creationType === 'bot_only' ? 'rgba(30,144,255,0.1)' : 'rgba(255,255,255,0.02)', 
+                          border: creationType === 'bot_only' ? '1.5px solid var(--accent-blue)' : '1.5px solid rgba(255,255,255,0.05)',
+                          padding: '10px 14px', 
+                          borderRadius: '8px', 
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          transition: 'all 0.2s'
+                        }}>
+                          <input 
+                            type="radio" 
+                            name="creationType" 
+                            value="bot_only" 
+                            checked={creationType === 'bot_only'} 
+                            onChange={() => setCreationType('bot_only')}
+                            style={{ accentColor: 'var(--accent-blue)' }}
+                          />
+                          <span>Faqat Bot</span>
+                        </label>
+                      </div>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', display: 'block' }}>
+                        {creationType === 'bot_and_webapp' 
+                          ? '💡 Bot stsenariysi bilan birga vizual veb-ilova (katalog, buyurtma, forma, ovoz berish) ham tayyorlanadi.'
+                          : '💡 Faqat Telegram bot stsenariysi va matnli xabarlar yaratiladi (veb-ilova interfeysisiz).'}
+                      </span>
+                    </div>
+                  </>
+                )}
 
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <button type="button" className="btn btn-ghost flex-1" onClick={() => setShowCreateModal(false)}>Bekor qilish</button>

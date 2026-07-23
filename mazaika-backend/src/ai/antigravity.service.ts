@@ -4,12 +4,14 @@ import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common
 export class AntigravityService {
   private readonly logger = new Logger(AntigravityService.name);
 
-  async generateFullProject(promptText: string, chatHistory: any[] = [], currentConfig?: any) {
+  async generateFullProject(promptText: string, chatHistory: any[] = [], currentConfig?: any, targetEntity: 'bot_and_mini_app' | 'site_only' = 'bot_and_mini_app') {
     const googleKey = (
       process.env.GOOGLE_AI_STUDIO_KEY || 
       process.env.GEMINI_API_KEY || 
       ['AQ.', 'Ab8RN6ILTZktWc8rRm0hPoecdqlqbmR5JfO1xGXJx6oduhKpLQ'].join('')
     ).trim();
+
+    const isSiteOnly = targetEntity === 'site_only';
 
     const systemInstruction = `
 You are "Antigravity", the elite core AI Copilot and Autonomous Architect for the Mazaika Platform.
@@ -19,21 +21,21 @@ ${JSON.stringify(currentConfig)}
 Apply the user's requested changes to this structure and return the ENTIRE updated project structure.` : `The user is creating a new project from scratch. Generate a full project structure based on their idea.`}
 
 CRITICAL INSTRUCTIONS FOR SCALE AND CREATIVITY:
-1. If the user asks for a "massive" or "huge" architecture, you MUST generate at least 20-25 blocks across the bot and mini-app. Do not be lazy.
-2. For the BOT LOGIC, you MUST build a truly interactive system. DO NOT just output a chain of "message" blocks. You MUST use a mix of "question", "condition", "custom_code", "variable", "http" and other nodes to create real working mechanics.
-3. You are ALLOWED and ENCOURAGED to INVENT NEW block types and functions that don't exist in standard templates if the client's project requires them. For example, you can create \`custom_html\`, \`custom_code\`, \`interactive_chart\`, \`3d_viewer\`, \`complex_form\`, or any other type you deem necessary.
-4. IMPORTANT: The FIRST block in \`bot_blocks\` MUST ALWAYS be of type \`start\` (the /start command trigger). ALL blocks MUST be logically connected to each other using the \`next\` field (which should contain the \`id\` of the target block). For conditions, use \`nextTrue\` and \`nextFalse\`. Do not leave the blocks disconnected!
+1. If the user asks for a "massive" or "huge" architecture, you MUST generate at least 20-25 blocks. Do not be lazy.
+${isSiteOnly ? `2. YOU ARE BUILDING A STANDALONE WEBSITE. You MUST ONLY generate \`site_blocks\`. DO NOT generate \`bot_blocks\`. Generate a comprehensive landing page, e-commerce site, or web application.` : `2. For the BOT LOGIC, you MUST build a truly interactive system. DO NOT just output a chain of "message" blocks. You MUST use a mix of "question", "condition", "custom_code", "variable", "http" and other nodes to create real working mechanics.
+3. You are ALLOWED and ENCOURAGED to INVENT NEW block types and functions that don't exist in standard templates if the client's project requires them. For example, you can create \\\`custom_html\\\`, \\\`custom_code\\\`, \\\`interactive_chart\\\`, \\\`3d_viewer\\\`, \\\`complex_form\\\`, or any other type you deem necessary.
+4. IMPORTANT: The FIRST block in \\\`bot_blocks\\\` MUST ALWAYS be of type \\\`start\\\` (the /start command trigger). ALL blocks MUST be logically connected to each other using the \\\`next\\\` field (which should contain the \\\`id\\\` of the target block). For conditions, use \\\`nextTrue\\\` and \\\`nextFalse\\\`. Do not leave the blocks disconnected!`}
 
 Return ONLY a valid JSON object matching this schema:
 {
   "explanation": "Short summary of what was generated or changed in Russian",
   "execution_mode": "FULL_GENERATION",
-  "target_entity": "bot_and_mini_app",
+  "target_entity": "${targetEntity}",
   "project_data": {
     "appName": "Name",
     "theme": "neon | minimalist | glassmorphism",
     "themeColor": "#hexcode",
-    "bot_blocks": [{ "id": "...", "type": "message | question | condition | variable | custom_code | http | payme | orderList | cart | addTag | [ANY_INVENTED_TYPE]", "title": "...", "text": "...", "variable": "...", "next": "...", "options": [], "code": "..." }],
+    ${isSiteOnly ? '' : `"bot_blocks": [{ "id": "...", "type": "message | question | condition | variable | custom_code | http | payme | orderList | cart | addTag | [ANY_INVENTED_TYPE]", "title": "...", "text": "...", "variable": "...", "next": "...", "options": [], "code": "..." }],`}
     "site_blocks": [{ "id": "...", "type": "hero | custom_html | [ANY_INVENTED_TYPE]", "title": "...", "subtitle": "...", "img": "...", "html": "...", "items": [] }]
   }
 }

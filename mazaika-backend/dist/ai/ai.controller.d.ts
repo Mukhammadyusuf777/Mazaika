@@ -6,6 +6,7 @@ export declare class GenerateDto {
         content: string;
     }[];
     currentConfig?: any;
+    targetEntity?: 'bot_and_mini_app' | 'site_only';
 }
 export declare class PatchDto {
     prompt: string;

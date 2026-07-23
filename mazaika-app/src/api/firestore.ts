@@ -55,12 +55,15 @@ export async function getBotById(botId: string): Promise<any> {
   return null
 }
 
-export async function createBot(userId: string, data: { name: string; token: string; template?: string; creationType?: 'bot_only' | 'bot_and_webapp', customNodes?: any[], customEdges?: any[] }): Promise<any> {
+export async function createBot(userId: string, data: { name: string; token?: string; template?: string; creationType?: 'bot_only' | 'bot_and_webapp', customNodes?: any[], customEdges?: any[], projectType?: 'bot' | 'site' }): Promise<any> {
+  const isSite = data.projectType === 'site';
+  
   const ref = await addDoc(collection(db, 'bots'), {
     name: data.name,
-    token: data.token,
+    token: isSite ? '' : (data.token || ''),
+    projectType: data.projectType || 'bot',
     userId,
-    status: 'active',
+    status: isSite ? 'active' : 'active',
     users: 0,
     messages: 0,
     createdAt: serverTimestamp(),

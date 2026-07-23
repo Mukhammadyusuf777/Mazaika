@@ -20,7 +20,7 @@ interface AICopilotContextType {
   setActiveElementId: (id: string | null) => void
   messages: ChatMessage[]
   isGenerating: boolean
-  sendMessage: (text: string, overrideMode?: 'FULL_GENERATION' | 'PATCH') => Promise<AgentResponsePayload | null>
+  sendMessage: (text: string, overrideMode?: 'FULL_GENERATION' | 'PATCH', targetEntity?: 'bot_and_mini_app' | 'site_only') => Promise<AgentResponsePayload | null>
   activeConfig: any
   setActiveConfig: React.Dispatch<React.SetStateAction<any>>
   applyPatchOperations: (ops: PatchOperation[]) => void
@@ -125,7 +125,7 @@ const [isWidgetOpen, setWidgetOpen] = useState(false)
     })
   }
 
-  const sendMessage = async (text: string, overrideMode?: 'FULL_GENERATION' | 'PATCH') => {
+  const sendMessage = async (text: string, overrideMode?: 'FULL_GENERATION' | 'PATCH', targetEntity?: 'bot_and_mini_app' | 'site_only') => {
     if (!text.trim() || isGenerating) return null
 
     const userMsg: ChatMessage = {
@@ -153,7 +153,8 @@ const [isWidgetOpen, setWidgetOpen] = useState(false)
         selectedElementId: activeElementId,
         currentConfig: activeConfig,
         currentPage: window.location.pathname,
-        chatHistory
+        chatHistory,
+        targetEntity
       })
 
       const agentMsg: ChatMessage = {

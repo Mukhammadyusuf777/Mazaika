@@ -30,6 +30,7 @@ export async function queryAntigravityAgent(
     selectedElementId?: string | null
     currentConfig?: any
     chatHistory?: { role: string, content: string }[]
+    targetEntity?: 'bot_and_mini_app' | 'site_only'
   }
 ): Promise<AgentResponsePayload> {
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -44,7 +45,8 @@ export async function queryAntigravityAgent(
         currentPage: contextMeta?.currentPage,
         selectedBlockId: contextMeta?.selectedElementId,
         currentConfig: contextMeta?.currentConfig,
-        chatHistory: contextMeta?.chatHistory || []
+        chatHistory: contextMeta?.chatHistory || [],
+        targetEntity: contextMeta?.targetEntity
       })
     })
 

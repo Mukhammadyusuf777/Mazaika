@@ -208,6 +208,13 @@ export default function AiWorkspacePage() {
   const { user } = useAuthStore()
   const { messages, isGenerating, sendMessage, activeConfig, clearChat, activeProjectId, switchProject } = useAICopilot()
 
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('')
+  const [creationType, setCreationType] = useState<'bot_only' | 'bot_and_webapp'>('bot_and_webapp')
+  
+  // NEW STATE: AI Target Entity
+  const [aiTargetEntity, setAiTargetEntity] = useState<'bot_and_mini_app' | 'site_only'>('bot_and_mini_app')
+
+  const { getBackendUrl } = useAICopilot()
   const [promptInput, setPromptInput] = useState('')
   const [savingBot, setSavingBot] = useState(false)
 
@@ -251,7 +258,7 @@ export default function AiWorkspacePage() {
     if (!text.trim() || isGenerating) return
     if (!textToUse) setPromptInput('')
 
-    await sendMessage(text, 'FULL_GENERATION')
+    await sendMessage(text, 'FULL_GENERATION', aiTargetEntity)
   }
 
   const handleSaveProjectToBot = async () => {
@@ -364,10 +371,13 @@ export default function AiWorkspacePage() {
         });
       }
 
+      const isSite = (activeConfig.target_entity === 'site' || activeConfig.target_entity === 'site_only' || activeConfig.target_entity === 'webapp');
+
       const newBot = await createBot(user.id, {
         name: activeConfig.appName || 'AI Generated Project',
-        token: 'TEST_TOKEN_' + Date.now().toString().slice(-6),
+        token: isSite ? undefined : ('TEST_TOKEN_' + Date.now().toString().slice(-6)),
         creationType: (activeConfig.target_entity === 'bot') ? 'bot_only' : 'bot_and_webapp',
+        projectType: isSite ? 'site' : 'bot',
         customNodes,
         customEdges
       })
@@ -468,6 +478,24 @@ export default function AiWorkspacePage() {
         </div>
 
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          
+          <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 8, padding: 4, marginRight: 16 }}>
+            <button 
+              className={`btn btn-sm ${aiTargetEntity === 'bot_and_mini_app' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setAiTargetEntity('bot_and_mini_app')}
+              style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, minHeight: 28 }}
+            >
+              🤖 Bot & Mini App
+            </button>
+            <button 
+              className={`btn btn-sm ${aiTargetEntity === 'site_only' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setAiTargetEntity('site_only')}
+              style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, minHeight: 28 }}
+            >
+              🌐 Veb Sayt
+            </button>
+          </div>
+
           <button 
             className="btn btn-ghost btn-sm" 
             onClick={clearChat}
