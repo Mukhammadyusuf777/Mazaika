@@ -285,6 +285,8 @@ export default function AiWorkspacePage() {
         }
         
         let yOffset = 100;
+        let xOffset = 300;
+        
         botBlocks.forEach((block: any, index: number) => {
           let nodeType = 'message';
           if (block.type === 'boshlash') nodeType = 'start';
@@ -292,10 +294,19 @@ export default function AiWorkspacePage() {
           if (block.type === 'matnli_savol') nodeType = 'question';
           if (block.type === 'shart') nodeType = 'condition';
 
+          // Layout algorithm (Zig-zag or simple wrap)
+          // Just alternate between left and right slightly to make it readable, or just vertical spacing
+          // React Flow auto-layout is best done via library, but a simple grid works:
+          const col = index % 3;
+          const row = Math.floor(index / 3);
+          
+          const xPos = 100 + (col * 350);
+          const yPos = 100 + (row * 200);
+
           const node = {
             id: block.id || `node-${index}`,
             type: nodeType,
-            position: { x: 300, y: yOffset },
+            position: { x: xPos, y: yPos },
             data: {
               label: block.title || block.type,
               text: block.text || '',

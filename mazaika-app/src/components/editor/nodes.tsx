@@ -132,6 +132,7 @@ function SmartNode({ data, selected, type }: NodeProps) {
       case 'deleteVariable':
         return <div className="node-text-preview">O'chirish: {d.variableName || 'Tanlanmagan'}</div>
       case 'javascript':
+      case 'custom_code':
         return <div className="node-text-preview" style={{ fontFamily: 'monospace', fontSize: 10 }}>{d.code || 'x = 1'}</div>
       case 'http':
       case 'webhook':
@@ -240,6 +241,7 @@ export const nodeTypes = {
   variable: (props: NodeProps) => <SmartNode {...props} type="variable" />,
   deleteVariable: (props: NodeProps) => <SmartNode {...props} type="deleteVariable" />,
   javascript: (props: NodeProps) => <SmartNode {...props} type="javascript" />,
+  custom_code: (props: NodeProps) => <SmartNode {...props} type="custom_code" />,
   http: (props: NodeProps) => <SmartNode {...props} type="http" />,
   webhook: (props: NodeProps) => <SmartNode {...props} type="webhook" />,
   googleSheetsAdd: (props: NodeProps) => <SmartNode {...props} type="googleSheetsAdd" />,

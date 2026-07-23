@@ -397,6 +397,29 @@ export default function BuilderBlock({ block, config, isActive, onClick, onUpdat
           )
         )}
 
+        {/* CUSTOM HTML / FALLBACK BLOCK */}
+        {!['hero', 'about', 'catalog', 'blog', 'contacts', 'form', 'wallet', 'voting'].includes(block.type) && !isBotNode && (
+          isMobile ? (
+            <div style={{ padding: '4px' }}>
+              <h5 style={{ fontSize: 12, fontWeight: 800, margin: '0 0 6px 0', color: config.themeColor }}>{block.title || block.type}</h5>
+              {block.html ? (
+                 <div dangerouslySetInnerHTML={{ __html: block.html }} style={{ fontSize: 10, width: '100%', overflowX: 'auto' }} />
+              ) : (
+                 <p style={{ fontSize: 10, opacity: 0.8 }}>{block.subtitle || 'Maxsus blok'}</p>
+              )}
+            </div>
+          ) : (
+            <div style={{ maxWidth: 800, margin: '0 auto', overflowX: 'auto' }}>
+              <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: config.themeColor }}>{block.title || block.type}</h3>
+              {block.html ? (
+                 <div dangerouslySetInnerHTML={{ __html: block.html }} />
+              ) : (
+                 <p style={{ fontSize: 14, opacity: 0.8 }}>{block.subtitle || 'Maxsus blok tipi.'}</p>
+              )}
+            </div>
+          )
+        )}
+
         {/* Resize Handles */}
         {isActive && (
           <>
