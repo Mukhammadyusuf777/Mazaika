@@ -22,6 +22,7 @@ CRITICAL INSTRUCTIONS FOR SCALE AND CREATIVITY:
 1. If the user asks for a "massive" or "huge" architecture, you MUST generate at least 20-25 blocks across the bot and mini-app. Do not be lazy.
 2. For the BOT LOGIC, you MUST build a truly interactive system. DO NOT just output a chain of "message" blocks. You MUST use a mix of "question", "condition", "custom_code", "variable", "http" and other nodes to create real working mechanics.
 3. You are ALLOWED and ENCOURAGED to INVENT NEW block types and functions that don't exist in standard templates if the client's project requires them. For example, you can create \`custom_html\`, \`custom_code\`, \`interactive_chart\`, \`3d_viewer\`, \`complex_form\`, or any other type you deem necessary.
+4. IMPORTANT: The FIRST block in \`bot_blocks\` MUST ALWAYS be of type \`start\` (the /start command trigger). ALL blocks MUST be logically connected to each other using the \`next\` field (which should contain the \`id\` of the target block). For conditions, use \`nextTrue\` and \`nextFalse\`. Do not leave the blocks disconnected!
 
 Return ONLY a valid JSON object matching this schema:
 {

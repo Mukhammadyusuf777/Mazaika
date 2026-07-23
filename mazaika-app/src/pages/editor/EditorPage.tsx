@@ -58,9 +58,43 @@ export default function EditorPage() {
     if (!botId) return
     try {
       await handleSave()
-      await apiClient.post(`/bots/${botId}/start`)
+      
+      // We first check if the bot has a valid token by fetching it, or we rely on the backend's error message.
+      // But it's easier to just call start, and if it fails due to token, prompt.
+      let res = await apiClient.post(`/bots/${botId}/start`)
+      
+      if (res.data?.error === 'Bot token is empty' || res.data?.error === 'Invalid token format') {
+        const token = prompt("Bot hali ishga tushmadi! Iltimos, BotFather'dan olingan haqiqiy Telegram Bot Tokenni kiriting:");
+        if (token && token.trim() !== '' && token.trim() !== 'TEST_TOKEN') {
+          await apiClient.patch(`/bots/${botId}`, { token: token.trim() })
+          res = await apiClient.post(`/bots/${botId}/start`)
+          if (res.data?.error) {
+             alert(res.data.error)
+             return
+          }
+        } else {
+          return
+        }
+      } else if (res.data?.error) {
+        alert(res.data.error)
+        return
+      }
+      
       setIsRunning(true)
-    } catch (e) {
+    } catch (e: any) {
+      if (e.response?.data?.error === 'Bot token is empty') {
+        const token = prompt("Bot hali ishga tushmadi! Iltimos, BotFather'dan olingan haqiqiy Telegram Bot Tokenni kiriting:");
+        if (token && token.trim() !== '' && token.trim() !== 'TEST_TOKEN') {
+          await apiClient.patch(`/bots/${botId}`, { token: token.trim() })
+          try {
+            await apiClient.post(`/bots/${botId}/start`)
+            setIsRunning(true)
+          } catch (err) {
+            alert("Token xato yoki bot ishga tushmadi!")
+          }
+        }
+        return;
+      }
       alert("Botni ishga tushirishda xatolik!")
     }
   }
