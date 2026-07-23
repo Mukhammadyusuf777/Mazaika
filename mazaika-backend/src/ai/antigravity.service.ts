@@ -207,7 +207,10 @@ NOTE: Only include "source_code" in project_data if the bot explicitly needs a M
       }
     } catch (err: any) {
       this.logger.error('Cloudflare API Exception: ' + err.message);
-      throw new InternalServerErrorException('AI Generation Failed. Please configure a valid AI API key in .env');
+      if (err.message.includes('Cloudflare API Error')) {
+        throw new InternalServerErrorException(err.message);
+      }
+      throw new InternalServerErrorException('AI Generation Failed. Please check your Cloudflare API keys in .env');
     }
   }
 
