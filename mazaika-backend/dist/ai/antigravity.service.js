@@ -61,8 +61,75 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                 this.logger.error(`Gemini API Exception: ${err.message}`);
             }
         }
-        else {
-            this.logger.warn('No valid GOOGLE_AI_STUDIO_KEY set. Trying Cloudflare fallback.');
+        const openrouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
+        if (openrouterKey && openrouterKey.length > 10) {
+            this.logger.log(`Attempting OpenRouter API generation...`);
+            try {
+                const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + openrouterKey,
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': 'https://mazaika.uz',
+                        'X-Title': 'Mazaika AI Platform'
+                    },
+                    body: JSON.stringify({
+                        model: 'google/gemini-2.5-flash:free',
+                        messages: [
+                            { role: 'system', content: systemInstruction },
+                            { role: 'user', content: promptText }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 8192
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    let text = data.choices?.[0]?.message?.content;
+                    if (text) {
+                        text = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
+                        const jsonMatch = text.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            this.logger.log('Successfully generated via OpenRouter!');
+                            return JSON.parse(jsonMatch[0]);
+                        }
+                    }
+                }
+                else {
+                    const errText = await res.text();
+                    this.logger.error(`OpenRouter API Error (${res.status}): ${errText.substring(0, 300)}`);
+                    const resFallback = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + openrouterKey,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: 'meta-llama/llama-3.3-70b-instruct:free',
+                            messages: [
+                                { role: 'system', content: systemInstruction },
+                                { role: 'user', content: promptText }
+                            ],
+                            max_tokens: 8192
+                        })
+                    });
+                    if (resFallback.ok) {
+                        const dataF = await resFallback.json();
+                        let textF = dataF.choices?.[0]?.message?.content;
+                        if (textF) {
+                            textF = textF.replace(/```json/gi, '').replace(/```/gi, '').trim();
+                            const jsonMatchF = textF.match(/\{[\s\S]*\}/);
+                            if (jsonMatchF) {
+                                this.logger.log('Successfully generated via OpenRouter Fallback Model!');
+                                return JSON.parse(jsonMatchF[0]);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (err) {
+                this.logger.error(`OpenRouter API Exception: ${err.message}`);
+            }
         }
         const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || '';
         const token = process.env.CLOUDFLARE_API_TOKEN || '';
@@ -166,42 +233,58 @@ Generate a COMPLETE, WORKING Telegram bot workflow as ReactFlow nodes and edges.
 NOTE: Only include "source_code" in project_data if the bot explicitly needs a Mini App web interface.`;
     }
     async generateViaCloudflare(promptText, systemInstruction, accountId, token) {
-        try {
-            const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.1-8b-instruct`;
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + token,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    messages: [
-                        { role: 'system', content: systemInstruction },
-                        { role: 'user', content: promptText }
-                    ],
-                    max_tokens: 6000
-                })
-            });
-            if (res.ok) {
-                const data = await res.json();
-                let textOrObject = data.result?.response;
-                if (textOrObject) {
-                    this.logger.log('Successfully generated via Cloudflare Workers AI!');
-                    if (typeof textOrObject === 'object')
-                        return textOrObject;
-                    let text = textOrObject.replace(/```json/gi, '').replace(/```/gi, '').trim();
-                    return JSON.parse(text);
+        const modelsToTry = [
+            process.env.CLOUDFLARE_MODEL,
+            '@cf/google/gemini-3.6-flash',
+            '@cf/google/gemini-1.5-flash',
+            '@cf/google/gemini-3.5-flash-lite',
+            '@cf/xai/grok-4.5',
+            '@cf/meta/llama-3.3-70b-instruct',
+            '@cf/meta/llama-3.1-8b-instruct'
+        ].filter(Boolean);
+        let lastError = '';
+        for (const model of modelsToTry) {
+            try {
+                this.logger.log(`Attempting Cloudflare AI generation with model: ${model}...`);
+                const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        prompt: systemInstruction + '\n\n--- USER REQUEST ---\n' + promptText,
+                        max_tokens: 8192
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    let textOrObject = data.result?.response || data.result;
+                    if (textOrObject) {
+                        this.logger.log(`Successfully generated via Cloudflare Workers AI (${model})!`);
+                        if (typeof textOrObject === 'object' && !Array.isArray(textOrObject))
+                            return textOrObject;
+                        let text = typeof textOrObject === 'string' ? textOrObject : JSON.stringify(textOrObject);
+                        text = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
+                        const jsonMatch = text.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            return JSON.parse(jsonMatch[0]);
+                        }
+                    }
+                }
+                else {
+                    const errText = await res.text();
+                    this.logger.warn(`Cloudflare model ${model} failed (${res.status}): ${errText.substring(0, 150)}`);
+                    lastError = errText;
                 }
             }
-            else {
-                const errText = await res.text();
-                throw new Error('Cloudflare API Error: ' + errText);
+            catch (err) {
+                this.logger.warn(`Cloudflare model ${model} exception: ${err.message}`);
+                lastError = err.message;
             }
         }
-        catch (err) {
-            this.logger.error('Cloudflare API Exception: ' + err.message);
-            throw new common_1.InternalServerErrorException('AI Generation Failed. Please configure a valid AI API key in .env');
-        }
+        throw new common_1.InternalServerErrorException('Cloudflare AI Generation Failed: ' + lastError);
     }
     async generatePatch(promptText, currentPageUrl, selectedBlockId, currentConfig) {
         this.logger.log('Patch mode: delegating to full generation for reliability.');

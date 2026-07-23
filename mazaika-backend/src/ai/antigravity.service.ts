@@ -61,6 +61,7 @@ export class AntigravityService {
       } catch (err: any) {
         this.logger.error(`Gemini API Exception: ${err.message}`);
       }
+    }
     // 2. TRY OPENROUTER API
     const openrouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
     if (openrouterKey && openrouterKey.length > 10) {
