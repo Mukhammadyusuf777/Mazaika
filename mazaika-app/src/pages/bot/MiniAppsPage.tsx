@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Copy, Eye, Layout, Save, Info, Check, RefreshCw } from 'lucide-react'
+import { Copy, Eye, Save, Check, RefreshCw, Sparkles } from 'lucide-react'
 import { getBotById, updateBot, getSiteConfig, saveSiteConfig } from '../../api/firestore'
 
 export default function MiniAppsPage() {
@@ -175,16 +175,16 @@ export default function MiniAppsPage() {
             <p style={{ color: 'var(--text-muted)' }}>Telegram bot ichida ochiladigan smart interfeysni (WebApp) sozlang.</p>
           </div>
           <div className="page-header-actions">
-            <button className="btn btn-primary" onClick={() => navigate(`/bot/${botId}/sitebuilder`)} style={{ gap: 8 }}>
-              <Layout size={16} /> Konstruktorga o'tish
+            <button className="btn btn-primary" onClick={() => navigate(`/bot/${botId}/sitebuilder`)} style={{ gap: 8, background: 'linear-gradient(135deg, #a855f7, #3b82f6)', border: 'none', boxShadow: '0 4px 14px rgba(168,85,247,0.3)' }}>
+              <Sparkles size={16} /> AI Architect Konstruktoriga o'tish
             </button>
           </div>
         </div>
 
-        {/* Info Banner explaining unification */}
+        {/* Info Banner explaining AI Architect integration */}
         <div style={{ 
-          background: 'rgba(30,144,255,0.08)', 
-          border: '1px solid var(--accent-blue)', 
+          background: 'linear-gradient(135deg, rgba(168,85,247,0.1), rgba(30,144,255,0.1))', 
+          border: '1px solid rgba(168,85,247,0.3)', 
           borderRadius: 'var(--radius-xl)', 
           padding: 'var(--space-4)', 
           fontSize: 13, 
@@ -192,10 +192,10 @@ export default function MiniAppsPage() {
           display: 'flex',
           gap: 12
         }}>
-          <Info size={20} style={{ color: 'var(--accent-blue)', flexShrink: 0, marginTop: 2 }} />
+          <Sparkles size={20} style={{ color: '#a855f7', flexShrink: 0, marginTop: 2 }} />
           <div>
-            <b>Birlashgan Tizim (Unified Platform):</b> Mazaika platformasida Telegram Mini Ilova va veb-sayt yagona blok-konstruktor orqali ishlaydi. 
-            Mahsulotlar ro'yxati, arizalar formasi, sarlavha va rasmlarni tahrirlash uchun yuqoridagi <b>Konstruktorga o'tish</b> tugmasini bosing.
+            <b>AI Architect Generator:</b> Mazaika platformasida Telegram Mini Ilova va Veb-saytlar sun'iy intellekt (Mazaika AI Architect) yordamida avtomatik ravishda yaratiladi. 
+            Disaynni o'zgartirish, yangi bo'limlar qo'shish va Mini App interfeysini yaratish uchun <b>AI Architect Konstruktoriga o'tish</b> tugmasini bosing.
           </div>
         </div>
 

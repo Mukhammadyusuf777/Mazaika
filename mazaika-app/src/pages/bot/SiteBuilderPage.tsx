@@ -1,86 +1,38 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { 
-  Globe, Save, Eye, Trash2, ArrowUp, ArrowDown, Settings,
-  Layout, FileText, ShoppingBag, AlignLeft, MessageSquare, CheckSquare, Wallet,
-  UserCheck, Laptop, Smartphone, Plus, Info, CheckCircle, Sparkles, Bot, Loader2, Send,
-  Copy, Check, RefreshCw, Zap, ExternalLink
+  Globe, Save, Eye, CheckCircle, Sparkles, Bot, Loader2, Send,
+  Copy, Check, RefreshCw, Zap, ExternalLink, Laptop, Smartphone
 } from 'lucide-react'
 
-import { Reorder } from 'framer-motion'
-import BuilderBlock from './BuilderBlock'
-import { getSiteConfig, saveSiteConfig, updateBot, getBotById } from '../../api/firestore'
+import { getSiteConfig, saveSiteConfig, updateBot } from '../../api/firestore'
 import { useAICopilot } from '../../context/AICopilotContext'
 
 export interface Block {
   id: string
-  type: 'hero' | 'about' | 'catalog' | 'blog' | 'contacts' | 'form' | 'loyalty' | 'voting' | string
+  type: string
   title?: string
   subtitle?: string
   text?: string
   img?: string
   ctaText?: string
-  items?: Array<{ id: string; name: string; price: number; desc: string; img?: string }>
-  posts?: Array<{ id: string; title: string; text: string }>
-  phone?: string
-  telegram?: string
-  fields?: Array<{ name: string; label: string; type: string; required: boolean }>
-  candidates?: string[]
-  styles?: {
-    paddingTop?: number
-    paddingBottom?: number
-  }
   html?: string
   source_code?: string
 }
 
 interface SiteConfig {
-  theme: 'neon' | 'minimalist' | 'glassmorphism'
+  theme: 'neon' | 'minimalist' | 'glassmorphism' | string
   themeColor: string
   appName: string
   blocks: Block[]
   source_code?: string
 }
 
-
-const DEFAULT_BLOCKS: Block[] = [
-  {
-    id: '1',
-    type: 'hero',
-    title: 'Smart Bot va Mini Applar',
-    subtitle: 'Biznesingizni Telegram orqali yangi darajaga olib chiqing! Sodiqlik tizimlari, internet-do\'kon va avtomatlashtirilgan xizmatlar.',
-    ctaText: 'Katalogga o\'tish',
-    img: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800'
-  },
-  {
-    id: '2',
-    type: 'about',
-    title: 'Biz haqimizda',
-    text: 'Mazaika - bu Telegram Mini Apps va botlarni dasturlashsiz (No-code) yaratish imkonini beruvchi eng zamonaviy platformadir. Biz bilan istalgan loyihangizni bir necha daqiqada ishga tushiring!'
-  },
-  {
-    id: '3',
-    type: 'catalog',
-    title: 'Do\'kon / Katalog',
-    items: [
-      { id: 'item_1', name: 'VIP A\'zolar paketi', price: 99000, desc: 'Barcha imkoniyatlarga cheksiz kirish.', img: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=150' },
-      { id: 'item_2', name: 'Konsultatsiya 1 soat', price: 150000, desc: 'Mutaxassis bilan yakkama-yakka suhbat.', img: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=150' }
-    ]
-  },
-  {
-    id: '4',
-    type: 'contacts',
-    title: 'Aloqada bo\'ling',
-    phone: '+998 90 123 45 67',
-    telegram: 'MazaikaSupportBot'
-  }
-]
-
 const DEFAULT_CONFIG: SiteConfig = {
-  appName: 'Mini App',
+  appName: 'Mini App & Website',
   theme: 'glassmorphism',
   themeColor: '#1e90ff',
-  blocks: DEFAULT_BLOCKS,
+  blocks: [],
   source_code: ''
 }
 
@@ -88,8 +40,8 @@ export default function SiteBuilderPage() {
   const { botId } = useParams<{ botId: string }>()
   const [config, setConfig] = useState<SiteConfig>(DEFAULT_CONFIG)
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedBlockId, setSelectedBlockId] = useState<string | null>('1')
-  const [projectType, setProjectType] = useState<'bot' | 'site'>('bot')
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>('desktop')
   
   const { activeConfig, messages, sendMessage, isGenerating, clearChat } = useAICopilot()
   const [promptInput, setPromptInput] = useState('')
@@ -98,21 +50,8 @@ export default function SiteBuilderPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    if (projectType === 'site') {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [messages, projectType])
-  
-  // Google Sites layout states
-  const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop')
-  const [activeTab, setActiveTab] = useState<'insert' | 'properties'>('insert')
-  const [saveSuccess, setSaveSuccess] = useState(false)
-
-  // Interactive smartphone preview states
-  const [previewCart, setPreviewCart] = useState<Array<{ id: string; name: string; price: number; qty: number }>>([])
-  const [showPreviewOrderSheet, setShowPreviewOrderSheet] = useState(false)
-  const [previewName, setPreviewName] = useState('')
-  const [previewPhone, setPreviewPhone] = useState('')
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -120,181 +59,32 @@ export default function SiteBuilderPage() {
       setIsLoading(true)
       try {
         const data = await getSiteConfig(botId)
-        if (data && Array.isArray(data.blocks)) {
+        if (data) {
           setConfig(data as SiteConfig)
-          if (data.blocks.length > 0) {
-            setSelectedBlockId(data.blocks[0].id)
-          }
         } else {
           setConfig(DEFAULT_CONFIG)
-          setSelectedBlockId('1')
         }
       } catch (e) {
         console.error(e)
       } finally {
         setIsLoading(false)
       }
-
-      try {
-        const botData = await getBotById(botId)
-        if (botData) setProjectType(botData.projectType || 'bot')
-      } catch (e) {
-        console.error(e)
-      }
     }
     fetchConfig()
   }, [botId])
 
-  // Sync AI changes from the floating widget
   useEffect(() => {
     if (activeConfig) {
-      const newBlocks = activeConfig.site_blocks || activeConfig.blocks || [];
       setConfig(prev => ({
         ...prev,
         theme: activeConfig.theme || prev.theme,
         themeColor: activeConfig.themeColor || prev.themeColor,
         appName: activeConfig.appName || prev.appName,
-        blocks: Array.isArray(newBlocks) ? newBlocks : prev.blocks,
+        blocks: activeConfig.blocks || prev.blocks,
         source_code: activeConfig.source_code || prev.source_code
-      }));
-      if (Array.isArray(newBlocks) && newBlocks.length > 0) {
-        setSelectedBlockId(newBlocks[0].id || null);
-      }
+      }))
     }
   }, [activeConfig])
-
-  const handleSave = async () => {
-    if (!botId) return
-    setIsLoading(true)
-    try {
-      await saveSiteConfig(botId, config)
-      if (config.appName) {
-        await updateBot(botId, { name: config.appName })
-      }
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 3000)
-    } catch (e) {
-      alert('Saqlashda xatolik yuz berdi!')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Block management
-  const addBlock = (type: Block['type']) => {
-    const id = Date.now().toString()
-    let newBlock: Block = { id, type }
-
-    switch (type) {
-      case 'hero':
-        newBlock = {
-          id,
-          type,
-          title: 'Yangi Banner',
-          subtitle: 'Kompaniyangiz shiori yoki qisqacha ta\'rifi',
-          ctaText: 'Batafsil',
-          img: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800'
-        }
-        break
-      case 'about':
-        newBlock = {
-          id,
-          type,
-          title: 'Biz haqimizda',
-          text: 'Ushbu bo\'limda biznesingiz yoki xizmatlaringiz haqida batafsil ma\'lumot bering.'
-        }
-        break
-      case 'catalog':
-        newBlock = {
-          id,
-          type,
-          title: 'Bizning Katalog',
-          items: [
-            { id: Date.now().toString() + '_1', name: 'Premium Xizmat', price: 150000, desc: 'Yuqori sifatli va tezkor xizmat', img: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=150' }
-          ]
-        }
-        break
-      case 'blog':
-        newBlock = {
-          id,
-          type,
-          title: 'Yangiliklar va Maqolalar',
-          posts: [
-            { id: Date.now().toString() + '_p1', title: 'IT sohasida yangiliklar', text: 'Mazaika platformasida yangi qulayliklar ishga tushdi.' }
-          ]
-        }
-        break
-      case 'contacts':
-        newBlock = {
-          id,
-          type,
-          title: 'Bog\'lanish',
-          phone: '+998 90 123 45 67',
-          telegram: 'MazaikaSupportBot'
-        }
-        break
-      case 'form':
-        newBlock = {
-          id,
-          type,
-          title: 'Mijoz so\'rovnomasi',
-          fields: [
-            { name: 'name', label: 'Ismingiz', type: 'text', required: true },
-            { name: 'phone', label: 'Telefon raqamingiz', type: 'tel', required: true }
-          ]
-        }
-        break
-      case 'loyalty':
-        newBlock = {
-          id,
-          type,
-          title: 'Sodiqlik Tizimi va Cashback'
-        }
-        break
-      case 'voting':
-        newBlock = {
-          id,
-          type,
-          title: 'Hafta g\'olibini aniqlash',
-          candidates: ['Nomzod A', 'Nomzod B']
-        }
-        break
-    }
-
-    const updatedBlocks = [...config.blocks, newBlock]
-    setConfig({ ...config, blocks: updatedBlocks })
-    setSelectedBlockId(id)
-    setActiveTab('properties') // auto switch to properties when block added
-  }
-
-  const deleteBlock = (id: string) => {
-    const updated = config.blocks.filter(b => b.id !== id)
-    setConfig({ ...config, blocks: updated })
-    if (selectedBlockId === id) {
-      setSelectedBlockId(updated.length > 0 ? updated[0].id : null)
-    }
-  }
-
-  const moveBlock = (index: number, direction: 'up' | 'down') => {
-    if (direction === 'up' && index === 0) return
-    if (direction === 'down' && index === config.blocks.length - 1) return
-
-    const updated = [...config.blocks]
-    const targetIndex = direction === 'up' ? index - 1 : index + 1
-    const temp = updated[index]
-    updated[index] = updated[targetIndex]
-    updated[targetIndex] = temp
-
-    setConfig({ ...config, blocks: updated })
-  }
-
-  const updateBlockData = (updatedBlock: Block) => {
-    const updated = config.blocks.map(b => b.id === updatedBlock.id ? updatedBlock : b)
-    setConfig({ ...config, blocks: updated })
-  }
-
-  const selectedBlock = config.blocks.find(b => b.id === selectedBlockId)
-  const liveUrl = `https://mazaika.pages.dev/site/${botId}`
 
   const handleSend = useCallback(async (text?: string) => {
     const msg = text || promptInput
@@ -317,16 +107,43 @@ export default function SiteBuilderPage() {
     e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px'
   }
 
+  const handleSave = async () => {
+    if (!botId) return
+    setIsLoading(true)
+    try {
+      await saveSiteConfig(botId, config)
+      if (config.appName) {
+        await updateBot(botId, { name: config.appName })
+      }
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    } catch (e) {
+      alert('Saqlashda xatolik yuz berdi!')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const copyMsg = (id: string, text: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedMsgId(id)
+    setTimeout(() => setCopiedMsgId(null), 2000)
+  }
+
+  const retryLast = async () => {
+    const lastUser = [...messages].reverse().find(m => m.sender === 'user')
+    if (lastUser) await handleSend(lastUser.text)
+  }
+
   const SITE_QUICK_PROMPTS = [
-    { icon: '🎨', label: 'Rangi o\'zgar', text: 'Asosiy rangni to\'q ko\'k-binafsha gradientga o\'zgartir' },
-    { icon: '⚡', label: 'Animatsiya', text: 'Hero sectionga chiroyli kirish animatsiyasini qo\'sh' },
+    { icon: '🎨', label: 'Rangi o\'zgartir', text: 'Asosiy rangni to\'q ko\'k-binafsha gradientga o\'zgartir' },
+    { icon: '⚡', label: 'Animatsiya', text: 'Hero bo\'limiga chiroyli kirish animatsiyasini qo\'sh' },
     { icon: '📱', label: 'Mobil', text: 'Mobil qurilmalarda yaxshiroq ko\'rinishi uchun optimizatsiya qil' },
-    { icon: '🛒', label: 'Mahsulot', text: 'Tovarlar katalogi bo\'limini qo\'sh' },
-    { icon: '📞', label: 'Aloqa', text: 'Bog\'lanish formasi va harita qo\'sh' },
+    { icon: '🛒', label: 'Mahsulot', text: 'Tovarlar katalogi va xarid bo\'limini qo\'sh' },
+    { icon: '📞', label: 'Aloqa', text: 'Bog\'lanish formasi va Telegram tugmasini qo\'sh' },
     { icon: '✨', label: 'Modernlashtir', text: 'Butun dizaynni zamonaviy va premium ko\'rinishga o\'zgartir' },
   ]
 
-  // Markdown renderer for site builder chat
   const renderMarkdown = (text: string) => {
     const lines = text.split('\n')
     return lines.map((line, i) => {
@@ -340,7 +157,6 @@ export default function SiteBuilderPage() {
         )
       }
       if (line.trim() === '') return <div key={i} style={{ height: 6 }} />
-      // Bold **text**
       const parts = line.split(/(\*\*.*?\*\*)/g)
       return (
         <p key={i} style={{ margin: '2px 0', color: '#e2e8f0' }}>
@@ -353,1014 +169,236 @@ export default function SiteBuilderPage() {
     })
   }
 
-  if (projectType === 'site') {
-    const copyMsg = (id: string, text: string) => {
-      navigator.clipboard.writeText(text)
-      setCopiedMsgId(id)
-      setTimeout(() => setCopiedMsgId(null), 2000)
-    }
-    const retryLast = async () => {
-      const lastUser = [...messages].reverse().find(m => m.sender === 'user')
-      if (lastUser) await handleSend(lastUser.text)
-    }
-    return (
-      <div style={{ display: 'flex', height: '100%', background: '#090d16', color: '#fff', width: '100%', fontFamily: 'inherit' }}>
-        {/* ===== LEFT: AI Chat ===== */}
-        <div style={{ width: '420px', borderRight: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', background: 'linear-gradient(160deg, #0d1526 0%, #0a0f1e 100%)' }}>
-          {/* Header */}
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(168,85,247,0.05)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ background: 'linear-gradient(135deg, #a855f7, #3b82f6)', padding: 8, borderRadius: 12, boxShadow: '0 4px 12px rgba(168,85,247,0.4)' }}>
-                <Sparkles size={16} color="#fff" />
-              </div>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>Mazaika AI Architect</div>
-                <div style={{ fontSize: 10, color: isGenerating ? '#a855f7' : '#10d974' }}>
-                  {isGenerating ? '● Ishlayapti...' : '● Tayyor'}
-                </div>
-              </div>
+  return (
+    <div style={{ display: 'flex', height: '100%', background: '#090d16', color: '#fff', width: '100%', fontFamily: 'inherit' }}>
+      <div style={{ width: '420px', borderRight: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', background: 'linear-gradient(160deg, #0d1526 0%, #0a0f1e 100%)' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(168,85,247,0.05)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ background: 'linear-gradient(135deg, #a855f7, #3b82f6)', padding: 8, borderRadius: 12, boxShadow: '0 4px 12px rgba(168,85,247,0.4)' }}>
+              <Sparkles size={16} color="#fff" />
             </div>
-            <div style={{ display: 'flex', gap: 4 }}>
-              <button onClick={retryLast} title="Qayta yuborish" disabled={isGenerating || messages.length < 2} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 6, borderRadius: 7, display: 'flex', alignItems: 'center', opacity: (isGenerating || messages.length < 2) ? 0.3 : 1 }}>
-                <RefreshCw size={13} />
-              </button>
-              <button onClick={() => { if (window.confirm('Chatni tozalash?')) clearChat() }} title="Tozalash" style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 6, borderRadius: 7, display: 'flex', alignItems: 'center' }}>
-                <Zap size={13} />
-              </button>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>Mazaika AI Architect</div>
+              <div style={{ fontSize: 10, color: isGenerating ? '#a855f7' : '#10d974' }}>
+                {isGenerating ? '● Ishlayapti...' : '● Tayyor'}
+              </div>
             </div>
           </div>
-
-          {/* Messages */}
-          <div ref={messagesEndRef as any} style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 14, scrollbarWidth: 'thin' }}>
-            {/* Quick prompts when chat is fresh */}
-            {messages.length <= 1 && (
-              <div style={{ textAlign: 'center', padding: '16px 8px' }}>
-                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(168,85,247,0.2), rgba(59,130,246,0.2))', border: '1px solid rgba(168,85,247,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', color: '#a855f7' }}>
-                  <Globe size={20} />
-                </div>
-                <p style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0', margin: '0 0 6px' }}>Sayt yaratishni boshlaylik!</p>
-                <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 16px', lineHeight: 1.5 }}>Quyidagi misollardan birini tanlang yoki o'z g'oyangizni yozing</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
-                  {SITE_QUICK_PROMPTS.map((q, i) => (
-                    <button key={i} onClick={() => handleSend(q.text)} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '6px 12px', fontSize: 11, color: '#94a3b8', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
-                      onMouseEnter={e => { (e.currentTarget as any).style.background = 'rgba(168,85,247,0.15)'; (e.currentTarget as any).style.color = '#e2e8f0'; (e.currentTarget as any).style.borderColor = 'rgba(168,85,247,0.4)' }}
-                      onMouseLeave={e => { (e.currentTarget as any).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as any).style.color = '#94a3b8'; (e.currentTarget as any).style.borderColor = 'rgba(255,255,255,0.1)' }}
-                    >{q.icon} {q.label}</button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {messages.map((m) => (
-              <div key={m.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: m.sender === 'user' ? 'row-reverse' : 'row' }}>
-                {m.sender === 'agent' && (
-                  <div style={{ background: 'linear-gradient(135deg, #1e90ff, #a855f7)', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2, boxShadow: '0 2px 8px rgba(168,85,247,0.3)' }}>
-                    <Bot size={12} color="#fff" />
-                  </div>
-                )}
-                <div style={{ flex: 1, maxWidth: '84%', display: 'flex', flexDirection: 'column', gap: 4, alignItems: m.sender === 'user' ? 'flex-end' : 'flex-start' }}>
-                  <div style={{
-                    padding: '10px 14px',
-                    borderRadius: 14,
-                    fontSize: 13,
-                    lineHeight: 1.55,
-                    wordBreak: 'break-word',
-                    ...(m.sender === 'user'
-                      ? { background: 'linear-gradient(135deg, #1e90ff, #2563eb)', color: '#fff', borderBottomRightRadius: 4, boxShadow: '0 4px 14px rgba(30,144,255,0.25)' }
-                      : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderBottomLeftRadius: 4, color: '#e2e8f0' })
-                  }}>
-                    {m.sender === 'agent' ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>{renderMarkdown(m.text)}</div>
-                    ) : m.text}
-                  </div>
-                  {m.sender === 'agent' && (
-                    <button onClick={() => copyMsg(m.id, m.text)} style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 6, padding: '2px 7px', fontSize: 10, color: '#64748b', cursor: 'pointer', opacity: 0.8 }}>
-                      {copiedMsgId === m.id ? <><Check size={10} /> Nusxalandi</> : <><Copy size={10} /> Nusxa</>}
-                    </button>
-                  )}
-                </div>
-                {m.sender === 'user' && (
-                  <div style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2, fontSize: 10, fontWeight: 700, color: '#fff' }}>
-                    SZ
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {/* Typing animation */}
-            {isGenerating && (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <div style={{ background: 'linear-gradient(135deg, #1e90ff, #a855f7)', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Bot size={12} color="#fff" />
-                </div>
-                <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, borderBottomLeftRadius: 4, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 5 }}>
-                  {[0, 200, 400].map((delay, i) => (
-                    <span key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: 'linear-gradient(135deg, #1e90ff, #a855f7)', display: 'inline-block', animation: `siteTypingBounce 1.3s ease-in-out ${delay}ms infinite` }} />
-                  ))}
-                </div>
-              </div>
-            )}
-            <style>{`
-              @keyframes siteTypingBounce {
-                0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-                40% { transform: translateY(-6px); opacity: 1; }
-              }
-            `}</style>
-
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input */}
-          <div style={{ padding: '14px 16px 16px', background: 'rgba(0,0,0,0.3)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: promptInput ? 'rgba(30,144,255,0.05)' : 'rgba(255,255,255,0.03)', border: `1px solid ${promptInput ? 'rgba(30,144,255,0.4)' : 'rgba(255,255,255,0.09)'}`, borderRadius: 14, padding: '8px 8px 8px 14px', transition: 'all 0.2s', boxShadow: promptInput ? '0 0 0 3px rgba(30,144,255,0.08)' : 'none' }}>
-              <textarea
-                ref={textareaRef}
-                value={promptInput}
-                onChange={handleTextareaChange}
-                onKeyDown={handleKeyDown}
-                disabled={isGenerating}
-                placeholder="Saytga nimalar qo'shamiz? Masalan: 'Animatsiyali hero qo'sh'"
-                style={{ flex: 1, background: 'transparent', border: 'none', color: '#fff', fontSize: 13, resize: 'none', outline: 'none', minHeight: 48, maxHeight: 140, lineHeight: 1.5, fontFamily: 'inherit', padding: 0 }}
-              />
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, flexShrink: 0, paddingBottom: 2 }}>
-                {promptInput && <span style={{ fontSize: 10, color: '#334155', whiteSpace: 'nowrap', paddingBottom: 4 }}>↵ yuborish</span>}
-                <button onClick={() => handleSend()} disabled={!promptInput.trim() || isGenerating} style={{ width: 34, height: 34, borderRadius: 10, background: (promptInput.trim() && !isGenerating) ? 'linear-gradient(135deg, #1e90ff, #a855f7)' : 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: (promptInput.trim() && !isGenerating) ? 'pointer' : 'not-allowed', transition: 'all 0.2s', boxShadow: (promptInput.trim() && !isGenerating) ? '0 4px 14px rgba(30,144,255,0.4)' : 'none', flexShrink: 0 }}>
-                  {isGenerating ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={14} />}
-                </button>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#334155', marginTop: 8, paddingLeft: 4 }}>
-              <ExternalLink size={9} />
-              AI yaratgan sayt o'ng tomonda ko'rinadi
-            </div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button onClick={retryLast} title="Qayta yuborish" disabled={isGenerating || messages.length < 2} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 6, borderRadius: 7, display: 'flex', alignItems: 'center', opacity: (isGenerating || messages.length < 2) ? 0.3 : 1 }}>
+              <RefreshCw size={13} />
+            </button>
+            <button onClick={() => { if (window.confirm('Chatni tozalash?')) clearChat() }} title="Tozalash" style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 6, borderRadius: 7, display: 'flex', alignItems: 'center' }}>
+              <Zap size={13} />
+            </button>
           </div>
         </div>
 
-        {/* ===== RIGHT: Live Preview ===== */}
-        <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: 20, background: '#050810', minWidth: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Globe size={20} color="var(--accent-blue)" />
-              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Live Preview</h1>
-              {config.source_code && (
-                <span style={{ fontSize: 10, color: '#10d974', background: 'rgba(16,217,116,0.1)', border: '1px solid rgba(16,217,116,0.2)', borderRadius: 20, padding: '2px 8px' }}>
-                  ● Sayt tayyor
-                </span>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 14, scrollbarWidth: 'thin' }}>
+          {messages.length <= 1 && (
+            <div style={{ textAlign: 'center', padding: '16px 8px' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(168,85,247,0.2), rgba(59,130,246,0.2))', border: '1px solid rgba(168,85,247,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', color: '#a855f7' }}>
+                <Globe size={20} />
+              </div>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0', margin: '0 0 6px' }}>Sayt yaratishni boshlaylik!</p>
+              <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 16px', lineHeight: 1.5 }}>Quyidagi misollardan birini tanlang yoki o'z g'oyangizni yozing</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+                {SITE_QUICK_PROMPTS.map((q, i) => (
+                  <button key={i} onClick={() => handleSend(q.text)} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '6px 12px', fontSize: 11, color: '#94a3b8', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
+                    onMouseEnter={e => { (e.currentTarget as any).style.background = 'rgba(168,85,247,0.15)'; (e.currentTarget as any).style.color = '#e2e8f0'; (e.currentTarget as any).style.borderColor = 'rgba(168,85,247,0.4)' }}
+                    onMouseLeave={e => { (e.currentTarget as any).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as any).style.color = '#94a3b8'; (e.currentTarget as any).style.borderColor = 'rgba(255,255,255,0.1)' }}
+                  >{q.icon} {q.label}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {messages.map((m) => (
+            <div key={m.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: m.sender === 'user' ? 'row-reverse' : 'row' }}>
+              {m.sender === 'agent' && (
+                <div style={{ background: 'linear-gradient(135deg, #1e90ff, #a855f7)', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2, boxShadow: '0 2px 8px rgba(168,85,247,0.3)' }}>
+                  <Bot size={12} color="#fff" />
+                </div>
+              )}
+              <div style={{ flex: 1, maxWidth: '84%', display: 'flex', flexDirection: 'column', gap: 4, alignItems: m.sender === 'user' ? 'flex-end' : 'flex-start' }}>
+                <div style={{
+                  padding: '10px 14px',
+                  borderRadius: 14,
+                  fontSize: 13,
+                  lineHeight: 1.55,
+                  wordBreak: 'break-word',
+                  ...(m.sender === 'user'
+                    ? { background: 'linear-gradient(135deg, #1e90ff, #2563eb)', color: '#fff', borderBottomRightRadius: 4, boxShadow: '0 4px 14px rgba(30,144,255,0.25)' }
+                    : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderBottomLeftRadius: 4, color: '#e2e8f0' })
+                }}>
+                  {m.sender === 'agent' ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>{renderMarkdown(m.text)}</div>
+                  ) : m.text}
+                </div>
+                {m.sender === 'agent' && (
+                  <button onClick={() => copyMsg(m.id, m.text)} style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 6, padding: '2px 7px', fontSize: 10, color: '#64748b', cursor: 'pointer', opacity: 0.8 }}>
+                    {copiedMsgId === m.id ? <><Check size={10} /> Nusxalandi</> : <><Copy size={10} /> Nusxa</>}
+                  </button>
+                )}
+              </div>
+              {m.sender === 'user' && (
+                <div style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2, fontSize: 10, fontWeight: 700, color: '#fff' }}>
+                  SZ
+                </div>
               )}
             </div>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              {saveSuccess && <span style={{ color: '#10d974', display: 'flex', alignItems: 'center', fontSize: 13, gap: 5 }}><CheckCircle size={14} /> Saqlandi!</span>}
-              <button onClick={handleSave} disabled={isLoading} className="btn btn-primary" style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
-                <Save size={14} /> {isLoading ? 'Saqlanmoqda...' : 'Saqlash'}
+          ))}
+
+          {isGenerating && (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div style={{ background: 'linear-gradient(135deg, #1e90ff, #a855f7)', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Bot size={12} color="#fff" />
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, borderBottomLeftRadius: 4, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 5 }}>
+                {[0, 200, 400].map((delay, i) => (
+                  <span key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: 'linear-gradient(135deg, #1e90ff, #a855f7)', display: 'inline-block', animation: `siteTypingBounce 1.3s ease-in-out ${delay}ms infinite` }} />
+                ))}
+              </div>
+            </div>
+          )}
+          <style>{`
+            @keyframes siteTypingBounce {
+              0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+              40% { transform: translateY(-6px); opacity: 1; }
+            }
+          `}</style>
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div style={{ padding: '14px 16px 16px', background: 'rgba(0,0,0,0.3)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: promptInput ? 'rgba(30,144,255,0.05)' : 'rgba(255,255,255,0.03)', border: `1px solid ${promptInput ? 'rgba(30,144,255,0.4)' : 'rgba(255,255,255,0.09)'}`, borderRadius: 14, padding: '8px 8px 8px 14px', transition: 'all 0.2s', boxShadow: promptInput ? '0 0 0 3px rgba(30,144,255,0.08)' : 'none' }}>
+            <textarea
+              ref={textareaRef}
+              value={promptInput}
+              onChange={handleTextareaChange}
+              onKeyDown={handleKeyDown}
+              disabled={isGenerating}
+              placeholder="Saytga nimalar qo'shamiz? Masalan: 'Animatsiyali hero bo'limini yarat'"
+              style={{ flex: 1, background: 'transparent', border: 'none', color: '#fff', fontSize: 13, resize: 'none', outline: 'none', minHeight: 48, maxHeight: 140, lineHeight: 1.5, fontFamily: 'inherit', padding: 0 }}
+            />
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, flexShrink: 0, paddingBottom: 2 }}>
+              {promptInput && <span style={{ fontSize: 10, color: '#334155', whiteSpace: 'nowrap', paddingBottom: 4 }}>↵ yuborish</span>}
+              <button onClick={() => handleSend()} disabled={!promptInput.trim() || isGenerating} style={{ width: 34, height: 34, borderRadius: 10, background: (promptInput.trim() && !isGenerating) ? 'linear-gradient(135deg, #1e90ff, #a855f7)' : 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: (promptInput.trim() && !isGenerating) ? 'pointer' : 'not-allowed', transition: 'all 0.2s', boxShadow: (promptInput.trim() && !isGenerating) ? '0 4px 14px rgba(30,144,255,0.4)' : 'none', flexShrink: 0 }}>
+                {isGenerating ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={14} />}
               </button>
-              <a href={`/site/${botId}`} target="_blank" rel="noreferrer" className="btn btn-ghost" style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.05)', fontSize: 13 }}>
-                <Eye size={14} /> Ochish
-              </a>
             </div>
           </div>
-
-          <div style={{ flex: 1, background: '#fff', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6)', position: 'relative' }}>
-            {!config.source_code ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b', flexDirection: 'column', gap: 16, background: '#0d1526' }}>
-                <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(168,85,247,0.1)', border: '2px dashed rgba(168,85,247,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Globe size={36} style={{ opacity: 0.4, color: '#a855f7' }} />
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: '#94a3b8', margin: '0 0 8px' }}>Sayt hali yaratilmagan</p>
-                  <p style={{ fontSize: 12, color: '#475569', margin: 0 }}>Chap tomondagi AI chatdan sayt g'oyangizni yozing</p>
-                </div>
-              </div>
-            ) : (
-              <iframe
-                key={config.source_code.length}
-                srcDoc={config.source_code}
-                style={{ width: '100%', height: '100%', border: 'none' }}
-                title="Live Site Preview"
-                sandbox="allow-scripts allow-same-origin"
-              />
-            )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#334155', marginTop: 8, paddingLeft: 4 }}>
+            <ExternalLink size={9} />
+            AI yaratgan sayt o'ng tomonda ko'rinadi
           </div>
         </div>
       </div>
-    )
-  }
 
-
-  return (
-    <div className="builder-container" style={{ background: '#090d16' }}>
-      
-      {/* 1. LEFT & CENTER AREA: Canvas and Layout Switcher */}
-      <div className="builder-canvas-panel">
-        
-        {/* Top Control Bar */}
-        <div className="builder-header">
-          {/* Logo/Title */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Globe size={18} style={{ color: 'var(--accent-blue)' }} />
-            <div>
-              <h3 style={{ fontWeight: 700, fontSize: '15px', color: '#fff', margin: 0 }}>Mazaika Builder</h3>
-              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                Site & Telegram Mini App constructor
+      <div style={{ flex: 1, padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16, background: '#050810', minWidth: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Globe size={20} color="var(--accent-blue)" />
+            <h1 style={{ margin: 0, fontSize: 17, fontWeight: 600 }}>Live Preview</h1>
+            {config.source_code && (
+              <span style={{ fontSize: 10, color: '#10d974', background: 'rgba(16,217,116,0.1)', border: '1px solid rgba(16,217,116,0.2)', borderRadius: 20, padding: '2px 8px' }}>
+                ● Tayyor
               </span>
-            </div>
+            )}
           </div>
 
-          {/* View Switcher Controls (Desktop / Mobile) */}
-          <div className="builder-header-switcher">
+          <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: 3, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)' }}>
             <button 
-              onClick={() => setViewMode('desktop')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: 'none',
-                background: viewMode === 'desktop' ? 'var(--bg-card)' : 'transparent',
-                color: viewMode === 'desktop' ? '#fff' : 'var(--text-muted)',
-                cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.2s'
-              }}
+              onClick={() => setDeviceMode('desktop')} 
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, border: 'none', background: deviceMode === 'desktop' ? 'rgba(30,144,255,0.2)' : 'transparent', color: deviceMode === 'desktop' ? '#1e90ff' : '#94a3b8', cursor: 'pointer', fontWeight: deviceMode === 'desktop' ? 600 : 400 }}
             >
               <Laptop size={14} /> Desktop (Veb-sayt)
             </button>
             <button 
-              onClick={() => setViewMode('mobile')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 6, border: 'none',
-                background: viewMode === 'mobile' ? 'var(--bg-card)' : 'transparent',
-                color: viewMode === 'mobile' ? '#fff' : 'var(--text-muted)',
-                cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.2s'
-              }}
+              onClick={() => setDeviceMode('mobile')} 
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, border: 'none', background: deviceMode === 'mobile' ? 'rgba(168,85,247,0.2)' : 'transparent', color: deviceMode === 'mobile' ? '#a855f7' : '#94a3b8', cursor: 'pointer', fontWeight: deviceMode === 'mobile' ? 600 : 400 }}
             >
               <Smartphone size={14} /> Mobile (Mini App)
             </button>
           </div>
 
-          {/* Save & Live Links */}
-          <div className="builder-header-actions">
-            {saveSuccess && (
-              <span style={{ fontSize: 12, color: '#10d974', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <CheckCircle size={14} /> Saqlandi!
-              </span>
-            )}
-            <button 
-              className="btn btn-primary btn-sm" 
-              onClick={handleSave} 
-              disabled={isLoading}
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-            >
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {saveSuccess && <span style={{ color: '#10d974', display: 'flex', alignItems: 'center', fontSize: 13, gap: 5 }}><CheckCircle size={14} /> Saqlandi!</span>}
+            <button onClick={handleSave} disabled={isLoading} className="btn btn-primary" style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13 }}>
               <Save size={14} /> {isLoading ? 'Saqlanmoqda...' : 'Saqlash'}
             </button>
-            <a 
-              href={`/site/${botId}`} 
-              target="_blank" 
-              rel="noreferrer" 
-              className="btn btn-ghost btn-sm" 
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-            >
-              <Eye size={14} /> Saytni ochish
+            <a href={`/site/${botId}`} target="_blank" rel="noreferrer" className="btn btn-ghost" style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.05)', fontSize: 13 }}>
+              <Eye size={14} /> Ochish
             </a>
           </div>
         </div>
 
-        {/* Dynamic Canvas Workspace */}
-        <div className="builder-canvas-workspace" style={{ alignItems: viewMode === 'mobile' ? 'center' : 'flex-start' }}>
-          
-          {/* DESKTOP CANVAS VIEW */}
-          {viewMode === 'desktop' && (
-            <div style={{ 
-              width: '100%', 
-              maxWidth: '900px', 
-              background: config.theme === 'minimalist' ? '#ffffff' : 'rgba(30,41,59,0.4)',
-              backdropFilter: config.theme === 'glassmorphism' ? 'blur(16px)' : 'none',
-              borderRadius: '24px',
-              border: config.theme === 'minimalist' ? '1px solid #cbd5e1' : '1px solid rgba(255,255,255,0.08)',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-              overflow: 'hidden',
-              minHeight: '600px',
-              color: config.theme === 'minimalist' ? '#0f172a' : '#fff'
-            }}>
-              
-              {/* Simulated browser header */}
-              <div style={{ 
-                background: config.theme === 'minimalist' ? '#f1f5f9' : 'rgba(15,23,42,0.6)', 
-                borderBottom: config.theme === 'minimalist' ? '1px solid #cbd5e1' : '1px solid rgba(255,255,255,0.08)',
-                padding: '12px 20px', 
-                display: 'flex', 
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#fbbf24' }} />
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#22c55e' }} />
-                </div>
-                <div style={{ 
-                  background: config.theme === 'minimalist' ? '#e2e8f0' : 'rgba(0,0,0,0.2)', 
-                  borderRadius: 6, 
-                  fontSize: 11, 
-                  padding: '4px 32px', 
-                  color: 'var(--text-muted)' 
-                }}>
-                  {liveUrl}
-                </div>
-                <div style={{ width: 40 }} />
-              </div>
-
-              {/* Desktop Rendered Blocks Stack */}
-              <div style={{ padding: '32px' }}>
-                <Reorder.Group 
-                  axis="y" 
-                  values={config.blocks} 
-                  onReorder={(newOrder) => setConfig({ ...config, blocks: newOrder })}
-                  style={{ listStyle: 'none', padding: 0, margin: 0 }}
-                >
-                  {config.blocks.map((block) => (
-                    <BuilderBlock
-                      key={block.id}
-                      block={block}
-                      config={config}
-                      isActive={selectedBlockId === block.id}
-                      onClick={() => {
-                        setSelectedBlockId(block.id)
-                        setActiveTab('properties')
-                      }}
-                      onUpdateBlock={(updatedBlock) => {
-                        const newBlocks = config.blocks.map(b => b.id === updatedBlock.id ? updatedBlock : b)
-                        setConfig({ ...config, blocks: newBlocks })
-                      }}
-                    />
-                  ))}
-                </Reorder.Group>
-
-                {config.blocks.length === 0 && (
-                  <div style={{ padding: '60px 0', textAlign: 'center', opacity: 0.5, fontSize: 14 }}>
-                    Oyna bo'sh. O'ng paneldagi "Bloklar" yordamida yangi bloklar qo'shing.
-                  </div>
-                )}
-              </div>
-
-            </div>
-          )}
-
-          {/* MOBILE PREVIEW VIEW (Smartphone Shell) */}
-          {viewMode === 'mobile' && (
-            <div className="builder-mobile-shell">
-              {/* Dynamic Island */}
-              <div style={{
-                position: 'absolute', top: '18px', left: '50%', transform: 'translateX(-50%)',
-                width: '100px', height: '22px', background: '#090d16', borderRadius: '11px', zIndex: 99,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.1)'
-              }}>
-                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#1c2230' }} />
-                <div style={{ width: '24px', height: '3px', borderRadius: '1.5px', background: '#151b26' }} />
-              </div>
-
-              {/* Mobile Screen Viewport */}
-              <div style={{
-                flex: 1,
-                borderRadius: '34px',
-                overflow: 'hidden',
-                background: config.theme === 'minimalist' ? '#f8fafc' : '#090d16',
-                color: config.theme === 'minimalist' ? '#0f172a' : '#fff',
-                display: 'flex',
-                flexDirection: 'column',
-                position: 'relative'
-              }}>
-                {/* Header inside WebApp */}
-                <div style={{ 
-                  background: config.themeColor, padding: '24px 16px 12px 16px', textAlign: 'center', color: '#fff', zIndex: 90
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, opacity: 0.8, marginBottom: 4, fontFamily: 'monospace' }}>
-                    <span>9:41</span>
-                    <span>📶 🔋</span>
-                  </div>
-                  <h4 style={{ margin: 0, fontSize: 13, fontWeight: 800 }}>Telegram Mini App</h4>
-                  <span style={{ fontSize: 9, opacity: 0.7 }}>mazaika.pages.dev</span>
-                </div>
-
-                {/* Inner Scroll container */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px 60px 12px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-                  <Reorder.Group 
-                    axis="y" 
-                    values={config.blocks} 
-                    onReorder={(newOrder) => setConfig({ ...config, blocks: newOrder })}
-                    style={{ listStyle: 'none', padding: 0, margin: 0 }}
-                  >
-                    {config.blocks.map((block) => (
-                      <BuilderBlock
-                        key={block.id}
-                        block={block}
-                        config={config}
-                        viewMode="mobile"
-                        isActive={selectedBlockId === block.id}
-                        onClick={() => {
-                          setSelectedBlockId(block.id)
-                          setActiveTab('properties')
-                        }}
-                        onUpdateBlock={(updatedBlock) => {
-                          const newBlocks = config.blocks.map(b => b.id === updatedBlock.id ? updatedBlock : b)
-                          setConfig({ ...config, blocks: newBlocks })
-                        }}
-                      />
-                    ))}
-                  </Reorder.Group>
-                </div>
-
-                {/* Cart Bottom Sheet in Mobile Preview */}
-                {previewCart.length > 0 && !showPreviewOrderSheet && (
-                  <div style={{
-                    position: 'absolute', bottom: 16, left: 12, right: 12, zIndex: 100,
-                    background: 'rgba(30, 41, 59, 0.95)', border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: 12, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    boxShadow: '0 -10px 25px rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)'
-                  }}>
-                    <div>
-                      <span style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#fff' }}>🛒 Savatda: {previewCart.reduce((acc, i) => acc + i.qty, 0)} ta</span>
-                      <span style={{ fontSize: 10, color: config.themeColor, fontWeight: 700 }}>
-                        Jami: {previewCart.reduce((acc, i) => acc + (i.price * i.qty), 0).toLocaleString()} UZS
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPreviewCart([]);
-                        }}
-                        style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '4px 8px', borderRadius: 6, fontSize: 10, cursor: 'pointer' }}
-                      >
-                        Tozalash
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowPreviewOrderSheet(true);
-                        }}
-                        style={{ background: config.themeColor, color: '#fff', border: 'none', padding: '4px 12px', borderRadius: 6, fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
-                      >
-                        Buyurtma
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Checkout Modal in Mobile Preview */}
-                {showPreviewOrderSheet && (
-                  <div style={{
-                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 110,
-                    background: 'rgba(15, 23, 42, 0.95)', padding: '24px 16px', display: 'flex', flexDirection: 'column',
-                    color: '#fff', fontFamily: 'system-ui, sans-serif'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                      <h4 style={{ fontSize: 13, fontWeight: 800, margin: 0 }}>🛒 Buyurtmani Rasmiylashtirish</h4>
-                      <button 
-                        onClick={() => setShowPreviewOrderSheet(false)}
-                        style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: 12, cursor: 'pointer' }}
-                      >
-                        Yopish
-                      </button>
-                    </div>
-
-                    {/* Cart Summary */}
-                    <div style={{ 
-                      flex: 1, overflowY: 'auto', background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 10, marginBottom: 16,
-                      display: 'flex', flexDirection: 'column', gap: 6
-                    }}>
-                      {previewCart.map(item => (
-                        <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: 4 }}>
-                          <span>{item.name} (x{item.qty})</span>
-                          <span style={{ fontWeight: 700 }}>{(item.price * item.qty).toLocaleString()} UZS</span>
-                        </div>
-                      ))}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 800, marginTop: 'auto', paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.1)', color: config.themeColor }}>
-                        <span>Jami summasi:</span>
-                        <span>{previewCart.reduce((acc, i) => acc + (i.price * i.qty), 0).toLocaleString()} UZS</span>
-                      </div>
-                    </div>
-
-                    {/* Delivery details form */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 10, color: '#94a3b8', marginBottom: 2 }}>Ismingiz</label>
-                        <input 
-                          type="text" 
-                          className="input" 
-                          value={previewName} 
-                          onChange={e => setPreviewName(e.target.value)} 
-                          placeholder="Ismingizni kiriting"
-                          style={{ width: '100%', padding: '6px 8px', fontSize: 11 }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 10, color: '#94a3b8', marginBottom: 2 }}>Telefon raqamingiz</label>
-                        <input 
-                          type="text" 
-                          className="input" 
-                          value={previewPhone} 
-                          onChange={e => setPreviewPhone(e.target.value)} 
-                          placeholder="+998 90 123 45 67"
-                          style={{ width: '100%', padding: '6px 8px', fontSize: 11 }}
-                        />
-                      </div>
-                    </div>
-
-                    <button 
-                      onClick={() => {
-                        if (!previewName || !previewPhone) {
-                          alert("Iltimos, ism va telefon raqamini kiriting!");
-                          return;
-                        }
-                        const orderJSON = {
-                          action: 'order',
-                          items: previewCart.map(i => ({ name: i.name, price: i.price, qty: i.qty })),
-                          total: previewCart.reduce((acc, i) => acc + (i.price * i.qty), 0),
-                          customer: { name: previewName, phone: previewPhone }
-                        };
-                        
-                        alert(
-                          `🚀 [Mazaika WebApp] Buyurtma muvaffaqiyatli jo'natildi!\n\n` + 
-                          `Bu ma'lumot botga quyidagi formatda uzatiladi:\n` +
-                          `-----------------------------------\n` +
-                          `🛍 Mahsulotlar: ${orderJSON.items.map(i => `${i.name} (x${i.qty})`).join(', ')}\n` +
-                          `💰 Jami: ${orderJSON.total.toLocaleString()} UZS\n` +
-                          `👤 Mijoz: ${orderJSON.customer.name}\n` +
-                          `📞 Tel: ${orderJSON.customer.phone}\n` +
-                          `-----------------------------------\n` +
-                          `Telegram bot ushbu buyurtmani qabul qilib, foydalanuvchiga tasdiqlash xabari yuboradi va buyurtma Mazaika boshqaruv panelining "Chatlar" bo'limida zudlik bilan paydo bo'ladi!`
-                        );
-
-                        setPreviewCart([]);
-                        setShowPreviewOrderSheet(false);
-                      }}
-                      style={{ 
-                        background: '#10d974', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: 8, 
-                        fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
-                      }}
-                    >
-                      <CheckCircle size={14} /> Botga yuborish
-                    </button>
-                  </div>
-                )}
-
-                {/* Home Indicator */}
-                <div style={{ position: 'absolute', bottom: '6px', left: '50%', transform: 'translateX(-50%)', width: '110px', height: '4px', background: '#334155', borderRadius: '2px' }} />
-              </div>
-            </div>
-          )}
-
-        </div>
-      </div>
-
-      {/* 2. RIGHT SIDEBAR: Google Sites style Widget Drawer */}
-      <div className="builder-settings-sidebar" style={{ 
-        background: 'var(--bg-secondary)', 
-        display: 'flex', 
-        flexDirection: 'column'
-      }}>
-        
-        {/* Tab Buttons (Вставка / Свойства) */}
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--border-primary)', flexShrink: 0 }}>
-          <button 
-            onClick={() => setActiveTab('insert')}
-            style={{
-              flex: 1, padding: '16px 0', border: 'none', background: 'transparent',
-              borderBottom: activeTab === 'insert' ? `2px solid var(--accent-blue)` : '2px solid transparent',
-              color: activeTab === 'insert' ? '#fff' : 'var(--text-muted)',
-              fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
-            }}
-          >
-            <Plus size={16} /> Bloklar (Insert)
-          </button>
-          <button 
-            onClick={() => setActiveTab('properties')}
-            style={{
-              flex: 1, padding: '16px 0', border: 'none', background: 'transparent',
-              borderBottom: activeTab === 'properties' ? `2px solid var(--accent-blue)` : '2px solid transparent',
-              color: activeTab === 'properties' ? '#fff' : 'var(--text-muted)',
-              fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
-            }}
-          >
-            <Settings size={15} /> Sozlamalar (Properties)
-          </button>
-        </div>
-
-        {/* Scrollable Panel Area (styled scrollbars automatically appear when needed) */}
+        {/* Live Preview Frame Canvas */}
         <div style={{ 
           flex: 1, 
-          overflowY: 'auto', 
-          padding: '20px',
+          background: '#0d1526', 
+          borderRadius: 16, 
+          overflow: 'hidden', 
+          border: '1px solid rgba(255,255,255,0.08)', 
+          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6)', 
+          position: 'relative',
           display: 'flex',
-          flexDirection: 'column',
-          gap: 20
+          justifyContent: 'center',
+          alignItems: 'center'
         }}>
-          
-          {/* TAB 1: INSERT BLOCKS */}
-          {activeTab === 'insert' && (
-            <>
-              {/* Theme selection quick widget */}
-              <div style={{ background: 'var(--bg-card)', padding: 14, borderRadius: 12, border: '1px solid var(--border-primary)' }}>
-                <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 10 }}>MAVZU & SOZLAMA</h4>
-                
-                <div style={{ marginBottom: 10 }}>
-                  <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Mini App / Bot Nomi</label>
-                  <input 
-                    type="text" 
-                    className="input" 
-                    value={config.appName || ''} 
-                    onChange={e => setConfig({ ...config, appName: e.target.value })} 
-                    placeholder="Masalan: Mazaika Store" 
-                    style={{ width: '100%', fontSize: 12 }}
-                  />
+          {!config.source_code ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b', flexDirection: 'column', gap: 16 }}>
+              <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(168,85,247,0.1)', border: '2px dashed rgba(168,85,247,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Globe size={36} style={{ opacity: 0.4, color: '#a855f7' }} />
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontSize: 15, fontWeight: 600, color: '#94a3b8', margin: '0 0 8px' }}>Sayt hali yaratilmagan</p>
+                <p style={{ fontSize: 12, color: '#475569', margin: 0 }}>Chap tomondagi AI chatdan sayt g'oyangizni yozing</p>
+              </div>
+            </div>
+          ) : (
+            deviceMode === 'desktop' ? (
+              <iframe
+                key={config.source_code.length + '_desktop'}
+                srcDoc={config.source_code}
+                style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
+                title="Live Site Preview"
+                sandbox="allow-scripts allow-same-origin"
+              />
+            ) : (
+              /* Mobile Phone Frame Simulator */
+              <div style={{
+                width: 360,
+                height: '92%',
+                maxHeight: 720,
+                borderRadius: 40,
+                border: '12px solid #1e293b',
+                background: '#000',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 2px 4px rgba(255,255,255,0.1)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden'
+              }}>
+                {/* Phone Notch & Status bar */}
+                <div style={{ height: 24, background: '#000', display: 'flex', justifyContent: 'space-between', padding: '4px 20px', fontSize: 10, color: '#94a3b8', zIndex: 10 }}>
+                  <span>9:41</span>
+                  <div style={{ width: 80, height: 12, background: '#1e293b', borderRadius: 10, marginTop: 2 }} />
+                  <span>100%</span>
                 </div>
 
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <div style={{ flex: 1 }}>
-                    <select 
-                      className="input" 
-                      value={config.theme} 
-                      onChange={e => setConfig({ ...config, theme: e.target.value as 'glassmorphism' | 'minimalist' | 'neon' })}
-                      style={{ width: '100%', padding: '6px 10px', fontSize: 11 }}
-                    >
-                      <option value="glassmorphism">Glassmorphism</option>
-                      <option value="minimalist">Minimalist Light</option>
-                      <option value="neon">Neon Cyberpunk</option>
-                    </select>
-                  </div>
-                  <input 
-                    type="color" 
-                    value={config.themeColor} 
-                    onChange={e => setConfig({ ...config, themeColor: e.target.value })}
-                    style={{ width: 36, height: 28, border: 'none', padding: 0, borderRadius: 6, cursor: 'pointer' }}
-                  />
-                </div>
+                <iframe
+                  key={config.source_code.length + '_mobile'}
+                  srcDoc={config.source_code}
+                  style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
+                  title="Mobile App Live Preview"
+                  sandbox="allow-scripts allow-same-origin"
+                />
               </div>
-
-              {/* Grid of Addable Blocks */}
-              <div>
-                <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 12, textTransform: 'uppercase' }}>Blok qo'shish</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <button onClick={() => addBlock('hero')} style={addWidgetBtnStyle}>
-                    <Layout size={18} style={{ color: 'var(--accent-blue)' }} /> Banner (Hero)
-                  </button>
-                  <button onClick={() => addBlock('about')} style={addWidgetBtnStyle}>
-                    <FileText size={18} style={{ color: 'var(--accent-aqua)' }} /> Biz haqimizda
-                  </button>
-                  <button onClick={() => addBlock('catalog')} style={addWidgetBtnStyle}>
-                    <ShoppingBag size={18} style={{ color: '#fbbf24' }} /> Do'kon (Catalog)
-                  </button>
-                  <button onClick={() => addBlock('blog')} style={addWidgetBtnStyle}>
-                    <AlignLeft size={18} style={{ color: '#ec4899' }} /> Yangiliklar (Blog)
-                  </button>
-                  <button onClick={() => addBlock('contacts')} style={addWidgetBtnStyle}>
-                    <MessageSquare size={18} style={{ color: '#a855f7' }} /> Kontaktlar
-                  </button>
-                  <button onClick={() => addBlock('form')} style={addWidgetBtnStyle}>
-                    <CheckSquare size={18} style={{ color: '#3b82f6' }} /> Forma (Form)
-                  </button>
-                  <button onClick={() => addBlock('loyalty')} style={addWidgetBtnStyle}>
-                    <Wallet size={18} style={{ color: '#10d974' }} /> Cashback (Wallet)
-                  </button>
-                  <button onClick={() => addBlock('voting')} style={addWidgetBtnStyle}>
-                    <UserCheck size={18} style={{ color: '#f43f5e' }} /> Ovoz berish
-                  </button>
-                </div>
-              </div>
-
-              {/* Re-order / Delete blocks */}
-              <div>
-                <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 12, textTransform: 'uppercase' }}>Bloklar tartibi ({config.blocks.length})</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {config.blocks.map((block, idx) => (
-                    <div 
-                      key={block.id} 
-                      onClick={() => {
-                        setSelectedBlockId(block.id)
-                        setActiveTab('properties')
-                      }}
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '10px 12px', background: 'var(--bg-card)', borderRadius: 10,
-                        border: selectedBlockId === block.id ? `1px solid var(--accent-blue)` : '1px solid var(--border-primary)',
-                        cursor: 'pointer', fontSize: 12
-                      }}
-                    >
-                      <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>
-                        {idx + 1}. {block.type === 'hero' ? 'Banner' : block.type === 'about' ? 'Biz haqimizda' : block.type === 'catalog' ? 'Katalog' : block.type === 'blog' ? 'Yangiliklar' : block.type === 'contacts' ? 'Kontaktlar' : block.type === 'form' ? 'Forma' : block.type === 'loyalty' ? 'Hamyon' : 'Ovoz berish'}
-                      </span>
-                      <div style={{ display: 'flex', gap: 2 }} onClick={e => e.stopPropagation()}>
-                        <button className="btn btn-ghost btn-xs btn-icon" onClick={() => moveBlock(idx, 'up')} disabled={idx === 0}><ArrowUp size={11} /></button>
-                        <button className="btn btn-ghost btn-xs btn-icon" onClick={() => moveBlock(idx, 'down')} disabled={idx === config.blocks.length - 1}><ArrowDown size={11} /></button>
-                        <button className="btn btn-ghost btn-xs btn-icon" style={{ color: '#ef4444' }} onClick={() => deleteBlock(block.id)}><Trash2 size={11} /></button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
+            )
           )}
-
-          {/* TAB 2: ACTIVE BLOCK PROPERTIES */}
-          {activeTab === 'properties' && (
-            <>
-              {selectedBlock ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ borderBottom: '1px solid var(--border-primary)', paddingBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Settings size={16} style={{ color: config.themeColor }} />
-                    <div>
-                      <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, textTransform: 'capitalize' }}>{selectedBlock.type === 'hero' ? 'Banner' : selectedBlock.type} sozlamalari</h4>
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>ID: {selectedBlock.id}</span>
-                    </div>
-                  </div>
-
-                  {/* HERO PROPERTIES */}
-                  {selectedBlock.type === 'hero' && (
-                    <>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Sarlavha (Title)</label>
-                        <input type="text" className="input" value={selectedBlock.title || ''} onChange={e => updateBlockData({ ...selectedBlock, title: e.target.value })} style={{ width: '100%', fontSize: 12 }} />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Sub-sarlavha (Subtitle)</label>
-                        <textarea className="input" value={selectedBlock.subtitle || ''} onChange={e => updateBlockData({ ...selectedBlock, subtitle: e.target.value })} style={{ width: '100%', minHeight: 60, fontSize: 12 }} />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Banner rasmi (URL)</label>
-                        <input type="url" className="input" value={selectedBlock.img || ''} onChange={e => updateBlockData({ ...selectedBlock, img: e.target.value })} style={{ width: '100%', fontSize: 12 }} />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Tugma matni (CTA Text)</label>
-                        <input type="text" className="input" value={selectedBlock.ctaText || ''} onChange={e => updateBlockData({ ...selectedBlock, ctaText: e.target.value })} style={{ width: '100%', fontSize: 12 }} />
-                      </div>
-                    </>
-                  )}
-
-                  {/* ABOUT PROPERTIES */}
-                  {selectedBlock.type === 'about' && (
-                    <>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Sarlavha</label>
-                        <input type="text" className="input" value={selectedBlock.title || ''} onChange={e => updateBlockData({ ...selectedBlock, title: e.target.value })} style={{ width: '100%', fontSize: 12 }} />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Batafsil matn (Text)</label>
-                        <textarea className="input" value={selectedBlock.text || ''} onChange={e => updateBlockData({ ...selectedBlock, text: e.target.value })} style={{ width: '100%', minHeight: 140, fontSize: 12 }} />
-                      </div>
-                    </>
-                  )}
-
-                  {/* CATALOG PROPERTIES */}
-                  {selectedBlock.type === 'catalog' && (
-                    <>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Katalog sarlavhasi</label>
-                        <input type="text" className="input" value={selectedBlock.title || ''} onChange={e => updateBlockData({ ...selectedBlock, title: e.target.value })} style={{ width: '100%', fontSize: 12 }} />
-                      </div>
-                      
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>MAHSULOTLAR RO'YXATI</span>
-                        {(selectedBlock.items || []).map((item, idx) => (
-                          <div key={item.id} style={{ background: 'var(--bg-card)', padding: 10, borderRadius: 8, border: '1px solid var(--border-primary)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Mahsulot #{idx + 1}</span>
-                              <button className="btn btn-ghost btn-xs" style={{ color: '#ef4444' }} onClick={() => {
-                                const updated = (selectedBlock.items || []).filter(i => i.id !== item.id)
-                                updateBlockData({ ...selectedBlock, items: updated })
-                              }}><Trash2 size={12} /></button>
-                            </div>
-                            <input type="text" className="input" placeholder="Nomi" value={item.name} onChange={e => {
-                              const updated = [...(selectedBlock.items || [])]
-                              updated[idx].name = e.target.value
-                              updateBlockData({ ...selectedBlock, items: updated })
-                            }} style={{ padding: '4px 8px', fontSize: 11 }} />
-                            <input type="number" className="input" placeholder="Narxi (UZS)" value={item.price || ''} onChange={e => {
-                              const updated = [...(selectedBlock.items || [])]
-                              updated[idx].price = Number(e.target.value) || 0
-                              updateBlockData({ ...selectedBlock, items: updated })
-                            }} style={{ padding: '4px 8px', fontSize: 11 }} />
-                            <input type="text" className="input" placeholder="Tavsif" value={item.desc} onChange={e => {
-                              const updated = [...(selectedBlock.items || [])]
-                              updated[idx].desc = e.target.value
-                              updateBlockData({ ...selectedBlock, items: updated })
-                            }} style={{ padding: '4px 8px', fontSize: 11 }} />
-                            <input type="url" className="input" placeholder="Rasm havolasi (URL)" value={item.img || ''} onChange={e => {
-                              const updated = [...(selectedBlock.items || [])]
-                              updated[idx].img = e.target.value
-                              updateBlockData({ ...selectedBlock, items: updated })
-                            }} style={{ padding: '4px 8px', fontSize: 11 }} />
-                          </div>
-                        ))}
-                        <button 
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => {
-                            const newItem = { id: Date.now().toString(), name: 'Yangi mahsulot', price: 10000, desc: 'Tavsif', img: '' }
-                            updateBlockData({ ...selectedBlock, items: [...(selectedBlock.items || []), newItem] })
-                          }}
-                          style={{ fontSize: 11 }}
-                        >
-                          + Mahsulot qo'shish
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                  {/* FORM PROPERTIES */}
-                  {selectedBlock.type === 'form' && (
-                    <>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Forma sarlavhasi</label>
-                        <input type="text" className="input" value={selectedBlock.title || ''} onChange={e => updateBlockData({ ...selectedBlock, title: e.target.value })} style={{ width: '100%', fontSize: 12 }} />
-                      </div>
-                      
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>SO'ROVNOMA MAYDONLARI</span>
-                        {(selectedBlock.fields || []).map((f, idx) => (
-                          <div key={idx} style={{ background: 'var(--bg-card)', padding: 10, borderRadius: 8, border: '1px solid var(--border-primary)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Maydon #{idx + 1}</span>
-                              <button className="btn btn-ghost btn-xs" style={{ color: '#ef4444' }} onClick={() => {
-                                const updated = (selectedBlock.fields || []).filter((_, i) => i !== idx)
-                                updateBlockData({ ...selectedBlock, fields: updated })
-                              }}><Trash2 size={12} /></button>
-                            </div>
-                            <input type="text" className="input" placeholder="Maydon nomi" value={f.label} onChange={e => {
-                              const updated = [...(selectedBlock.fields || [])]
-                              updated[idx].label = e.target.value
-                              updated[idx].name = e.target.value.toLowerCase().replace(/\s+/g, '_')
-                              updateBlockData({ ...selectedBlock, fields: updated })
-                            }} style={{ padding: '4px 8px', fontSize: 11 }} />
-                            <select className="input" value={f.type} onChange={e => {
-                              const updated = [...(selectedBlock.fields || [])]
-                              updated[idx].type = e.target.value
-                              updateBlockData({ ...selectedBlock, fields: updated })
-                            }} style={{ padding: '4px 8px', fontSize: 11 }}>
-                              <option value="text">Matn</option>
-                              <option value="tel">Telefon</option>
-                              <option value="number">Son</option>
-                              <option value="textarea">Uzoq matn</option>
-                            </select>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, cursor: 'pointer' }}>
-                              <input type="checkbox" checked={f.required} onChange={e => {
-                                const updated = [...(selectedBlock.fields || [])]
-                                updated[idx].required = e.target.checked
-                                updateBlockData({ ...selectedBlock, fields: updated })
-                              }} />
-                              To'ldirish majburiy (Required)
-                            </label>
-                          </div>
-                        ))}
-                        <button 
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => {
-                            const newField = { name: 'field_' + Date.now(), label: 'Yangi maydon', type: 'text', required: true }
-                            updateBlockData({ ...selectedBlock, fields: [...(selectedBlock.fields || []), newField] })
-                          }}
-                          style={{ fontSize: 11 }}
-                        >
-                          + Maydon qo'shish
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                  {/* BLOG PROPERTIES */}
-                  {selectedBlock.type === 'blog' && (
-                    <>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Blog sarlavhasi</label>
-                        <input type="text" className="input" value={selectedBlock.title || ''} onChange={e => updateBlockData({ ...selectedBlock, title: e.target.value })} style={{ width: '100%', fontSize: 12 }} />
-                      </div>
-                      
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>MAQOLALAR RO'YXATI</span>
-                        {(selectedBlock.posts || []).map((post, idx) => (
-                          <div key={post.id} style={{ background: 'var(--bg-card)', padding: 10, borderRadius: 8, border: '1px solid var(--border-primary)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Post #{idx + 1}</span>
-                              <button className="btn btn-ghost btn-xs" style={{ color: '#ef4444' }} onClick={() => {
-                                const updated = (selectedBlock.posts || []).filter(p => p.id !== post.id)
-                                updateBlockData({ ...selectedBlock, posts: updated })
-                              }}><Trash2 size={12} /></button>
-                            </div>
-                            <input type="text" className="input" placeholder="Maqola sarlavhasi" value={post.title} onChange={e => {
-                              const updated = [...(selectedBlock.posts || [])]
-                              updated[idx].title = e.target.value
-                              updateBlockData({ ...selectedBlock, posts: updated })
-                            }} style={{ padding: '4px 8px', fontSize: 11 }} />
-                            <textarea className="input" placeholder="Maqola matni" value={post.text} onChange={e => {
-                              const updated = [...(selectedBlock.posts || [])]
-                              updated[idx].text = e.target.value
-                              updateBlockData({ ...selectedBlock, posts: updated })
-                            }} style={{ padding: '4px 8px', fontSize: 11, minHeight: 60 }} />
-                          </div>
-                        ))}
-                        <button 
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => {
-                            const newPost = { id: Date.now().toString(), title: 'Yangi sarlavha', text: 'Tafsilotlar...' }
-                            updateBlockData({ ...selectedBlock, posts: [...(selectedBlock.posts || []), newPost] })
-                          }}
-                          style={{ fontSize: 11 }}
-                        >
-                          + Maqola qo'shish
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                  {/* CONTACTS PROPERTIES */}
-                  {selectedBlock.type === 'contacts' && (
-                    <>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Sarlavha</label>
-                        <input type="text" className="input" value={selectedBlock.title || ''} onChange={e => updateBlockData({ ...selectedBlock, title: e.target.value })} style={{ width: '100%', fontSize: 12 }} />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Telefon raqam</label>
-                        <input type="text" className="input" value={selectedBlock.phone || ''} onChange={e => updateBlockData({ ...selectedBlock, phone: e.target.value })} style={{ width: '100%', fontSize: 12 }} />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Telegram username (@-siz)</label>
-                        <input type="text" className="input" value={selectedBlock.telegram || ''} onChange={e => updateBlockData({ ...selectedBlock, telegram: e.target.value })} style={{ width: '100%', fontSize: 12 }} />
-                      </div>
-                    </>
-                  )}
-
-                  {/* VOTING PROPERTIES */}
-                  {selectedBlock.type === 'voting' && (
-                    <>
-                      <div>
-                        <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Sarlavha</label>
-                        <input type="text" className="input" value={selectedBlock.title || ''} onChange={e => updateBlockData({ ...selectedBlock, title: e.target.value })} style={{ width: '100%', fontSize: 12 }} />
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>NOMZODLAR</span>
-                        {(selectedBlock.candidates || []).map((cand, idx) => (
-                          <div key={idx} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                            <input type="text" className="input" value={cand} onChange={e => {
-                              const updated = [...(selectedBlock.candidates || [])]
-                              updated[idx] = e.target.value
-                              updateBlockData({ ...selectedBlock, candidates: updated })
-                            }} style={{ flex: 1, padding: '4px 8px', fontSize: 11 }} />
-                            <button className="btn btn-ghost btn-xs" style={{ color: '#ef4444' }} onClick={() => {
-                              const updated = (selectedBlock.candidates || []).filter((_, i) => i !== idx)
-                              updateBlockData({ ...selectedBlock, candidates: updated })
-                            }}><Trash2 size={12} /></button>
-                          </div>
-                        ))}
-                        <button 
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => {
-                            updateBlockData({ ...selectedBlock, candidates: [...(selectedBlock.candidates || []), 'Yangi nomzod'] })
-                          }}
-                          style={{ fontSize: 11 }}
-                        >
-                          + Nomzod qo'shish
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                  {/* LOYALTY PROPERTIES */}
-                  {selectedBlock.type === 'loyalty' && (
-                    <div>
-                      <label style={{ display: 'block', fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>Sarlavha</label>
-                      <input type="text" className="input" value={selectedBlock.title || ''} onChange={e => updateBlockData({ ...selectedBlock, title: e.target.value })} style={{ width: '100%', fontSize: 12 }} />
-                      <div style={{ marginTop: 16, padding: 12, background: 'rgba(59,130,246,0.06)', borderRadius: 10, border: '1px solid rgba(59,130,246,0.15)', display: 'flex', gap: 8 }}>
-                        <Info size={16} style={{ color: '#3b82f6', flexShrink: 0, marginTop: 2 }} />
-                        <span style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                          Loyalty (Keshbek) bloki foydalanuvchilarning botdagi virtual balansini real vaqt rejimida avtomatlashtirilgan tarzda ko'rsatib turadi. Sozlama talab qilinmaydi.
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                </div>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--text-muted)' }}>
-                  <Settings size={32} style={{ opacity: 0.2, marginBottom: 12 }} />
-                  <p style={{ fontSize: 13 }}>Sozlash uchun chap tomondagi canvasdan yoki "Bloklar" ro'yxatidan biror blokni tanlang.</p>
-                </div>
-              )}
-            </>
-          )}
-
         </div>
       </div>
-
     </div>
   )
-}
-
-const addWidgetBtnStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '8px',
-  padding: '16px 12px',
-  background: 'var(--bg-card)',
-  border: '1px solid var(--border-primary)',
-  borderRadius: '12px',
-  color: '#fff',
-  fontSize: '11px',
-  fontWeight: 600,
-  cursor: 'pointer',
-  transition: 'all 0.2s',
-  textAlign: 'center',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03)'
 }
