@@ -317,6 +317,80 @@ export default function DashboardPage() {
           </>
         )}
 
+        {/* SITES TAB */}
+        {activeTab === 'sites' && (
+          <>
+            <div className="dash-topbar">
+              <div>
+                <h1 className="dash-title">Mening saytlarim</h1>
+                <p className="dash-subtitle">Mini App va veb-saytlaringizni boshqaring</p>
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={() => navigate('/dashboard/ai-workspace')} 
+                  style={{ gap: 8, background: 'linear-gradient(135deg, #00f5c4, #1e90ff)', border: 'none' }}
+                >
+                  <Sparkles size={16} /> ✨ AI Sayt Yaratish
+                </button>
+                <button className="btn btn-aqua" onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setShowCreateModal(true); }}>
+                  <Plus size={16} /> Yangi sayt
+                </button>
+              </div>
+            </div>
+
+            <div className="dash-stats">
+              <div className="dash-stat-card">
+                <div className="stat-icon" style={{ background: 'var(--accent-aqua-dim)', color: 'var(--accent-aqua)' }}>
+                  <Globe size={20} />
+                </div>
+                <div>
+                  <div className="stat-value">{bots.length}</div>
+                  <div className="stat-label">Jami saytlar</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bots-section">
+              <h2 className="section-title">Saytlarim</h2>
+              <div className="bots-grid">
+                <div className="bot-card create-card" onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setShowCreateModal(true); }}>
+                  <div className="create-icon"><Plus size={32} /></div>
+                  <div className="create-label">Yangi sayt yaratish</div>
+                  <div className="create-sub">Noldan boshlang</div>
+                </div>
+
+                {bots.map(bot => (
+                  <div key={bot.id} className="bot-card" onClick={() => navigate(`/bot/${bot.id}/sitebuilder`)}
+                    style={{ '--bot-color': bot.color || '#00f5c4' } as React.CSSProperties}>
+                    <div className="bot-card-header" style={{ position: 'relative' }}>
+                      <div className="bot-avatar" style={{ background: `${bot.color || '#00f5c4'}22`, color: bot.color || '#00f5c4' }}>
+                        <Globe size={22} />
+                      </div>
+                      <button className="btn-icon" style={{ position: 'absolute', top: 0, right: 0 }} onClick={(e) => { e.stopPropagation(); handleDeleteBot(bot.id, bot.name) }}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                    <div className="bot-name">{bot.name || 'Nomsiz sayt'}</div>
+                    <div className="bot-username">Tashriflar: {(bot.users || 0).toLocaleString()}</div>
+                    <div className="bot-stats-row">
+                      <div className="bot-stat">
+                        <Globe size={12} />
+                        <span>Veb-sayt</span>
+                      </div>
+                      <div className="bot-stat">
+                        <TrendingUp size={12} />
+                        <span>Mini App</span>
+                      </div>
+                    </div>
+                    <div className="bot-glow" style={{ background: bot.color || '#00f5c4' }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
         {/* ANALYTICS TAB */}
         {activeTab === 'analytics' && (
           <>
