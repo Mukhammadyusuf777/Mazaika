@@ -31,6 +31,7 @@ interface SiteConfig {
   theme: string
   themeColor: string
   blocks: Block[]
+  source_code?: string
 }
 
 export default function SiteRendererPage() {

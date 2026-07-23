@@ -30,13 +30,23 @@ export interface Block {
     paddingBottom?: number
   }
   html?: string
+  source_code?: string
 }
 
 interface SiteConfig {
-  appName?: string
-  theme: string
+  theme: 'neon' | 'minimalist' | 'glassmorphism'
   themeColor: string
+  appName: string
   blocks: Block[]
+  source_code?: string
+}
+
+const DEFAULT_CONFIG: SiteConfig = {
+  theme: 'glassmorphism',
+  themeColor: '#3b82f6',
+  appName: 'Mazaika Store',
+  blocks: [],
+  source_code: ''
 }
 
 const DEFAULT_BLOCKS: Block[] = [

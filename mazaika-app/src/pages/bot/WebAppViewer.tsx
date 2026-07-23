@@ -27,9 +27,11 @@ interface Block {
 }
 
 interface SiteConfig {
+  appName?: string
   theme: string
   themeColor: string
   blocks: Block[]
+  source_code?: string
 }
 
 export default function WebAppViewer() {
