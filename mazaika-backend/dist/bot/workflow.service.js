@@ -414,9 +414,24 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 const code = node.data?.code;
                 if (code) {
                     try {
-                        const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
-                        const executor = new AsyncFunction('ctx', 'variables', 'botId', 'contactId', code);
-                        await executor(ctx, variables, botId, contactId);
+                        const vm = await import('node:vm');
+                        const sandbox = {
+                            ctx: {
+                                reply: async (text) => ctx.reply(text),
+                                replyWithPhoto: async (url, opts) => ctx.replyWithPhoto(url, opts),
+                            },
+                            variables: { ...variables },
+                            botId,
+                            contactId,
+                            console: { log: (msg) => this.logger.log(`[custom_code bot:${botId}]: ${msg}`) },
+                        };
+                        const script = new vm.Script(`
+              (async () => {
+                ${code}
+              })()
+            `);
+                        const context = vm.createContext(sandbox);
+                        await script.runInContext(context, { timeout: 5000 });
                     }
                     catch (err) {
                         this.logger.error(`Custom code execution failed for node ${node.id}: ${err.message}`);

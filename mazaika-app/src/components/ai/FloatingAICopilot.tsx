@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Sparkles, Send, X, Loader2, Bot, Minimize2, Maximize2 } from 'lucide-react'
+import { Sparkles, Send, X, Loader2, Bot, Minimize2, Maximize2, Trash2 } from 'lucide-react'
 import { useAICopilot } from '../../context/AICopilotContext'
 import './FloatingAICopilot.css'
 
 export default function FloatingAICopilot({ projectType = 'bot' }: { projectType?: 'bot' | 'site' }) {
-  const { isWidgetOpen, setWidgetOpen, messages, isGenerating, sendMessage } = useAICopilot()
+  const { isWidgetOpen, setWidgetOpen, messages, isGenerating, sendMessage, clearChat } = useAICopilot()
   const [promptInput, setPromptInput] = useState('')
   const [isMinimized, setIsMinimized] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -20,7 +20,7 @@ export default function FloatingAICopilot({ projectType = 'bot' }: { projectType
     const text = promptInput
     setPromptInput('')
     const targetEntity = projectType === 'site' ? 'site_only' : 'bot_and_mini_app'
-    await sendMessage(text, 'PATCH', targetEntity)
+    await sendMessage(text, 'FULL_GENERATION', targetEntity)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -52,6 +52,9 @@ export default function FloatingAICopilot({ projectType = 'bot' }: { projectType
           <span>Mazaika AI</span>
         </div>
         <div className="fai-header-actions">
+          <button onClick={() => clearChat()} title="Chatni tozalash" style={{ opacity: 0.7 }}>
+            <Trash2 size={14} />
+          </button>
           <button onClick={() => setIsMinimized(!isMinimized)}>
             {isMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
           </button>

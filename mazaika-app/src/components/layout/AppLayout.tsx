@@ -128,7 +128,7 @@ export default function AppLayout() {
             <button 
               className="btn btn-ghost btn-sm btn-icon mobile-menu-toggle"
               onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-              style={{ display: 'none', alignItems: 'center', justifyContent: 'center' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <Menu size={18} />
             </button>
@@ -173,10 +173,25 @@ export default function AppLayout() {
             </button>
             {projectType === 'bot' && (
               <>
-                <button className="btn btn-ghost btn-sm mobile-hide">
+                <button 
+                  className="btn btn-ghost btn-sm mobile-hide"
+                  onClick={() => navigate(`/bot/${botId}/editor`)}
+                  title="Redaktorda ochish"
+                >
                   <AlertCircle size={14} /> Tekshirish
                 </button>
-                <button className="btn btn-primary btn-sm" style={{ padding: '6px 12px', fontSize: 12 }}>
+                <button 
+                  className="btn btn-primary btn-sm" 
+                  style={{ padding: '6px 12px', fontSize: 12 }}
+                  onClick={() => {
+                    if (botId) {
+                      import('../../api/apiClient').then(({ apiClient }) => {
+                        apiClient.post(`/bots/${botId}/start`).catch(console.error)
+                      })
+                    }
+                    navigate(`/bot/${botId}/editor`)
+                  }}
+                >
                   <Play size={14} /> Ishga tushirish
                 </button>
               </>

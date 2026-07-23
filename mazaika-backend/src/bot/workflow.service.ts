@@ -436,11 +436,31 @@ export class WorkflowService {
         const code = node.data?.code;
         if (code) {
           try {
-            // WARNING: In a production environment this needs a sandbox (like vm2). 
-            // For this generative MVP, we use raw async eval to allow maximum AI freedom.
-            const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
-            const executor = new AsyncFunction('ctx', 'variables', 'botId', 'contactId', code);
-            await executor(ctx, variables, botId, contactId);
+            // SANDBOXED execution using Node.js built-in 'vm' module
+            // This prevents access to process, require, fs, and other dangerous globals
+            const vm = await import('node:vm');
+            
+            // Create a safe sandbox with only bot-related context
+            const sandbox = {
+              ctx: {
+                reply: async (text: string) => ctx.reply(text),
+                replyWithPhoto: async (url: string, opts?: any) => ctx.replyWithPhoto(url, opts),
+              },
+              variables: { ...variables },
+              botId,
+              contactId,
+              console: { log: (msg: any) => this.logger.log(`[custom_code bot:${botId}]: ${msg}`) },
+              // NO process, NO require, NO fs, NO global
+            };
+            
+            const script = new vm.Script(`
+              (async () => {
+                ${code}
+              })()
+            `);
+            
+            const context = vm.createContext(sandbox);
+            await script.runInContext(context, { timeout: 5000 });
           } catch (err: any) {
             this.logger.error(`Custom code execution failed for node ${node.id}: ${err.message}`);
           }

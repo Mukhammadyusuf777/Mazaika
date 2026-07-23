@@ -14,6 +14,7 @@ import { useEditorStore, type FlowNode } from '../../store/useEditorStore'
 import { Plus, Save } from 'lucide-react'
 import { apiClient } from '../../api/apiClient'
 import { useParams } from 'react-router-dom'
+import { useAICopilot } from '../../context/AICopilotContext'
 
 const edgeTypes = {
   buttonEdge: ButtonEdge,
@@ -28,7 +29,7 @@ export default function EditorPage() {
     nodes, edges, isLoading,
     onNodesChange, onEdgesChange, onConnect,
     addNode, updateNodeData, deleteNode,
-    saveToStorage, loadFromStorage
+    saveToStorage, loadFromStorage, setNodes, setEdges
   } = useEditorStore()
 
   const [selectedNode, setSelectedNode] = useState<FlowNode | null>(null)
@@ -36,6 +37,23 @@ export default function EditorPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [saved, setSaved] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
+
+  const { activeConfig, switchProject } = useAICopilot()
+
+  // Sync AI-generated bot_blocks into the ReactFlow editor
+  useEffect(() => {
+    if (!activeConfig) return
+    const aiNodes = activeConfig.bot_blocks
+    const aiEdges = activeConfig.bot_edges
+    if (Array.isArray(aiNodes) && aiNodes.length > 0) {
+      // Validate that nodes have ReactFlow structure
+      const hasPositions = aiNodes.every((n: any) => n.position && typeof n.position.x === 'number')
+      if (hasPositions) {
+        setNodes(aiNodes)
+        setEdges(Array.isArray(aiEdges) ? aiEdges : [])
+      }
+    }
+  }, [activeConfig])
 
   const checkStatus = useCallback(async () => {
     if (!botId) return
@@ -51,6 +69,8 @@ export default function EditorPage() {
     if (botId) {
       loadFromStorage(botId)
       checkStatus()
+      // Switch AI project context to this bot
+      switchProject(botId, null)
     }
   }, [botId, loadFromStorage, checkStatus])
 

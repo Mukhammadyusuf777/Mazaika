@@ -106,7 +106,9 @@ export default function DashboardPage() {
     if (!window.confirm(`Haqiqatan ham "${botName}" botini o'chirmoqchimisiz?`)) return
     try {
       await deleteBot(botId)
+      // Clean up all related localStorage keys
       localStorage.removeItem('mazaika_ai_messages_' + botId)
+      localStorage.removeItem('mazaika_ai_config_' + botId)
       localStorage.removeItem('mazaika_site_' + botId)
       fetchBots()
     } catch (e) {
@@ -123,10 +125,25 @@ export default function DashboardPage() {
     setShowCreateModal(true)
   }
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSettingsSaved(true)
-    setTimeout(() => setSettingsSaved(false), 2000)
+    try {
+      const { auth, updateProfile, updateEmail } = await import('../../api/firebase')
+      const user = auth.currentUser
+      if (user) {
+        if (profileName && profileName !== user.displayName) {
+          await updateProfile(user, { displayName: profileName })
+        }
+        if (profileEmail && profileEmail !== user.email) {
+          await updateEmail(user, profileEmail)
+        }
+      }
+      setSettingsSaved(true)
+      setTimeout(() => setSettingsSaved(false), 2000)
+    } catch (e: any) {
+      console.error('Settings save error:', e)
+      alert('Sozlamalarni saqlashda xatolik: ' + (e.message || 'Noma\'lum xatolik'))
+    }
   }
 
   const botProjects = bots.filter(b => b.projectType !== 'site')
