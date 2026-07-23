@@ -28,6 +28,7 @@ export interface Block {
     paddingTop?: number
     paddingBottom?: number
   }
+  html?: string
 }
 
 interface SiteConfig {

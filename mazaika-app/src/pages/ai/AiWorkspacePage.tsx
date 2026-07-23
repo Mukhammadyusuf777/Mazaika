@@ -285,7 +285,7 @@ export default function AiWorkspacePage() {
         }
         
         let yOffset = 100;
-        let xOffset = 300;
+
         
         botBlocks.forEach((block: any, index: number) => {
           let nodeType = 'message';
