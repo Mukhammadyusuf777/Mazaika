@@ -3,7 +3,7 @@ import { Sparkles, Send, X, Loader2, Bot, Minimize2, Maximize2 } from 'lucide-re
 import { useAICopilot } from '../../context/AICopilotContext'
 import './FloatingAICopilot.css'
 
-export default function FloatingAICopilot() {
+export default function FloatingAICopilot({ projectType = 'bot' }: { projectType?: 'bot' | 'site' }) {
   const { isWidgetOpen, setWidgetOpen, messages, isGenerating, sendMessage } = useAICopilot()
   const [promptInput, setPromptInput] = useState('')
   const [isMinimized, setIsMinimized] = useState(false)
@@ -19,7 +19,8 @@ export default function FloatingAICopilot() {
     if (!promptInput.trim() || isGenerating) return
     const text = promptInput
     setPromptInput('')
-    await sendMessage(text)
+    const targetEntity = projectType === 'site' ? 'site_only' : 'bot_and_mini_app'
+    await sendMessage(text, 'MODIFICATION', targetEntity)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

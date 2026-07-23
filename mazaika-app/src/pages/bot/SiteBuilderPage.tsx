@@ -9,6 +9,7 @@ import {
 import { Reorder } from 'framer-motion'
 import BuilderBlock from './BuilderBlock'
 import { getSiteConfig, saveSiteConfig, updateBot, getBotById } from '../../api/firestore'
+import { useAICopilot } from '../../context/AICopilotContext'
 
 export interface Block {
   id: string
@@ -85,6 +86,8 @@ export default function SiteBuilderPage() {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>('1')
   const [projectType, setProjectType] = useState<'bot' | 'site'>('bot')
   
+  const { activeConfig } = useAICopilot()
+  
   // Google Sites layout states
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop')
   const [activeTab, setActiveTab] = useState<'insert' | 'properties'>('insert')
@@ -126,6 +129,25 @@ export default function SiteBuilderPage() {
     }
     fetchConfig()
   }, [botId])
+
+  // Sync AI changes from the floating widget
+  useEffect(() => {
+    if (activeConfig && (activeConfig.site_blocks || activeConfig.blocks)) {
+      const newBlocks = activeConfig.site_blocks || activeConfig.blocks;
+      if (Array.isArray(newBlocks)) {
+        setConfig(prev => ({
+          ...prev,
+          theme: activeConfig.theme || prev.theme,
+          themeColor: activeConfig.themeColor || prev.themeColor,
+          appName: activeConfig.appName || prev.appName,
+          blocks: newBlocks
+        }));
+        if (newBlocks.length > 0) {
+          setSelectedBlockId(newBlocks[0].id || null);
+        }
+      }
+    }
+  }, [activeConfig])
 
   const handleSave = async () => {
     if (!botId) return
