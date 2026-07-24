@@ -413,7 +413,7 @@ export default function SiteBuilderPage() {
             deviceMode === 'desktop' ? (
               <iframe
                 key={config.source_code.length + '_desktop'}
-                srcDoc={config.source_code}
+                srcDoc={config.source_code || '<!DOCTYPE html><html><body style="background:#0f172a;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;"><h2>Загрузка сайта...</h2></body></html>'}
                 style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
                 title="Live Site Preview"
                 sandbox="allow-scripts allow-same-origin"
@@ -439,7 +439,7 @@ export default function SiteBuilderPage() {
 
                 <iframe
                   key={config.source_code.length + '_mobile'}
-                  srcDoc={config.source_code}
+                  srcDoc={config.source_code || '<!DOCTYPE html><html><body style="background:#0f172a;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;"><h2>Загрузка сайта...</h2></body></html>'}
                   style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
                   title="Mobile App Live Preview"
                   sandbox="allow-scripts allow-same-origin"
