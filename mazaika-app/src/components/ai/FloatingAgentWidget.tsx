@@ -7,6 +7,12 @@ import './FloatingAgentWidget.css'
 export default function FloatingAgentWidget() {
   const navigate = useNavigate()
   const location = useLocation()
+  
+  const getBotId = () => {
+    const parts = location.pathname.split('/')
+    const botIdx = parts.indexOf('bot')
+    return botIdx !== -1 && parts.length > botIdx + 1 ? parts[botIdx + 1] : null
+  }
   const {
     isWidgetOpen,
     toggleWidget,
@@ -118,6 +124,20 @@ export default function FloatingAgentWidget() {
                 {msg.patchOperations && msg.patchOperations.length > 0 && (
                   <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: 11, color: '#00f5c4', display: 'flex', alignItems: 'center', gap: 4 }}>
                     <CheckCircle2 size={12} /> {msg.patchOperations.length} patch qo'llanildi
+                  </div>
+                )}
+                {msg.projectData?.source_code && msg.projectData.source_code.length > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    <button 
+                      className="btn btn-primary btn-sm" 
+                      style={{ fontSize: 12, padding: '4px 12px', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6 }}
+                      onClick={() => {
+                        const botId = getBotId();
+                        if (botId) navigate(`/dashboard/bot/${botId}/sitebuilder`);
+                      }}
+                    >
+                      <Maximize2 size={14} /> Veb-saytni ko'rish
+                    </button>
                   </div>
                 )}
               </div>

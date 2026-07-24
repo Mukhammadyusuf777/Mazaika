@@ -155,7 +155,7 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
                             const parsed = this.extractJsonObject(text);
                             if (parsed) {
                                 this.logger.log('Successfully generated via Gemini!');
-                                return this.formatResponse(parsed, isSiteRequest, isRussian, isUzbek, isEditMode, existingHtml);
+                                return this.formatResponse(parsed, isSiteRequest, isRussian, isUzbek, isEditMode, existingHtml, currentConfig);
                             }
                         }
                     }
@@ -190,7 +190,7 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
                             const parsed = this.extractJsonObject(text);
                             if (parsed) {
                                 this.logger.log('Successfully generated via OpenRouter!');
-                                return this.formatResponse(parsed, isSiteRequest, isRussian, isUzbek, isEditMode, existingHtml);
+                                return this.formatResponse(parsed, isSiteRequest, isRussian, isUzbek, isEditMode, existingHtml, currentConfig);
                             }
                         }
                     }
@@ -199,7 +199,7 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
                     this.logger.error(`OpenRouter API Exception: ${err.message}`);
                 }
             }
-            return this.formatResponse({ html: existingHtml || null }, isSiteRequest, isRussian, isUzbek, isEditMode, existingHtml);
+            return this.formatResponse({ html: existingHtml || null }, isSiteRequest, isRussian, isUzbek, isEditMode, existingHtml, currentConfig);
         }
         catch (fatalError) {
             this.logger.error(`Fatal Service Error: ${fatalError.message}`);
@@ -216,7 +216,7 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
     async generatePatch(promptText, currentPageUrl, selectedBlockId, currentConfig) {
         return this.generateFullProject(promptText, [], currentConfig, 'bot_and_mini_app');
     }
-    formatResponse(parsed, isSiteRequest, isRussian, isUzbek, isEditMode, fallbackHtml) {
+    formatResponse(parsed, isSiteRequest, isRussian, isUzbek, isEditMode, fallbackHtml, currentConfig) {
         const htmlCode = parsed.html || parsed.source_code || parsed.website_html || parsed.site_code || parsed.code || parsed.project_data?.source_code || fallbackHtml || '';
         const targetEntity = (isSiteRequest || htmlCode) ? 'site_only' : (parsed.target_entity || 'bot_and_mini_app');
         const defaultExpl = isEditMode
@@ -258,9 +258,10 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
                 website_html: htmlCode,
                 site_code: htmlCode,
                 code: htmlCode,
-                blocks: projectData.blocks || [],
-                bot_blocks: projectData.bot_blocks || [],
-                site_blocks: projectData.site_blocks || []
+                blocks: projectData.blocks?.length ? projectData.blocks : (currentConfig?.blocks || []),
+                bot_blocks: projectData.bot_blocks?.length ? projectData.bot_blocks : (currentConfig?.bot_blocks || []),
+                bot_edges: projectData.bot_edges?.length ? projectData.bot_edges : (currentConfig?.bot_edges || []),
+                site_blocks: projectData.site_blocks?.length ? projectData.site_blocks : (currentConfig?.site_blocks || [])
             }
         };
     }
