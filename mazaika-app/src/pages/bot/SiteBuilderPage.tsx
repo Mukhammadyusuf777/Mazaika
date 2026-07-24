@@ -412,7 +412,7 @@ export default function SiteBuilderPage() {
           ) : (
             deviceMode === 'desktop' ? (
                 <iframe
-                  key={config.source_code.length + Date.now() + '_desktop'}
+                  key={(config.source_code?.length || 0) + '_desktop'}
                 srcDoc={config.source_code || '<!DOCTYPE html><html><body style="background:#0f172a;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;"><h2>Загрузка сайта...</h2></body></html>'}
                 style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
                 title="Live Site Preview"
@@ -438,7 +438,7 @@ export default function SiteBuilderPage() {
                 </div>
 
                 <iframe
-                  key={config.source_code.length + Date.now() + '_mobile'}
+                  key={(config.source_code?.length || 0) + '_mobile'}
                   srcDoc={config.source_code || '<!DOCTYPE html><html><body style="background:#0f172a;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;"><h2>Загрузка сайта...</h2></body></html>'}
                   style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
                   title="Mobile App Live Preview"

@@ -160,7 +160,8 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
               contents: [{ parts: [{ text: `${systemInstruction}\n\nUser Input: ${promptText}` }] }],
               generationConfig: {
                 responseMimeType: 'application/json',
-                temperature: isEditMode ? 0.3 : 0.4
+                temperature: 0.2,
+                maxOutputTokens: 8192
               },
             }),
           });
