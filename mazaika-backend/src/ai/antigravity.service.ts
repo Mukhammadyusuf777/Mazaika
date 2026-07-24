@@ -36,6 +36,7 @@ export class AntigravityService {
 
       const isUzbek = /[ўғҳа-я]/i.test(promptText) && !/[ыэъ]/i.test(promptText);
       const isRussian = /[а-яА-ЯёЁ]/.test(promptText);
+      const userLang = isUzbek ? 'UZBEK' : (isRussian ? 'RUSSIAN' : 'ENGLISH');
       const lowerPrompt = promptText.toLowerCase();
 
       const isSiteRequest =
@@ -74,29 +75,39 @@ export class AntigravityService {
       let systemInstruction = '';
       if (isEditMode) {
         // --- EDIT MODE ---
-        systemInstruction = `You are an expert Senior Frontend Engineer & UI/UX Designer.
-Your job is to MODIFY and UPDATE the existing HTML website code based on the user's request.
+        systemInstruction = `You are a Senior Web UI/UX Engineer.
+MODE: EDIT EXISTING SITE
 ${historyContext}
 
-CURRENT WEBSITE HTML CODE:
+USER REQUEST: "${promptText}"
+
+CRITICAL EDITING INSTRUCTIONS:
+1. You MUST modify the HTML code below according to the user request.
+2. IF USER ASKS FOR "BLACK AND WHITE" (черно-белый): 
+   - Replace ALL green, emerald, blue background and text classes (e.g., bg-emerald-500, text-emerald-400, bg-green-900) WITH black, white, and gray classes (e.g., bg-black, bg-white, text-zinc-900, bg-zinc-900, border-zinc-700).
+3. IF USER ASKS FOR "IPHONE / GLASSMORPHISM" (стеклянный стиль):
+   - Add 'backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl rounded-3xl' to cards and containers.
+4. IF USER ASKS FOR MOBILE ADAPTATION (адаптируй для телефона):
+   - Make sure all containers use 'w-full px-4', grid uses 'grid-cols-1 md:grid-cols-2', text sizes use 'text-2xl md:text-5xl'.
+   - Add a working responsive mobile navigation menu with JS toggle.
+
+CURRENT HTML CODE TO MODIFY:
 \`\`\`html
 ${existingHtml}
 \`\`\`
 
-USER EDIT REQUEST:
-"${promptText}"
+STRICT OUTPUT RULES:
+1. Return ONLY valid JSON with keys: "type", "execution_mode", "target_entity", "title", "explanation" and "html".
+2. Do NOT send the exact same HTML back. You MUST change the code!
+3. "explanation" MUST be a short sentence in ${userLang} describing EXACTLY what classes or colors were changed (e.g., "Дизайн переведен в черно-белую гамму: зелёные элементы заменены на тёмные и белые тона.").
 
-CRITICAL EDITING RULES:
-1. MODIFY ONLY WHAT THE USER ASKS FOR (e.g. change color scheme, change layout, add new section, update text, improve mobile responsiveness).
-2. KEEP ALL EXISTING FUNCTIONALITY, pages, text, styling, and JavaScript router intact unless the user explicitly asks to remove/replace them.
-3. Keep the site fully mobile-responsive (Tailwind CSS, flex-col on mobile, working hamburger menu).
-4. Return ONLY a valid JSON object without markdown fences containing the FULL UPDATED HTML code:
+JSON OUTPUT FORMAT without markdown fences:
 {
   "type": "site",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "site_only",
   "title": "Updated Site",
-  "explanation": "${isUzbek ? "Sayt muvaffaqiyatli tahrirlandi va yangilandi!" : isRussian ? "Сайт успешно обновлен согласно вашим пожеланиям!" : "Website updated successfully based on your request!"}",
+  "explanation": "Конкретное описание изменений...",
   "html": "<!DOCTYPE html><html class='scroll-smooth'>...FULL UPDATED HTML CODE...</html>"
 }`;
       } else {
