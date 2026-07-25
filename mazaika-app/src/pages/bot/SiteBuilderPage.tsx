@@ -38,10 +38,11 @@ const DEFAULT_CONFIG: SiteConfig = {
   source_code: ''
 }
 
-/** Validate HTML — returns true if HTML is valid enough to render */
 function isValidHtml(html: string): boolean {
   if (!html || html.trim().length < 50) return false
-  if (!html.includes('<!DOCTYPE') && !html.includes('<html')) return false
+  const lowerHtml = html.toLowerCase();
+  if (!lowerHtml.includes('<html')) return false
+  if (html === '<!-- INVALID_HTML_FORCE_RETRY -->') return false
   try {
     const parser = new DOMParser()
     const doc = parser.parseFromString(html, 'text/html')

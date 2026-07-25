@@ -323,17 +323,24 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
   }
 
   private formatResponse(parsed: any, isSiteRequest: boolean, isRussian: boolean, isUzbek: boolean, isEditMode: boolean, fallbackHtml: string, currentConfig?: any) {
-    const htmlCode =
+    let htmlCode =
       parsed.html ||
       parsed.source_code ||
       parsed.website_html ||
       parsed.site_code ||
       parsed.code ||
       parsed.project_data?.source_code ||
+      parsed.project_data?.html ||
+      parsed.project_data?.website_html ||
       fallbackHtml ||
       '';
 
-    const targetEntity = (isSiteRequest || htmlCode) ? 'site_only' : (parsed.target_entity || 'bot_and_mini_app');
+    if (isSiteRequest && !htmlCode) {
+      // Force the frontend's isValidHtml to fail and trigger self-healing
+      htmlCode = '<!-- INVALID_HTML_FORCE_RETRY -->';
+    }
+
+    const targetEntity = (isSiteRequest || htmlCode && htmlCode !== '<!-- INVALID_HTML_FORCE_RETRY -->') ? 'site_only' : (parsed.target_entity || 'bot_and_mini_app');
 
     const defaultExpl = isEditMode
       ? (isRussian ? 'Сайт успешно обновлён! 🚀' : isUzbek ? 'Sayt muvaffaqiyatli yangilandi! 🚀' : 'Website updated!')
@@ -396,10 +403,14 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
     if (!text) return null;
 
     // Check for HTML block outside JSON
-    const htmlMatch = text.match(/```html\s*([\s\S]*?)\s*```/i) || text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i);
+    const htmlMatch = text.match(/```(?:html)?\s*([\s\S]*?)```/i) || text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i) || text.match(/<html[\s\S]*<\/html>/i);
     let htmlContent = '';
     if (htmlMatch) {
-      htmlContent = htmlMatch[1] || htmlMatch[0];
+      // If it matched the code block, it's group 1. Otherwise group 0.
+      let possibleHtml = htmlMatch[1] || htmlMatch[0];
+      if (possibleHtml && possibleHtml.toLowerCase().includes('<html')) {
+         htmlContent = possibleHtml;
+      }
     }
 
     let cleanText = text.replace(/```json/gi, '').replace(/```html[\s\S]*?```/gi, '').replace(/```/gi, '').trim();
