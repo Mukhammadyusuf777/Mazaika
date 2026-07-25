@@ -52,9 +52,18 @@ const getSafeSourceCode = (html: string | undefined) => {
         }
         if (target && target.tagName === 'A') {
           const href = target.getAttribute('href');
-          if (href && !href.startsWith('#')) {
-            e.preventDefault();
-            console.log('Navigation intercepted and blocked to prevent iframe reload:', href);
+          const targetAttr = target.getAttribute('target');
+          
+          // If it's an external link opening in a new tab, allow it
+          if (targetAttr === '_blank') return;
+          
+          // OTHERWISE, PREVENT DEFAULT NAVIGATION (This stops the iframe from reloading Mazaika!)
+          e.preventDefault();
+          
+          // If it was a simple anchor link (e.g. href="#about"), manually scroll to it
+          if (href && href.startsWith('#') && href.length > 1) {
+            const el = document.getElementById(href.substring(1));
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
           }
         }
       });
