@@ -379,25 +379,52 @@ export default function LandingPage() {
           </div>
           <div className="l-hero-mockup-side">
             <div className="hero-mockup-wrap">
+
+              {/* Spinning rainbow ring — pure SVG, no border-image */}
+              <svg className="mockup-spin-ring" viewBox="0 0 440 440" fill="none">
+                <defs>
+                  <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#7c3cfa"/>
+                    <stop offset="25%" stopColor="#3b82f6"/>
+                    <stop offset="50%" stopColor="#00f5d4"/>
+                    <stop offset="75%" stopColor="#f72585"/>
+                    <stop offset="100%" stopColor="#fbbf24"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="220" cy="220" r="210" stroke="url(#ring-grad)" strokeWidth="1.5" strokeDasharray="80 60" strokeLinecap="round"/>
+              </svg>
+
+              {/* Floating node cards — show bot being built */}
+              <div className="mock-node mock-node-1">🧩 Greeting node</div>
+              <div className="mock-node mock-node-2">💳 Payment node</div>
+              <div className="mock-node mock-node-3">✅ Built!</div>
+
               <div className="hero-mockup">
                 <div className="hero-mockup-notch"></div>
                 <div className="hero-mockup-screen">
                   <div className="hero-mockup-header">
                     <div className="hero-mockup-avatar"></div>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: 16 }}>Mazaika Shop</div>
-                      <div style={{ color: '#06b6d4', fontSize: 12 }}>bot</div>
+                      <div className="hero-mockup-name">Mazaika Shop</div>
+                      <div className="hero-mockup-status">● online</div>
                     </div>
                   </div>
                   <div className="hero-mockup-chat">
-                    <div className="hero-mockup-bubble bot">Assalomu alaykum! Bizning do'konga xush kelibsiz. Nima buyurtma qilasiz?</div>
-                    <div className="hero-mockup-bubble user">Menyu ko'rish</div>
-                    <div className="hero-mockup-bubble bot">Katalogimiz bilan tanishing:<br/>- Qahva<br/>- Shirinliklar<br/>- Fast food</div>
-                    <div className="hero-mockup-bubble user">Qahva</div>
-                    <div className="hero-mockup-bubble bot">💳 To'lovni amalga oshiring:<br/><br/><button style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: 8, width: '100%' }}>Payme orqali to'lash</button></div>
+                    <div className="hero-mockup-bubble bot anim-1">Assalomu alaykum! Bizning do'konga xush kelibsiz 👋</div>
+                    <div className="hero-mockup-bubble user anim-2">Menyu ko'rish</div>
+                    <div className="hero-mockup-bubble bot anim-3">Katalogimiz:<br/>☕ Qahva<br/>🍰 Shirinliklar<br/>🍔 Fast food</div>
+                    <div className="hero-mockup-bubble user anim-4">Qahva</div>
+                    <div className="hero-mockup-bubble bot anim-5">
+                      💳 To'lov:
+                      <button className="mockup-pay-btn">Payme orqali to'lash</button>
+                    </div>
+                    <div className="hero-mockup-typing anim-6">
+                      <span></span><span></span><span></span>
+                    </div>
                   </div>
                 </div>
               </div>
+
             </div>
           </div>
         </div>
