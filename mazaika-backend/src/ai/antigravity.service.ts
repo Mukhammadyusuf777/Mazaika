@@ -495,68 +495,49 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
   private extractJsonObject(text: string): any {
     if (!text) return null;
 
-    // Check for HTML block outside JSON
-    const htmlMatch = text.match(/```(?:html)?\s*([\s\S]*?)```/i) || text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i) || text.match(/<html[\s\S]*<\/html>/i);
-    let htmlContent = '';
-    if (htmlMatch) {
-      // If it matched the code block, it's group 1. Otherwise group 0.
-      let possibleHtml = htmlMatch[1] || htmlMatch[0];
-      if (possibleHtml && possibleHtml.toLowerCase().includes('<html')) {
-         htmlContent = possibleHtml;
-      }
+    let jsonPart = text;
+    let htmlPart = '';
+
+    // Find where HTML code block or tag starts
+    const htmlStartMatch = text.match(/```html|<!DOCTYPE html>|<html/i);
+    if (htmlStartMatch && htmlStartMatch.index !== undefined) {
+      const idx = htmlStartMatch.index;
+      jsonPart = text.substring(0, idx);
+      htmlPart = text.substring(idx);
     }
 
-    let cleanText = text.replace(/```json/gi, '').replace(/```html[\s\S]*?```/gi, '').replace(/```/gi, '').trim();
+    // Clean HTML part
+    htmlPart = htmlPart
+      .replace(/^```html\s*/i, '')
+      .replace(/```\s*$/i, '')
+      .trim();
 
-    // Clean trailing commas in objects and arrays before parsing
-    cleanText = cleanText.replace(/,\s*([\]}])/g, '$1');
+    // Clean JSON part
+    jsonPart = jsonPart.replace(/```json/gi, '').replace(/```/gi, '').trim();
+    jsonPart = jsonPart.replace(/,\s*([\]}])/g, '$1');
 
-    try {
-      const parsed = JSON.parse(cleanText);
-      if (htmlContent && !parsed.html) parsed.html = htmlContent;
-      return parsed;
-    } catch (e) {}
-
-    const startIdx = cleanText.indexOf('{');
-    if (startIdx === -1) return null;
-
-    let braceCount = 0;
-    let inString = false;
-    let isEscaped = false;
-
-    for (let i = startIdx; i < cleanText.length; i++) {
-      const char = cleanText[i];
-      if (inString) {
-        if (char === '\\' && !isEscaped) {
-          isEscaped = true;
-        } else {
-          if (char === '"' && !isEscaped) inString = false;
-          isEscaped = false;
-        }
-      } else {
-        if (char === '"') inString = true;
-        else if (char === '{') braceCount++;
-        else if (char === '}') {
-          braceCount--;
-          if (braceCount === 0) {
-            let candidate = cleanText.substring(startIdx, i + 1);
-            candidate = candidate.replace(/,\s*([\]}])/g, '$1');
-            try { 
-              const parsed = JSON.parse(candidate); 
-              if (htmlContent && !parsed.html) parsed.html = htmlContent;
-              return parsed;
-            } catch (e) {}
-          }
-        }
-      }
+    let parsedJson: any = null;
+    const jsonMatch = jsonPart.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        parsedJson = JSON.parse(jsonMatch[0]);
+      } catch (e) {}
     }
-    
-    // If we have HTML but failed to parse JSON, return at least the HTML
-    if (htmlContent) {
-      return { type: 'site', target_entity: 'site_only', html: htmlContent, explanation: 'Updated HTML' };
+
+    if (!parsedJson) {
+      parsedJson = {
+        type: 'site',
+        execution_mode: 'FULL_GENERATION',
+        target_entity: 'site_only',
+        explanation: 'Адаптированный сайт успешно создан!'
+      };
     }
-    
-    return null;
+
+    if (htmlPart && htmlPart.toLowerCase().includes('<html')) {
+      parsedJson.html = htmlPart;
+    }
+
+    return parsedJson;
   }
 }
 

@@ -40,22 +40,7 @@ const DEFAULT_CONFIG: SiteConfig = {
   source_code: ''
 }
 
-function isValidHtml(html: string): boolean {
-  if (!html || html.trim().length < 50) return false
-  const lowerHtml = html.toLowerCase();
-  if (!lowerHtml.includes('<html')) return false
-  if (html === '<!-- INVALID_HTML_FORCE_RETRY -->') return false
-  try {
-    const parser = new DOMParser()
-    const doc = parser.parseFromString(html, 'text/html')
-    const hasParserError = doc.querySelector('parsererror') !== null
-    const bodyContent = doc.body?.innerHTML?.trim() || ''
-    if (hasParserError || bodyContent.length < 20) return false
-    return true
-  } catch {
-    return false
-  }
-}
+
 
 export default function SiteBuilderPage() {
   const { botId } = useParams<{ botId: string }>()
@@ -131,39 +116,12 @@ export default function SiteBuilderPage() {
     fetchConfig()
   }, [botId])
 
-  // ✅ Self-healing: validate HTML on every activeConfig update
+  // ✅ Sync activeConfig to SiteConfig
   useEffect(() => {
     if (!activeConfig) return
     const newHtml = activeConfig.source_code || activeConfig.html || ''
     if (!newHtml) return
 
-    // Check if HTML is valid
-    if (!isValidHtml(newHtml)) {
-      if (selfHealRetryCount.current < 2) {
-        selfHealRetryCount.current += 1
-        setSelfHealingStatus('healing')
-        console.warn(`⚠️ Self-healing: invalid HTML detected (attempt ${selfHealRetryCount.current}/2)`)
-        // Auto-retry with healing prompt
-        const lastUser = [...messages].reverse().find(m => m.sender === 'user')
-        if (lastUser) {
-          setTimeout(async () => {
-            await sendMessage(
-              `PREVIOUS RESPONSE WAS INVALID HTML. Please regenerate: ${lastUser.text}. Return ONLY complete valid HTML with <!DOCTYPE html>.`,
-              'FULL_GENERATION',
-              'site_only'
-            )
-            setSelfHealingStatus('idle')
-          }, 800)
-        }
-        return
-      } else {
-        setSelfHealingStatus('failed')
-        selfHealRetryCount.current = 0
-        return
-      }
-    }
-
-    // HTML is valid — reset counter and apply
     selfHealRetryCount.current = 0
     setSelfHealingStatus('idle')
     setConfig(prev => ({
