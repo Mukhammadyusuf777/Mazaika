@@ -60,8 +60,47 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
             const imageInstruction = hasImage
                 ? `\n\nIMPORTANT: The user has attached an IMAGE. Analyze it carefully — it may be a design reference, screenshot, sketch, or diagram. Use it to understand what they want to create or replicate.`
                 : '';
+            const CONTINUE_KEYWORDS = ['продолжи', 'продолжить', 'дальше', 'допиши', 'продолжение', 'dovom', 'continue', 'more', 'добавь страницу'];
+            const isContinuationMode = CONTINUE_KEYWORDS.some(k => lowerPrompt.includes(k)) && hasExistingHtml;
             let systemInstruction = '';
-            if (isEditMode && isSiteRequest && !isBotRequest) {
+            if (isContinuationMode) {
+                systemInstruction = `You are a Senior Web UI/UX Engineer.
+MODE: CONTINUE & EXPAND EXISTING MULTI-PAGE SITE
+${historyContext}
+${imageInstruction}
+
+USER REQUEST: "${promptText}"
+
+INSTRUCTIONS:
+1. The user wants you to CONTINUE building and expanding the website code below.
+2. Add the remaining pages, sections, features, styles, or scripts requested.
+3. SPA NAVIGATION: NEVER use href="/" or href="page.html" in <a> tags! This breaks the live preview. Use href="#" and onclick="showPage('about'); return false;".
+4. Output the COMPLETE updated and expanded HTML document from <!DOCTYPE html> to </html>.
+
+EXISTING HTML CODE:
+\`\`\`html
+${existingHtml}
+\`\`\`
+
+STRICT OUTPUT RULES:
+1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
+2. Then, AFTER the JSON, output the full updated HTML wrapped in a \`\`\`html code block!
+3. Do NOT put the HTML inside the JSON object!
+
+JSON FORMAT:
+{
+  "type": "site",
+  "execution_mode": "FULL_GENERATION",
+  "target_entity": "site_only",
+  "title": "Expanded Site",
+  "explanation": "${isUzbek ? 'Sayt muvaffaqiyatli kengaytirildi va yangi sahifalar qo\'shildi!' : isRussian ? 'Сайт успешно дополнен и расширен новыми страницами!' : 'Website expanded with new pages!'}"
+}
+\`\`\`html
+<!DOCTYPE html><html>...FULL EXPANDED HTML...</html>
+\`\`\`
+`;
+            }
+            else if (isEditMode && isSiteRequest && !isBotRequest) {
                 systemInstruction = `You are a Senior Web UI/UX Engineer.
 MODE: EDIT EXISTING SITE
 ${historyContext}
@@ -73,7 +112,8 @@ CRITICAL EDITING INSTRUCTIONS:
 1. You MUST modify the HTML code below according to the user request.
 2. IF the user attached an image — match its design, colors, layout or style as closely as possible.
 3. Keep all existing functionality — only change what was requested.
-4. NEVER truncate the HTML. You MUST output the entire document from <!DOCTYPE html> to </html>.
+4. SPA NAVIGATION: NEVER use href="/" or href="page.html" in <a> tags! This breaks the live preview. Use href="#" and onclick="showPage('about'); return false;".
+5. NEVER truncate the HTML. You MUST output the entire document from <!DOCTYPE html> to </html>.
 
 CURRENT HTML CODE TO MODIFY:
 \`\`\`html
@@ -107,11 +147,12 @@ ${imageInstruction}
 CRITICAL CREATION RULES:
 1. MOBILE-FIRST: Include working Hamburger Menu for mobile.
 2. MULTI-PAGE ROUTING: JS page switcher (Home, About, Gallery, Contact).
-3. STYLING: Tailwind CSS CDN + Google Font Inter + Glassmorphism + smooth animations.
-4. IMAGES: Real Unsplash high-res photos.
-5. If user attached an image — match that design style, layout, and color palette.
-6. HTML must be at least 200 lines, complete, with all CSS and JS inline.
-7. NEVER truncate the HTML. You MUST output the entire document from <!DOCTYPE html> to </html>.
+3. SPA NAVIGATION: NEVER use href="/" or href="page.html" in <a> tags! This breaks the live preview. Use href="#" and onclick="showPage('about'); return false;".
+4. STYLING: Tailwind CSS CDN + Google Font Inter + Glassmorphism + smooth animations.
+5. IMAGES: Real Unsplash high-res photos.
+6. If user attached an image — match that design style, layout, and color palette.
+7. HTML must be at least 200 lines, complete, with all CSS and JS inline.
+8. NEVER truncate the HTML. You MUST output the entire document from <!DOCTYPE html> to </html>.
 
 STRICT OUTPUT RULES:
 1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
@@ -451,6 +492,24 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
             };
         }
         if (htmlPart && htmlPart.toLowerCase().includes('<html')) {
+            const lowerHtml = htmlPart.toLowerCase();
+            if (!lowerHtml.includes('</html>')) {
+                parsedJson.has_more = true;
+                this.logger.warn('⚠️ HTML was truncated by token limit. Auto-closing tags & setting has_more=true');
+                if (lowerHtml.lastIndexOf('<style') > lowerHtml.lastIndexOf('</style>')) {
+                    htmlPart += '\n</style>';
+                }
+                if (lowerHtml.lastIndexOf('<script') > lowerHtml.lastIndexOf('</script>')) {
+                    htmlPart += '\n</script>';
+                }
+                if (!lowerHtml.includes('</body>')) {
+                    htmlPart += '\n</body>';
+                }
+                htmlPart += '\n</html>';
+                parsedJson.explanation = isRawRussian(text)
+                    ? '⚡ Я создал основную структуру и первые страницы! Нажмите кнопку "Продолжить генерацию", чтобы я достроил остальные разделы!'
+                    : '⚡ Saytning asosiy qismi yaratildi! Qolgan sahifa va bo\'limlarni qo\'shish uchun "Davom ettirish" tugmasini bosing!';
+            }
             parsedJson.html = htmlPart;
         }
         return parsedJson;

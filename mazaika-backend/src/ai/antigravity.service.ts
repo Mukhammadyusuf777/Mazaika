@@ -93,7 +93,8 @@ USER REQUEST: "${promptText}"
 INSTRUCTIONS:
 1. The user wants you to CONTINUE building and expanding the website code below.
 2. Add the remaining pages, sections, features, styles, or scripts requested.
-3. Output the COMPLETE updated and expanded HTML document from <!DOCTYPE html> to </html>.
+3. SPA NAVIGATION: NEVER use href="/" or href="page.html" in <a> tags! This breaks the live preview. Use href="#" and onclick="showPage('about'); return false;".
+4. Output the COMPLETE updated and expanded HTML document from <!DOCTYPE html> to </html>.
 
 EXISTING HTML CODE:
 \`\`\`html
@@ -130,7 +131,8 @@ CRITICAL EDITING INSTRUCTIONS:
 1. You MUST modify the HTML code below according to the user request.
 2. IF the user attached an image — match its design, colors, layout or style as closely as possible.
 3. Keep all existing functionality — only change what was requested.
-4. NEVER truncate the HTML. You MUST output the entire document from <!DOCTYPE html> to </html>.
+4. SPA NAVIGATION: NEVER use href="/" or href="page.html" in <a> tags! This breaks the live preview. Use href="#" and onclick="showPage('about'); return false;".
+5. NEVER truncate the HTML. You MUST output the entire document from <!DOCTYPE html> to </html>.
 
 CURRENT HTML CODE TO MODIFY:
 \`\`\`html
@@ -164,11 +166,12 @@ ${imageInstruction}
 CRITICAL CREATION RULES:
 1. MOBILE-FIRST: Include working Hamburger Menu for mobile.
 2. MULTI-PAGE ROUTING: JS page switcher (Home, About, Gallery, Contact).
-3. STYLING: Tailwind CSS CDN + Google Font Inter + Glassmorphism + smooth animations.
-4. IMAGES: Real Unsplash high-res photos.
-5. If user attached an image — match that design style, layout, and color palette.
-6. HTML must be at least 200 lines, complete, with all CSS and JS inline.
-7. NEVER truncate the HTML. You MUST output the entire document from <!DOCTYPE html> to </html>.
+3. SPA NAVIGATION: NEVER use href="/" or href="page.html" in <a> tags! This breaks the live preview. Use href="#" and onclick="showPage('about'); return false;".
+4. STYLING: Tailwind CSS CDN + Google Font Inter + Glassmorphism + smooth animations.
+5. IMAGES: Real Unsplash high-res photos.
+6. If user attached an image — match that design style, layout, and color palette.
+7. HTML must be at least 200 lines, complete, with all CSS and JS inline.
+8. NEVER truncate the HTML. You MUST output the entire document from <!DOCTYPE html> to </html>.
 
 STRICT OUTPUT RULES:
 1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
