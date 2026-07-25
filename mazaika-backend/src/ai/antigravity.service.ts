@@ -473,7 +473,7 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
 
         if (res.ok) {
           const data = await res.json();
-          const text = data.result?.response;
+          const text = data.result?.choices?.[0]?.message?.content || data.result?.response;
           if (text) {
             const parsed = this.extractJsonObject(text);
             if (parsed) {
