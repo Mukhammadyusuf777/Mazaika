@@ -147,7 +147,11 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         import('fast-json-patch').then(jsonpatch => {
           const newDoc = jsonpatch.applyPatch(updated, normalizedOps).newDocument
           setActiveConfig(newDoc)
-          localStorage.setItem(makeKey(userId, 'config', activeProjectId), JSON.stringify(newDoc))
+          try {
+            localStorage.setItem(makeKey(userId, 'config', activeProjectId), JSON.stringify(newDoc))
+          } catch (e) {
+            console.warn('LocalStorage quota exceeded for config patch saving', e)
+          }
         })
         return updated
       } catch (e) {
@@ -228,7 +232,12 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         applyPatchOperations(response.patch_operations)
       } else if (response.execution_mode === 'FULL_GENERATION' && response.project_data) {
         setActiveConfig(response.project_data)
-        localStorage.setItem(makeKey(userId, 'config', activeProjectId), JSON.stringify(response.project_data))
+        try {
+          localStorage.setItem(makeKey(userId, 'config', activeProjectId), JSON.stringify(response.project_data))
+        } catch (e) {
+          console.warn('LocalStorage quota exceeded for config saving', e)
+          alert("Loyiha hajmi juda kattalashib ketdi va vaqtinchalik xotiraga sig'mayapti. Iltimos loyihani saqlab qo'ying.")
+        }
       }
 
       return response
