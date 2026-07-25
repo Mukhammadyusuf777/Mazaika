@@ -76,9 +76,49 @@ export class AntigravityService {
         ? `\n\nIMPORTANT: The user has attached an IMAGE. Analyze it carefully — it may be a design reference, screenshot, sketch, or diagram. Use it to understand what they want to create or replicate.`
         : '';
 
+      const CONTINUE_KEYWORDS = ['продолжи', 'продолжить', 'дальше', 'допиши', 'продолжение', 'dovom', 'continue', 'more', 'добавь страницу'];
+      const isContinuationMode = CONTINUE_KEYWORDS.some(k => lowerPrompt.includes(k)) && hasExistingHtml;
+
       let systemInstruction = '';
 
-      if (isEditMode && isSiteRequest && !isBotRequest) {
+      if (isContinuationMode) {
+        // --- CONTINUATION / EXPAND MODE ---
+        systemInstruction = `You are a Senior Web UI/UX Engineer.
+MODE: CONTINUE & EXPAND EXISTING MULTI-PAGE SITE
+${historyContext}
+${imageInstruction}
+
+USER REQUEST: "${promptText}"
+
+INSTRUCTIONS:
+1. The user wants you to CONTINUE building and expanding the website code below.
+2. Add the remaining pages, sections, features, styles, or scripts requested.
+3. Output the COMPLETE updated and expanded HTML document from <!DOCTYPE html> to </html>.
+
+EXISTING HTML CODE:
+\`\`\`html
+${existingHtml}
+\`\`\`
+
+STRICT OUTPUT RULES:
+1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
+2. Then, AFTER the JSON, output the full updated HTML wrapped in a \`\`\`html code block!
+3. Do NOT put the HTML inside the JSON object!
+
+JSON FORMAT:
+{
+  "type": "site",
+  "execution_mode": "FULL_GENERATION",
+  "target_entity": "site_only",
+  "title": "Expanded Site",
+  "explanation": "${isUzbek ? 'Sayt muvaffaqiyatli kengaytirildi va yangi sahifalar qo\'shildi!' : isRussian ? 'Сайт успешно дополнен и расширен новыми страницами!' : 'Website expanded with new pages!'}"
+}
+\`\`\`html
+<!DOCTYPE html><html>...FULL EXPANDED HTML...</html>
+\`\`\`
+`;
+
+      } else if (isEditMode && isSiteRequest && !isBotRequest) {
         systemInstruction = `You are a Senior Web UI/UX Engineer.
 MODE: EDIT EXISTING SITE
 ${historyContext}
@@ -534,7 +574,28 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
       };
     }
 
+    // Truncation detection & Auto-Closer for safe rendering
     if (htmlPart && htmlPart.toLowerCase().includes('<html')) {
+      const lowerHtml = htmlPart.toLowerCase();
+      if (!lowerHtml.includes('</html>')) {
+        parsedJson.has_more = true;
+        this.logger.warn('⚠️ HTML was truncated by token limit. Auto-closing tags & setting has_more=true');
+        
+        if (lowerHtml.lastIndexOf('<style') > lowerHtml.lastIndexOf('</style>')) {
+          htmlPart += '\n</style>';
+        }
+        if (lowerHtml.lastIndexOf('<script') > lowerHtml.lastIndexOf('</script>')) {
+          htmlPart += '\n</script>';
+        }
+        if (!lowerHtml.includes('</body>')) {
+          htmlPart += '\n</body>';
+        }
+        htmlPart += '\n</html>';
+
+        parsedJson.explanation = isRawRussian(text)
+          ? '⚡ Я создал основную структуру и первые страницы! Нажмите кнопку "Продолжить генерацию", чтобы я достроил остальные разделы!'
+          : '⚡ Saytning asosiy qismi yaratildi! Qolgan sahifa va bo\'limlarni qo\'shish uchun "Davom ettirish" tugmasini bosing!';
+      }
       parsedJson.html = htmlPart;
     }
 

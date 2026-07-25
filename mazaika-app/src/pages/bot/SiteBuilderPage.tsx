@@ -368,6 +368,22 @@ export default function SiteBuilderPage() {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Continuation Button */}
+        {Boolean(activeConfig?.has_more) && !isGenerating && (
+          <button
+            onClick={() => handleSend('Продолжи генерацию и добавь оставшиеся страницы и секции сайта')}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              width: '100%', padding: '10px 16px', borderRadius: 12, marginBottom: 10,
+              background: 'linear-gradient(135deg, #10d974, #1e90ff)', color: '#fff',
+              border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              boxShadow: '0 4px 16px rgba(16,217,116,0.3)', transition: 'all 0.2s', animation: 'pulse 2s infinite'
+            }}
+          >
+            <Zap size={16} /> ⚡ Продолжить генерацию сайта (Добавить страницы)
+          </button>
+        )}
+
         {/* Input Area */}
         <div style={{ padding: '14px 16px 16px', background: 'rgba(0,0,0,0.3)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           {/* Image preview */}
