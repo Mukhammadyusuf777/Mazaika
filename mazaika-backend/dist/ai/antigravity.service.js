@@ -148,7 +148,7 @@ ${historyContext}
 ${imageInstruction}
 
 CRITICAL CREATION RULES:
-1. MULTI-FILE ARCHITECTURE (OPTIONAL BUT ENCOURAGED): You have the freedom to split your code into separate files (e.g. index.html, style.css, script.js) if the project is complex. If it's simple, you can keep it all in index.html. Simplify your work!
+1. MULTI-FILE ARCHITECTURE: If the project is simple (landing page, portfolio), keep it in one index.html. If complex (dashboard, shop, multi-page app), split into files (e.g., index.html, style.css, script.js).
 2. If you use separate files, use the exact XML-like format to demarcate files:
 <file path="index.html">
 ...html code here...
@@ -160,9 +160,9 @@ CRITICAL CREATION RULES:
 ...js code here...
 </file>
 
-3. STRICT SPA NAVIGATION: Your script.js (or inline JS) MUST include a router that hides all sections and shows only the active one (e.g. display:none for inactive). DO NOT just anchor-scroll down a long page.
-4. PREMIUM DESIGN: Use Tailwind CSS + Glassmorphism (e.g., bg-white/10 backdrop-blur-xl border border-white/20) + smooth animations + gorgeous gradients + large spacing (p-12, gap-8). NEVER output plain/ugly layouts!
-5. IMAGES: Real Unsplash high-res photos.
+3. STRICT SPA NAVIGATION: Use a JS function like showPage(pageId) that hides all sections and shows only the active one (e.g., display:none for inactive). NEVER use href="page.html".
+4. PREMIUM DESIGN (STUNNING): Use dark theme by default, glassmorphism cards (bg-white/10 backdrop-blur-xl), gorgeous gradient hero sections, and real Unsplash images. Create STUNNING, PREMIUM websites. DO NOT output plain or basic layouts!
+5. REAL DATA: Use real content (names, descriptions, prices). NEVER use Lorem Ipsum.
 
 STRICT OUTPUT RULES:
 1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
@@ -183,22 +183,25 @@ JSON OUTPUT:
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gradient-to-br from-gray-900 to-black text-white">
+<body class="bg-gray-900 text-white min-h-screen">
 ...
 <script src="script.js"></script>
 </body>
 </html>
 </file>
 <file path="style.css">
-.glass { ... }
+.glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
 .page { display: none; }
 .page.active { display: block; animation: fadeIn 0.5s; }
 </file>
 <file path="script.js">
-function showPage(id) { ... }
+function showPage(id) { 
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
 </file>
 `;
             }
@@ -209,15 +212,19 @@ ${imageInstruction}
 
 If user attached an image of a bot flow/diagram — analyze it and create matching nodes.
 
-CRITICAL FEATURE - LIMITLESS CREATION:
-If the user asks for advanced features (databases, crypto, weather, payment processing, math, web requests), you MUST use a "custom_code" block. This block executes raw JS code on the backend!
+CRITICAL CREATION RULES:
+1. If the user writes in Russian or Uzbek, you MUST use Russian or Uzbek text respectively in bot messages.
+2. ALWAYS lay out nodes with proper x/y coordinates. Start node should be at x:100 y:150, and each subsequent node should be placed logically (e.g., y + 200).
+3. Include 5-10 meaningful nodes for ANY bot request. Build a complete flow.
 
-MINI APP / CUSTOM FRONTEND UI (OPTIONAL):
-If the user's bot needs a complex Mini App frontend or custom web UI, you have the freedom to output it AFTER the JSON! You can split it into multiple files (index.html, style.css) or keep it simple.
-Use the exact XML-like format for files:
-<file path="index.html">
-...html code here...
-</file>
+NODE TYPES AND EXACT FORMATS:
+- start: {"id":"node_1", "type":"start", "position":{"x":100,"y":150}, "data":{"label":"Start", "emoji":"▶", "color":"#10d974", "text":"Welcome message"}}
+- message: {"id":"node_2", "type":"message", "position":{"x":100,"y":350}, "data":{"label":"Message", "emoji":"💬", "color":"#1e90ff", "text":"Your message here"}}
+- question: {"id":"node_3", "type":"question", "position":{"x":100,"y":550}, "data":{"label":"Question", "emoji":"❓", "color":"#ffb830", "text":"Ask something", "variable":"user_answer"}}
+- button_group: {"id":"node_4", "type":"button_group", "position":{"x":100,"y":750}, "data":{"label":"Buttons", "emoji":"🔘", "color":"#a855f7", "buttons":[{"label":"Option 1","nextNodeId":"node_5"}]}}
+- condition: {"id":"node_5", "type":"condition", "position":{"x":100,"y":950}, "data":{"label":"Condition", "emoji":"🔀", "color":"#ff6b6b", "variable":"user_answer", "value":"yes"}}
+- api_call: {"id":"node_6", "type":"api_call", "position":{"x":100,"y":1150}, "data":{"label":"API Call", "emoji":"🌐", "color":"#00f5c4", "url":"https://api.example.com/data", "method":"GET", "resultVariable":"api_result"}}
+- custom_code: {"id":"node_7", "type":"custom_code", "position":{"x":100,"y":1350}, "data":{"label":"Custom Code", "emoji":"⚡", "color":"#ff9f43", "code":"return { success: true };"}}
 
 STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then optionally output files:
 {
@@ -228,8 +235,8 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then o
   "explanation": "${isUzbek ? 'Telegram bot va Mini App loyihangiz tayyorlandi!' : isRussian ? 'Логика Telegram-бота успешно создана!' : 'Telegram Bot workflow generated!'}",
   "project_data": {
     "appName": "Bot Name",
-    "bot_blocks": [{"id":"node_start","type":"start","position":{"x":100,"y":150},"data":{"label":"Start","emoji":"▶","color":"#10d974","text":"Salom!"}}],
-    "bot_edges": [{"id":"e1","source":"node_start","target":"node_2"}]
+    "bot_blocks": [{"id":"node_1","type":"start","position":{"x":100,"y":150},"data":{"label":"Start","emoji":"▶","color":"#10d974","text":"Salom!"}}],
+    "bot_edges": [{"id":"e1","source":"node_1","target":"node_2"}]
   }
 }`;
             }
@@ -257,14 +264,15 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then o
                 }
             }
             if (googleKey) {
-                const result = await this.callGemini(googleKey, systemInstruction, promptText, imageBase64, imageMimeType, 0);
-                if (result) {
+                let result = await this.callGemini(googleKey, systemInstruction, promptText, imageBase64, imageMimeType, 0);
+                const isInvalid = !result || (!result.html && !result.files && !(result.project_data?.bot_blocks?.length > 0));
+                if (result && !isInvalid) {
                     this.logger.log(`✅ Gemini success (Mode: ${isEditMode ? 'EDIT' : 'CREATE'} ${isSiteRequest ? 'SITE' : 'BOT'})`);
                     return this.formatResponse(result, isSiteRequest && !isBotRequest, isRussian, isUzbek, isEditMode, existingHtml, currentConfig);
                 }
-                this.logger.warn('⚠️ First Gemini attempt failed — self-healing retry with temp=0.1');
+                this.logger.warn('⚠️ First Gemini attempt returned empty or invalid result — self-healing retry with temp=0.3');
                 const retrySystemInstruction = isSiteRequest
-                    ? systemInstruction + '\n\nCRITICAL: Ensure the JSON is perfectly valid, and the HTML is wrapped in ```html AFTER the JSON.'
+                    ? systemInstruction + '\n\nCRITICAL: Ensure the JSON is perfectly valid, and the HTML is wrapped in <file path="..."> AFTER the JSON.'
                     : systemInstruction + '\n\nCRITICAL: Return ONLY valid JSON. No markdown fences. No extra text.';
                 const retryResult = await this.callGemini(googleKey, retrySystemInstruction, promptText, imageBase64, imageMimeType, 1);
                 if (retryResult) {
@@ -336,7 +344,7 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then o
     }
     async callGemini(apiKey, systemInstruction, userPrompt, imageBase64, imageMimeType, attempt) {
         const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-pro'];
-        const temperature = attempt === 0 ? 0.2 : 0.1;
+        const temperature = attempt === 0 ? 0.7 : 0.3;
         for (const model of models) {
             try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
