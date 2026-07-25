@@ -163,7 +163,10 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
                     return this.formatResponse(result, isSiteRequest && !isBotRequest, isRussian, isUzbek, isEditMode, existingHtml, currentConfig);
                 }
                 this.logger.warn('⚠️ First Gemini attempt failed — self-healing retry with temp=0.1');
-                const retryResult = await this.callGemini(googleKey, systemInstruction + '\n\nCRITICAL: Return ONLY valid JSON. No markdown fences. No extra text.', promptText, imageBase64, imageMimeType, 1);
+                const retrySystemInstruction = isSiteRequest
+                    ? systemInstruction + '\n\nCRITICAL: Ensure the JSON is perfectly valid, and the HTML is wrapped in ```html AFTER the JSON.'
+                    : systemInstruction + '\n\nCRITICAL: Return ONLY valid JSON. No markdown fences. No extra text.';
+                const retryResult = await this.callGemini(googleKey, retrySystemInstruction, promptText, imageBase64, imageMimeType, 1);
                 if (retryResult) {
                     this.logger.log('✅ Self-healing retry succeeded!');
                     return this.formatResponse(retryResult, isSiteRequest && !isBotRequest, isRussian, isUzbek, isEditMode, existingHtml, currentConfig);
@@ -237,7 +240,6 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
                 body: JSON.stringify({
                     contents: [{ parts }],
                     generationConfig: {
-                        responseMimeType: 'application/json',
                         temperature,
                         maxOutputTokens: 16384
                     }

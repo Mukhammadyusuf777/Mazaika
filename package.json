@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/Mukhammadyusuf777/Mazaika/issues"
   },
-  "homepage": "https://github.com/Mukhammadyusuf777/Mazaika#readme"
+  "homepage": "https://github.com/Mukhammadyusuf777/Mazaika#readme",
+  "devDependencies": {
+    "vite": "^8.1.5"
+  }
 }
