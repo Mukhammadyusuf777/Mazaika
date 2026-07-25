@@ -467,7 +467,8 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
             messages: [
               { role: 'system', content: systemInstruction },
               { role: 'user', content: userPrompt }
-            ]
+            ],
+            max_tokens: 8192
           })
         });
 

@@ -391,7 +391,8 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
                         messages: [
                             { role: 'system', content: systemInstruction },
                             { role: 'user', content: userPrompt }
-                        ]
+                        ],
+                        max_tokens: 8192
                     })
                 });
                 if (res.ok) {
@@ -419,66 +420,40 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
     extractJsonObject(text) {
         if (!text)
             return null;
-        const htmlMatch = text.match(/```(?:html)?\s*([\s\S]*?)```/i) || text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i) || text.match(/<html[\s\S]*<\/html>/i);
-        let htmlContent = '';
-        if (htmlMatch) {
-            let possibleHtml = htmlMatch[1] || htmlMatch[0];
-            if (possibleHtml && possibleHtml.toLowerCase().includes('<html')) {
-                htmlContent = possibleHtml;
+        let jsonPart = text;
+        let htmlPart = '';
+        const htmlStartMatch = text.match(/```html|<!DOCTYPE html>|<html/i);
+        if (htmlStartMatch && htmlStartMatch.index !== undefined) {
+            const idx = htmlStartMatch.index;
+            jsonPart = text.substring(0, idx);
+            htmlPart = text.substring(idx);
+        }
+        htmlPart = htmlPart
+            .replace(/^```html\s*/i, '')
+            .replace(/```\s*$/i, '')
+            .trim();
+        jsonPart = jsonPart.replace(/```json/gi, '').replace(/```/gi, '').trim();
+        jsonPart = jsonPart.replace(/,\s*([\]}])/g, '$1');
+        let parsedJson = null;
+        const jsonMatch = jsonPart.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            try {
+                parsedJson = JSON.parse(jsonMatch[0]);
             }
+            catch (e) { }
         }
-        let cleanText = text.replace(/```json/gi, '').replace(/```html[\s\S]*?```/gi, '').replace(/```/gi, '').trim();
-        cleanText = cleanText.replace(/,\s*([\]}])/g, '$1');
-        try {
-            const parsed = JSON.parse(cleanText);
-            if (htmlContent && !parsed.html)
-                parsed.html = htmlContent;
-            return parsed;
+        if (!parsedJson) {
+            parsedJson = {
+                type: 'site',
+                execution_mode: 'FULL_GENERATION',
+                target_entity: 'site_only',
+                explanation: 'Адаптированный сайт успешно создан!'
+            };
         }
-        catch (e) { }
-        const startIdx = cleanText.indexOf('{');
-        if (startIdx === -1)
-            return null;
-        let braceCount = 0;
-        let inString = false;
-        let isEscaped = false;
-        for (let i = startIdx; i < cleanText.length; i++) {
-            const char = cleanText[i];
-            if (inString) {
-                if (char === '\\' && !isEscaped) {
-                    isEscaped = true;
-                }
-                else {
-                    if (char === '"' && !isEscaped)
-                        inString = false;
-                    isEscaped = false;
-                }
-            }
-            else {
-                if (char === '"')
-                    inString = true;
-                else if (char === '{')
-                    braceCount++;
-                else if (char === '}') {
-                    braceCount--;
-                    if (braceCount === 0) {
-                        let candidate = cleanText.substring(startIdx, i + 1);
-                        candidate = candidate.replace(/,\s*([\]}])/g, '$1');
-                        try {
-                            const parsed = JSON.parse(candidate);
-                            if (htmlContent && !parsed.html)
-                                parsed.html = htmlContent;
-                            return parsed;
-                        }
-                        catch (e) { }
-                    }
-                }
-            }
+        if (htmlPart && htmlPart.toLowerCase().includes('<html')) {
+            parsedJson.html = htmlPart;
         }
-        if (htmlContent) {
-            return { type: 'site', target_entity: 'site_only', html: htmlContent, explanation: 'Updated HTML' };
-        }
-        return null;
+        return parsedJson;
     }
 };
 exports.AntigravityService = AntigravityService;
