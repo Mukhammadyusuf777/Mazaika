@@ -96,9 +96,8 @@ USER REQUEST: "${promptText}"
 CRITICAL EDITING INSTRUCTIONS:
 1. You MUST modify the HTML code below according to the user request.
 2. IF the user attached an image — match its design, colors, layout or style as closely as possible.
-3. Return ONLY the full updated HTML — never return the original unchanged.
-4. Keep all existing functionality — only change what was requested.
-5. NEVER truncate the HTML. NEVER use placeholders like <!-- rest of the code -->. You MUST output the entire document from <!DOCTYPE html> to </html>.
+3. Keep all existing functionality — only change what was requested.
+4. NEVER truncate the HTML. You MUST output the entire document from <!DOCTYPE html> to </html>.
 
 CURRENT HTML CODE TO MODIFY:
 \`\`\`html
@@ -106,9 +105,9 @@ ${existingHtml}
 \`\`\`
 
 STRICT OUTPUT RULES:
-1. Return ONLY valid JSON without markdown fences.
-2. "explanation" must be in ${userLang} describing exactly what changed.
-3. HTML must be complete, valid, with DOCTYPE.
+1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
+2. Then, AFTER the JSON, output the full updated HTML wrapped in a ```html code block!
+3. Do NOT put the HTML inside the JSON object!
 
 JSON FORMAT:
 {
@@ -116,9 +115,12 @@ JSON FORMAT:
   "execution_mode": "FULL_GENERATION",
   "target_entity": "site_only",
   "title": "Updated Site",
-  "explanation": "Specific description of changes made...",
-  "html": "<!DOCTYPE html><html>...FULL UPDATED HTML...</html>"
-}`;
+  "explanation": "Specific description of changes made..."
+}
+
+```html
+<!DOCTYPE html><html>...FULL UPDATED HTML...</html>
+````;
 
       } else if (isSiteRequest && !isBotRequest) {
         // --- SITE CREATION MODE ---
@@ -134,17 +136,25 @@ CRITICAL CREATION RULES:
 4. IMAGES: Real Unsplash high-res photos.
 5. If user attached an image — match that design style, layout, and color palette.
 6. HTML must be at least 200 lines, complete, with all CSS and JS inline.
-7. NEVER truncate the HTML. NEVER use placeholders like <!-- rest of the code -->. You MUST output the entire document from <!DOCTYPE html> to </html>.
+7. NEVER truncate the HTML. You MUST output the entire document from <!DOCTYPE html> to </html>.
 
-JSON OUTPUT (no markdown fences):
+STRICT OUTPUT RULES:
+1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
+2. Then, AFTER the JSON, output the full generated HTML wrapped in a ```html code block!
+3. Do NOT put the HTML inside the JSON object!
+
+JSON OUTPUT:
 {
   "type": "site",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "site_only",
   "title": "Site Title",
-  "explanation": "${isUzbek ? 'Mobil va PC uchun moslashuvchan premium sayt yaratildi!' : isRussian ? 'Адаптированный сайт успешно создан!' : 'Responsive website generated!'}",
-  "html": "<!DOCTYPE html><html>...COMPLETE HTML...</html>"
-}`;
+  "explanation": "${isUzbek ? 'Mobil va PC uchun moslashuvchan premium sayt yaratildi!' : isRussian ? 'Адаптированный сайт успешно создан!' : 'Responsive website generated!'}"
+}
+
+```html
+<!DOCTYPE html><html>...COMPLETE HTML...</html>
+````;
 
       } else {
         // --- BOT CREATION/EDIT MODE ---
@@ -365,14 +375,20 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
 
   private extractJsonObject(text: string): any {
     if (!text) return null;
-    let cleanText = text.replace(/```json/gi, '').replace(/```/gi, '').trim();
 
-    // ✅ SELF-HEALING: Check for validation marker the AI may have added
-    // If AI added <!-- VALIDATION_CHECK --> it means it was uncertain — we flag this
-    // (handled at call site via retry logic)
+    // Check for HTML block outside JSON
+    const htmlMatch = text.match(/```html\s*([\s\S]*?)\s*```/i) || text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i);
+    let htmlContent = '';
+    if (htmlMatch) {
+      htmlContent = htmlMatch[1] || htmlMatch[0];
+    }
+
+    let cleanText = text.replace(/```json/gi, '').replace(/```html[\s\S]*?```/gi, '').replace(/```/gi, '').trim();
 
     try {
-      return JSON.parse(cleanText);
+      const parsed = JSON.parse(cleanText);
+      if (htmlContent && !parsed.html) parsed.html = htmlContent;
+      return parsed;
     } catch (e) {}
 
     const startIdx = cleanText.indexOf('{');
@@ -398,11 +414,21 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
           braceCount--;
           if (braceCount === 0) {
             const candidate = cleanText.substring(startIdx, i + 1);
-            try { return JSON.parse(candidate); } catch (e) {}
+            try { 
+              const parsed = JSON.parse(candidate); 
+              if (htmlContent && !parsed.html) parsed.html = htmlContent;
+              return parsed;
+            } catch (e) {}
           }
         }
       }
     }
+    
+    // If we have HTML but failed to parse JSON, return at least the HTML
+    if (htmlContent) {
+      return { type: 'site', target_entity: 'site_only', html: htmlContent, explanation: 'Updated HTML' };
+    }
+    
     return null;
   }
 }

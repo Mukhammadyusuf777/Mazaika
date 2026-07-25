@@ -8,7 +8,7 @@ import { auth } from '../../api/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { getBotsByUser, createBot, deleteBot, createOrUpdateUser } from '../../api/firestore'
 import { useTranslation } from '../../hooks/useTranslation'
-import { Language } from '../../i18n/translations'
+import type { Language } from '../../i18n/translations'
 import './DashboardPage.css'
 
 const TEMPLATES = [
@@ -216,7 +216,7 @@ export default function DashboardPage() {
           <div className="dash-user-info">
             <div className="dash-user-name">{user?.name || 'Foydalanuvchi'}</div>
             <div className="dash-user-plan">
-              {botProjects.length > 0 ? (
+              {(user as any)?.subscription === 'pro' || (user as any)?.subscription === 'business' ? (
                 <span className="badge badge-aqua">Pro</span>
               ) : (
                 <span className="badge" style={{ background: 'var(--bg-glass-light)', color: 'var(--text-muted)' }}>Free</span>

@@ -4,7 +4,7 @@ import { Save, Copy, RefreshCw, AlertTriangle, Globe, Zap, CheckCircle, XCircle,
 import { getBotById, updateBot, deleteBot } from '../../api/firestore'
 import { apiClient } from '../../api/apiClient'
 import { useTranslation } from '../../hooks/useTranslation'
-import { Language } from '../../i18n/translations'
+import type { Language } from '../../i18n/translations'
 
 export default function BotSettingsPage() {
   const { botId } = useParams<{ botId: string }>()

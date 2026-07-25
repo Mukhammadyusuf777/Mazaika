@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { Sparkles, Loader2 } from 'lucide-react'
 import './LandingPage.css'
-
-type Language = 'UZ' | 'RU' | 'EN'
 
 const TRANSLATIONS = {
   UZ: {
@@ -295,199 +295,86 @@ const TRANSLATIONS = {
   }
 }
 
-const BLOCK_TYPES = [
-  { name: 'Start', color: '#10d974', emoji: '▶' },
-  { name: 'Message', color: '#1e90ff', emoji: '💬' },
-  { name: 'AI Reply', color: '#a855f7', emoji: '🧠' },
-  { name: 'Condition', color: '#ffb830', emoji: '🔀' },
-  { name: 'Delay', color: '#64748b', emoji: '⏱' },
-  { name: 'Payment', color: '#10d974', emoji: '💳' },
-  { name: 'HTTP', color: '#06b6d4', emoji: '🌐' },
-  { name: 'Google Sheet', color: '#34a853', emoji: '📊' },
-  { name: 'Webhook', color: '#f97316', emoji: '🔗' },
-  { name: 'Stars', color: '#fbbf24', emoji: '⭐' },
-  { name: 'Video', color: '#6366f1', emoji: '🎬' },
-  { name: 'Poll', color: '#f97316', emoji: '📊' },
-]
-
 export default function LandingPage() {
   const navigate = useNavigate()
-  const [lang, setLang] = useState<Language>(() => {
-    return (localStorage.getItem('mazaika_lang') as Language) || 'UZ'
-  })
+  const [lang, setLang] = useState<keyof typeof TRANSLATIONS>('UZ')
+  
+  useEffect(() => {
+    const saved = localStorage.getItem('mazaika_lang') as keyof typeof TRANSLATIONS
+    if (saved && TRANSLATIONS[saved]) setLang(saved)
+  }, [])
 
   const t = TRANSLATIONS[lang]
 
-  useEffect(() => {
-    localStorage.setItem('mazaika_lang', lang)
-  }, [lang])
-
-  // Intersection Observer for animations
-  useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible')
-        }
-      })
-    }, { threshold: 0.1 })
-
-    document.querySelectorAll('.animate-on-scroll').forEach((el) => {
-      observer.observe(el)
-    })
-
-    return () => observer.disconnect()
-  }, [])
-
   return (
-    <div className="landing-premium">
-      {/* Background Effects */}
-      <div className="bg-effects">
-        <div className="bg-orb orb-1"></div>
-        <div className="bg-orb orb-2"></div>
-        <div className="bg-orb orb-3"></div>
-      </div>
-
-      <div className="landing-grid-bg"></div>
-
-      {/* ===== NAVBAR ===== */}
-      <nav className="landing-nav-premium">
-        <div className="nav-container">
-          <div className="nav-logo">
-            <div className="nav-logo-icon">
-              <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
-                <rect x="2" y="2" width="10" height="10" rx="3" fill="#1e90ff"/>
-                <rect x="16" y="2" width="10" height="10" rx="3" fill="#00f5c4" opacity="0.8"/>
-                <rect x="2" y="16" width="10" height="10" rx="3" fill="#00f5c4" opacity="0.8"/>
-                <rect x="16" y="16" width="10" height="10" rx="3" fill="#1e90ff" opacity="0.5"/>
-              </svg>
-            </div>
-            <span className="nav-logo-text">Mazaika</span>
-          </div>
-          <div className="nav-links">
+    <div className="landing-page">
+      <motion.header className="l-header" initial={{ y: -100 }} animate={{ y: 0 }}>
+        <div className="l-container header-inner">
+          <div className="l-logo">Mazaika</div>
+          <nav className="l-nav-desktop">
             <a href="#features">{t.navFeatures}</a>
-            <a href="#blocks">{t.navBlocks}</a>
+            <a href="#ai-agent">Mazaika AI 🚀</a>
             <a href="#pricing">{t.navPricing}</a>
-          </div>
-          <div className="nav-actions">
-            <div className="lang-switcher">
-              {(['UZ', 'RU', 'EN'] as Language[]).map(l => (
-                <button
-                  key={l}
-                  className={`lang-btn ${lang === l ? 'active' : ''}`}
-                  onClick={() => setLang(l)}
-                >
-                  {l}
-                </button>
+          </nav>
+          <div className="l-header-actions">
+            <div className="l-lang-switcher">
+              {(['UZ', 'RU', 'EN'] as const).map(l => (
+                <button key={l} className={lang === l ? 'active' : ''} onClick={() => { setLang(l); localStorage.setItem('mazaika_lang', l) }}>{l}</button>
               ))}
             </div>
-            <button className="btn-login" onClick={() => navigate('/login')}>{t.navLogin}</button>
-            <button className="btn-primary-neon" onClick={() => navigate('/register')}>{t.navStart}</button>
+            <button onClick={() => navigate('/register')}>{t.navStart}</button>
           </div>
         </div>
-      </nav>
+      </motion.header>
 
-      {/* ===== HERO ===== */}
-      <section className="hero-premium">
-        <div className="hero-content">
-          <div className="hero-badge animate-fade-in-up">
-            <span className="badge-text">{t.heroBadge}</span>
-          </div>
-          <h1 className="hero-title animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-            {t.heroTitleLine1}<br />
-            <span className="gradient-text-neon">Mazaika</span> {t.heroTitleLine2}
-          </h1>
-          <p className="hero-desc animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-            {t.heroDesc}
-          </p>
-          <div className="hero-cta animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-            <button className="btn-primary-neon large" onClick={() => navigate('/register')}>
-              {t.heroCtaFree}
-            </button>
-            <button className="btn-secondary-glass large" onClick={() => navigate('/dashboard')}>
-              {t.heroCtaDemo}
+      <section className="l-hero">
+        <motion.div className="l-container l-hero-content" initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+          <motion.div className="l-hero-badge">{t.heroBadge}</motion.div>
+          <h1 className="l-hero-title">{t.heroTitleLine1} <span className="l-gradient-text">Lego</span> {t.heroTitleLine2}</h1>
+          <p className="l-hero-desc">{t.heroDesc}</p>
+          <div className="l-hero-cta">
+            <button className="l-btn-primary" onClick={() => navigate('/register')}>{t.heroCtaFree}</button>
+            <button className="l-btn-secondary" onClick={() => document.getElementById('ai-agent')?.scrollIntoView({ behavior: 'smooth' })}>
+              <Sparkles size={18} /> {t.heroCtaDemo}
             </button>
           </div>
-          
-          <div className="hero-stats animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
-            <div className="stat-item">
-              <span className="stat-num">50+</span>
-              <span className="stat-label">{t.statBlocks}</span>
-            </div>
-            <div className="stat-divider"></div>
-            <div className="stat-item">
-              <span className="stat-num">3</span>
-              <span className="stat-label">{t.statLangs}</span>
-            </div>
-            <div className="stat-divider"></div>
-            <div className="stat-item">
-              <span className="stat-num">0</span>
-              <span className="stat-label">{t.statCode}</span>
-            </div>
-          </div>
-        </div>
+        </motion.div>
+      </section>
 
-        {/* 3D Flow Preview */}
-        <div className="hero-3d-wrapper animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
-          <div className="hero-3d-scene">
-            <div className="node-3d node-start">
-              <div className="node-icon" style={{ background: '#10d97422', color: '#10d974' }}>▶</div>
-              <span>Start</span>
-            </div>
-            <div className="node-3d node-msg">
-              <div className="node-icon" style={{ background: '#1e90ff22', color: '#1e90ff' }}>💬</div>
-              <span>Welcome</span>
-            </div>
-            <div className="node-3d node-ai">
-              <div className="node-icon" style={{ background: '#a855f722', color: '#a855f7' }}>🧠</div>
-              <span>AI Agent</span>
-            </div>
-            <div className="node-3d node-pay">
-              <div className="node-icon" style={{ background: '#fbbf2422', color: '#fbbf24' }}>⭐</div>
-              <span>Stars Pay</span>
-            </div>
-            
-            {/* Glowing Connections */}
-            <svg className="connections-3d" viewBox="0 0 600 400">
-              <path d="M 150 100 C 200 100 200 150 250 150" className="path-glow" stroke="#1e90ff" />
-              <path d="M 350 150 C 400 150 350 80 420 80" className="path-glow" stroke="#a855f7" />
-              <path d="M 350 150 C 400 150 350 220 420 220" className="path-glow" stroke="#fbbf24" />
-            </svg>
+      <section id="ai-agent" className="l-ai-section">
+        <div className="l-container">
+          <div className="l-ai-grid">
+            <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+              <h2>Mazaika AI Architect</h2>
+              <p>{lang === 'UZ' ? 'Faqat so\'z bilan tushuntiring, AI yaratadi.' : lang === 'RU' ? 'Просто объясните словами, AI создаст всё сам.' : 'Just explain in words, AI will create it.'}</p>
+              <ul>
+                <li><Sparkles size={16}/> {lang === 'UZ' ? 'Matndan bot yaratish' : lang === 'RU' ? 'Создание ботов из текста' : 'Text to Bot'}</li>
+              </ul>
+            </motion.div>
+            <motion.div className="ai-mockup" initial={{ scale: 0.9 }} whileInView={{ scale: 1 }}>
+              <div className="chat-msg ai"><div className="bubble"><Loader2 size={14} className="spin" /> {lang === 'UZ' ? 'Kod yozmoqdaman...' : 'Writing code...'}</div></div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* ===== BLOCK TYPES MARQUEE ===== */}
-      <section className="marquee-premium">
-        <div className="marquee-track">
-          {[...BLOCK_TYPES, ...BLOCK_TYPES, ...BLOCK_TYPES].map((b, i) => (
-            <div key={i} className="marquee-chip-premium" style={{ '--color': b.color } as any}>
-              <div className="marquee-icon">{b.emoji}</div>
-              <span className="marquee-text">{b.name}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ===== FEATURES ===== */}
-      <section className="features-premium" id="features">
+      <section className="features-premium">
         <div className="container">
-          <div className="section-header animate-on-scroll">
-            <div className="badge-glow">{t.featBadge}</div>
-            <h2>{t.featTitleLine1} <span className="gradient-text-neon">{t.featTitleLine2}</span></h2>
-            <p>{t.featDesc}</p>
-          </div>
-          
           <div className="features-grid">
-            {t.features.map((f, i) => (
-              <div key={i} className="feature-card-premium animate-on-scroll" style={{ transitionDelay: `${i * 100}ms` }}>
-                <div className="feature-icon-wrapper">
-                  <span className="feature-emoji">{f.icon}</span>
-                </div>
+            {t.features.map((f, idx) => (
+              <motion.div 
+                key={idx} 
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: idx * 0.1 }}
+                whileHover={{ y: -5 }}
+                className="l-feature-card"
+              >
+                <span>{f.icon}</span>
                 <h3>{f.title}</h3>
                 <p>{f.desc}</p>
-                <div className="card-border-gradient"></div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>

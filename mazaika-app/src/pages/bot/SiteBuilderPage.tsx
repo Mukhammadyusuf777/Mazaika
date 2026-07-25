@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   Globe, Save, Eye, CheckCircle, Sparkles, Bot, Loader2, Send,
-  Copy, Check, RefreshCw, Zap, ExternalLink, Laptop, Smartphone,
+  Copy, Check, RefreshCw, Zap, Laptop, Smartphone,
   Sliders, X, ImagePlus, AlertCircle
 } from 'lucide-react'
 

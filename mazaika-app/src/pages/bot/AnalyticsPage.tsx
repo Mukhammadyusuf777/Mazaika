@@ -45,9 +45,6 @@ export default function AnalyticsPage() {
             chartDataMap.set(dateStr, { name: dayName, dateStr, users: 0, msgs: 0 });
           }
 
-          let todayMessages = 0;
-          const todayStr = now.toISOString().split('T')[0];
-
           for (const contact of contacts) {
             if (contact.createdAt) {
               const d = contact.createdAt.toDate ? contact.createdAt.toDate() : new Date(contact.createdAt);
