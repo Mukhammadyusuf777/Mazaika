@@ -53,9 +53,6 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                 isBotRequest = BOT_KEYWORDS.some(k => lowerPrompt.includes(k)) && !isExplicitSite;
                 isSiteRequest = isExplicitSite || hasExistingHtml || (hasImage && !isBotRequest);
             }
-            const googleKey = (process.env.GOOGLE_AI_STUDIO_KEY ||
-                process.env.GEMINI_API_KEY ||
-                '').trim();
             const historyContext = chatHistory.length > 0
                 ? `\n\nPrevious conversation:\n${chatHistory.slice(-5).map(m => `${m.role === 'user' ? 'User' : 'Antigravity'}: ${m.content}`).join('\n')}\n`
                 : '';
@@ -144,8 +141,6 @@ If user attached an image of a bot flow/diagram — analyze it and create matchi
 
 CRITICAL FEATURE - LIMITLESS CREATION:
 If the user asks for advanced features (databases, crypto, weather, payment processing, math, web requests), you MUST use a "custom_code" block. This block executes raw JS code on the backend!
-Example of custom_code block:
-{"id":"node_2","type":"custom_code","position":{"x":300,"y":150},"data":{"label":"Process Payment","code":"const price = 100;\\nreturn price * 2;","color":"#f59e0b"}}
 
 STRICT RULE: Return ONLY a valid JSON object without markdown fences:
 {
@@ -160,6 +155,29 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
     "bot_edges": [{"id":"e1","source":"node_start","target":"node_2"}]
   }
 }`;
+            }
+            const cfAccountId = (rawInput?.cfAccountId ||
+                process.env.CLOUDFLARE_ACCOUNT_ID ||
+                process.env.CF_ACCOUNT_ID ||
+                '').trim();
+            const cfApiToken = (rawInput?.cfApiToken ||
+                process.env.CLOUDFLARE_API_TOKEN ||
+                process.env.CF_API_TOKEN ||
+                '').trim();
+            const googleKey = (rawInput?.googleKey ||
+                process.env.GOOGLE_AI_STUDIO_KEY ||
+                process.env.GEMINI_API_KEY ||
+                '').trim();
+            const openrouterKey = (rawInput?.openrouterKey ||
+                process.env.OPENROUTER_API_KEY ||
+                '').trim();
+            if (cfAccountId && cfApiToken) {
+                this.logger.log('⚡ Attempting Cloudflare Workers AI...');
+                const cfResult = await this.callCloudflareAI(cfAccountId, cfApiToken, systemInstruction, promptText);
+                if (cfResult) {
+                    this.logger.log(`✅ Cloudflare Workers AI success (Mode: ${isEditMode ? 'EDIT' : 'CREATE'} ${isSiteRequest ? 'SITE' : 'BOT'})`);
+                    return this.formatResponse(cfResult, isSiteRequest && !isBotRequest, isRussian, isUzbek, isEditMode, existingHtml, currentConfig);
+                }
             }
             if (googleKey) {
                 const result = await this.callGemini(googleKey, systemInstruction, promptText, imageBase64, imageMimeType, 0);
@@ -177,7 +195,6 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
                     return this.formatResponse(retryResult, isSiteRequest && !isBotRequest, isRussian, isUzbek, isEditMode, existingHtml, currentConfig);
                 }
             }
-            const openrouterKey = (process.env.OPENROUTER_API_KEY || '').trim();
             if (openrouterKey && openrouterKey.length > 10) {
                 try {
                     this.logger.log('🔄 Attempting OpenRouter fallback...');
@@ -353,6 +370,51 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
                 site_blocks: projectData.site_blocks?.length ? projectData.site_blocks : (currentConfig?.site_blocks || [])
             }
         };
+    }
+    async callCloudflareAI(accountId, apiToken, systemInstruction, userPrompt) {
+        const models = [
+            '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+            '@cf/meta/llama-3.1-70b-instruct',
+            '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
+            '@cf/qwen/qwen1.5-14b-chat'
+        ];
+        for (const model of models) {
+            try {
+                const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        messages: [
+                            { role: 'system', content: systemInstruction },
+                            { role: 'user', content: userPrompt }
+                        ]
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const text = data.result?.response;
+                    if (text) {
+                        const parsed = this.extractJsonObject(text);
+                        if (parsed) {
+                            this.logger.log(`✅ Cloudflare Workers AI (${model}) succeeded!`);
+                            return parsed;
+                        }
+                    }
+                }
+                else {
+                    const errText = await res.text().catch(() => '');
+                    this.logger.warn(`Cloudflare AI ${model} HTTP ${res.status}: ${errText.substring(0, 150)}`);
+                }
+            }
+            catch (e) {
+                this.logger.warn(`Cloudflare AI ${model} error: ${e.message}`);
+            }
+        }
+        return null;
     }
     extractJsonObject(text) {
         if (!text)

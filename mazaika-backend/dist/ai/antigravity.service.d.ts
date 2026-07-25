@@ -11,5 +11,6 @@ export declare class AntigravityService {
     private callGemini;
     generatePatch(promptText: string, currentPageUrl?: string, selectedBlockId?: string | null, currentConfig?: any): Promise<any>;
     private formatResponse;
+    private callCloudflareAI;
     private extractJsonObject;
 }
