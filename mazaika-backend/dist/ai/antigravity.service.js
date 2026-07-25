@@ -77,8 +77,8 @@ USER REQUEST: "${promptText}"
 CRITICAL INSTRUCTIONS:
 1. You MUST expand and continue building the site, adding new pages, sections, or logic requested.
 2. The user has provided the existing codebase in <file> tags below.
-3. MULTI-FILE ARCHITECTURE IS MANDATORY. You must output the ENTIRE updated files using <file path="...">...</file>.
-4. Keep CSS in style.css and JS in script.js. Do not merge them back into index.html!
+3. MULTI-FILE ARCHITECTURE (OPTIONAL BUT ENCOURAGED): You have the freedom to split your code into separate files like style.css and script.js if the project is complex. If it's simple, you can keep it in index.html.
+4. Output the ENTIRE updated files using <file path="...">...</file>.
 
 CURRENT FILES TO MODIFY:
 ${filesContext}
@@ -117,7 +117,7 @@ CRITICAL EDITING INSTRUCTIONS:
 2. IF the user attached an image — match its design, colors, layout or style as closely as possible.
 3. Keep all existing functionality — only change what was requested.
 4. SPA NAVIGATION: NEVER use href="/" or href="page.html" in <a> tags! Use a JS function to hide/show sections.
-5. MULTI-FILE ARCHITECTURE IS MANDATORY. You must separate HTML, CSS, and JS using <file path="...">...</file> blocks. Do not merge CSS/JS into index.html!
+5. MULTI-FILE ARCHITECTURE (OPTIONAL BUT ENCOURAGED): You have the freedom to split HTML, CSS, and JS using <file path="...">...</file> blocks if it simplifies the project.
 
 CURRENT FILES TO MODIFY:
 ${filesContext}
@@ -148,10 +148,8 @@ ${historyContext}
 ${imageInstruction}
 
 CRITICAL CREATION RULES:
-1. MULTI-FILE ARCHITECTURE IS MANDATORY: You MUST split your code into separate files. 
-2. NEVER use <style> tags in index.html! ALL CSS MUST go into <file path="style.css">.
-3. NEVER write inline JS logic in index.html! ALL JS MUST go into <file path="script.js">.
-4. Use the exact XML-like format to demarcate files:
+1. MULTI-FILE ARCHITECTURE (OPTIONAL BUT ENCOURAGED): You have the freedom to split your code into separate files (e.g. index.html, style.css, script.js) if the project is complex. If it's simple, you can keep it all in index.html. Simplify your work!
+2. If you use separate files, use the exact XML-like format to demarcate files:
 <file path="index.html">
 ...html code here...
 </file>
@@ -162,15 +160,14 @@ CRITICAL CREATION RULES:
 ...js code here...
 </file>
 
-5. STRICT SPA NAVIGATION: Your script.js MUST include a router that hides all sections and shows only the active one (e.g. display:none for inactive). DO NOT just anchor-scroll down a long page.
-6. PREMIUM DESIGN: Use Tailwind CSS + Glassmorphism (e.g., bg-white/10 backdrop-blur-xl border border-white/20) + smooth animations + gorgeous gradients + large spacing (p-12, gap-8). NEVER output plain/ugly layouts!
-7. IMAGES: Real Unsplash high-res photos.
+3. STRICT SPA NAVIGATION: Your script.js (or inline JS) MUST include a router that hides all sections and shows only the active one (e.g. display:none for inactive). DO NOT just anchor-scroll down a long page.
+4. PREMIUM DESIGN: Use Tailwind CSS + Glassmorphism (e.g., bg-white/10 backdrop-blur-xl border border-white/20) + smooth animations + gorgeous gradients + large spacing (p-12, gap-8). NEVER output plain/ugly layouts!
+5. IMAGES: Real Unsplash high-res photos.
 
 STRICT OUTPUT RULES:
 1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
 2. Then, AFTER the JSON, output all the files wrapped in <file path="...">...</file> blocks.
 3. Do NOT put the HTML/CSS inside the JSON object!
-4. If you fail to separate files into index.html, style.css, and script.js, the system will crash!
 
 JSON OUTPUT:
 {
@@ -215,7 +212,14 @@ If user attached an image of a bot flow/diagram — analyze it and create matchi
 CRITICAL FEATURE - LIMITLESS CREATION:
 If the user asks for advanced features (databases, crypto, weather, payment processing, math, web requests), you MUST use a "custom_code" block. This block executes raw JS code on the backend!
 
-STRICT RULE: Return ONLY a valid JSON object without markdown fences:
+MINI APP / CUSTOM FRONTEND UI (OPTIONAL):
+If the user's bot needs a complex Mini App frontend or custom web UI, you have the freedom to output it AFTER the JSON! You can split it into multiple files (index.html, style.css) or keep it simple.
+Use the exact XML-like format for files:
+<file path="index.html">
+...html code here...
+</file>
+
+STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then optionally output files:
 {
   "type": "bot_and_mini_app",
   "execution_mode": "FULL_GENERATION",
