@@ -92,6 +92,17 @@ export default function ChatsPage() {
           <h2>Chatlar</h2>
           <span className="badge badge-aqua">{contacts.length} ta faol</span>
         </div>
+        <div style={{ padding: '0 16px 12px 16px' }}>
+          <input 
+            type="text" 
+            className="input" 
+            placeholder="Kontaktlarni qidirish..." 
+            style={{ width: '100%', padding: '8px 12px', fontSize: 13 }}
+            onChange={_e => {
+              // Basic search implementation would go here
+            }}
+          />
+        </div>
         <div className="chats-list">
           {contacts.map(contact => {
             let lastOrderTotal = ''
@@ -107,16 +118,19 @@ export default function ChatsPage() {
                 onClick={() => setActiveContactId(contact.id)}
               >
                 <div className="chat-avatar">
-                  <User size={20} />
+                  {contact.firstName ? contact.firstName.charAt(0).toUpperCase() : <User size={20} />}
                 </div>
                 <div className="chat-info" style={{ flex: 1, minWidth: 0 }}>
                   <div className="chat-name-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span className="chat-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {contact.firstName} {contact.lastName}
                     </span>
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                      {new Date(contact.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
                   <div className="chat-msg-row" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span className="chat-msg" style={{ fontSize: 11, color: 'var(--text-muted)' }}>ID: {contact.telegramId}</span>
+                    <span className="chat-msg" style={{ fontSize: 12, color: 'var(--text-muted)' }}>ID: {contact.telegramId}</span>
                     {lastOrderTotal && (
                       <span style={{ 
                         display: 'inline-flex', alignItems: 'center', gap: 4, 

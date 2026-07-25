@@ -148,7 +148,10 @@ export default function AppLayout() {
                 <>
                   <Bot size={18} style={{ color: 'var(--accent-blue)' }} />
                   <span style={{ fontWeight: 600, fontSize: '13px' }}>{projectName}</span>
-                  <span className="badge badge-aqua" style={{ fontSize: '9px', padding: '1px 6px' }}>Faol</span>
+                  <span className="badge badge-aqua" style={{ fontSize: '9px', padding: '1px 6px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10d974' }}></span>
+                    Faol
+                  </span>
                 </>
               )}
             </div>

@@ -1,7 +1,6 @@
-
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Sparkles, Loader2 } from 'lucide-react'
+import { Sparkles, Loader2, Bot, Zap, Code2, Smartphone } from 'lucide-react'
 import { useTranslation } from '../hooks/useTranslation'
 import './LandingPage.css'
 
@@ -304,6 +303,11 @@ export default function LandingPage() {
 
   return (
     <div className="landing-page">
+      <div className="l-animated-orb l-orb-1"></div>
+      <div className="l-animated-orb l-orb-2"></div>
+      <div className="l-animated-orb l-orb-3"></div>
+      <div className="l-animated-orb l-orb-4"></div>
+
       <motion.header className="l-header" initial={{ y: -100 }} animate={{ y: 0 }}>
         <div className="l-container header-inner">
           <div className="l-logo">Mazaika</div>
@@ -325,14 +329,45 @@ export default function LandingPage() {
 
       <section className="l-hero">
         <motion.div className="l-container l-hero-content" initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-          <motion.div className="l-hero-badge">{t.heroBadge}</motion.div>
-          <h1 className="l-hero-title">{t.heroTitleLine1} <span className="l-gradient-text">Lego</span> {t.heroTitleLine2}</h1>
+          <motion.div className="l-hero-badge"><Zap size={16} /> {t.heroBadge}</motion.div>
+          <h1 className="l-hero-title">
+            {t.heroTitleLine1} <br/>
+            <span className="l-gradient-text">Lego</span> <span className="l-gradient-text-2">{t.heroTitleLine2}</span>
+          </h1>
           <p className="l-hero-desc">{t.heroDesc}</p>
           <div className="l-hero-cta">
             <button className="l-btn-primary" onClick={() => navigate('/register')}>{t.heroCtaFree}</button>
             <button className="l-btn-secondary" onClick={() => document.getElementById('ai-agent')?.scrollIntoView({ behavior: 'smooth' })}>
-              <Sparkles size={18} /> {t.heroCtaDemo}
+              <Sparkles size={20} /> {t.heroCtaDemo}
             </button>
+          </div>
+        </motion.div>
+        
+        <motion.div 
+          className="l-stats-row"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="l-stat-item">
+            <Bot size={24} className="l-stat-icon" />
+            <span className="l-stat-value">50+</span>
+            <span className="l-stat-label">Bloklar</span>
+          </div>
+          <div className="l-stat-item">
+            <Smartphone size={24} className="l-stat-icon" />
+            <span className="l-stat-value">3</span>
+            <span className="l-stat-label">Til</span>
+          </div>
+          <div className="l-stat-item">
+            <Sparkles size={24} className="l-stat-icon" />
+            <span className="l-stat-value">AI</span>
+            <span className="l-stat-label">Generatsiya</span>
+          </div>
+          <div className="l-stat-item">
+            <Code2 size={24} className="l-stat-icon" />
+            <span className="l-stat-value">Tayyor</span>
+            <span className="l-stat-label">Telegram</span>
           </div>
         </motion.div>
       </section>
@@ -341,30 +376,64 @@ export default function LandingPage() {
         <div className="l-container">
           <div className="l-ai-grid">
             <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+              <div className="l-section-badge"><Sparkles size={14} style={{ display: 'inline', verticalAlign: 'text-bottom' }}/> AI Yordamchi</div>
               <h2>Mazaika AI Architect</h2>
-              <p>{lang === 'UZ' ? 'Faqat so\'z bilan tushuntiring, AI yaratadi.' : lang === 'RU' ? 'Просто объясните словами, AI создаст всё сам.' : 'Just explain in words, AI will create it.'}</p>
+              <p>{lang === 'UZ' ? 'Faqat so\'z bilan tushuntiring, AI yaratadi. Kod yozish shart emas.' : lang === 'RU' ? 'Просто объясните словами, AI создаст всё сам.' : 'Just explain in words, AI will create it.'}</p>
               <ul>
-                <li><Sparkles size={16}/> {lang === 'UZ' ? 'Matndan bot yaratish' : lang === 'RU' ? 'Создание ботов из текста' : 'Text to Bot'}</li>
+                <li><Sparkles size={20}/> {lang === 'UZ' ? 'Matndan bot yaratish' : lang === 'RU' ? 'Создание ботов из текста' : 'Text to Bot'}</li>
+                <li><Bot size={20}/> {lang === 'UZ' ? 'Bloklarni avtomatik ulash' : lang === 'RU' ? 'Авто-соединение блоков' : 'Auto block linking'}</li>
               </ul>
             </motion.div>
-            <motion.div className="ai-mockup" initial={{ scale: 0.9 }} whileInView={{ scale: 1 }}>
-              <div className="chat-msg ai"><div className="bubble"><Loader2 size={14} className="spin" /> {lang === 'UZ' ? 'Kod yozmoqdaman...' : 'Writing code...'}</div></div>
+            
+            <motion.div className="ai-mockup" initial={{ scale: 0.95, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }}>
+              <div className="ai-mockup-header">
+                <div className="ai-mockup-dots"><span></span><span></span><span></span></div>
+                <div className="ai-mockup-title">Mazaika AI Agent</div>
+              </div>
+              <div className="ai-mockup-body">
+                <div className="chat-msg user">
+                  <div className="bubble">Qahvaxona uchun buyurtma oladigan bot yasab ber. Menyu va to'lov ulangan bo'lsin.</div>
+                </div>
+                <div className="chat-msg ai">
+                  <div className="bubble">
+                    <div className="ai-icon-wrap"><Sparkles size={16} color="white" /></div>
+                    <div>
+                      <div>Tushundim! Qahvaxona botini yaratmoqdaman...</div>
+                      <div className="ai-code-block">
+                        <div><span className="keyword">const</span> flow <span className="keyword">=</span> <span className="function">createBotFlow</span>({'{'}</div>
+                        <div>  name: <span className="string">'CoffeeShopBot'</span>,</div>
+                        <div>  steps: [<span className="string">'Greeting'</span>, <span className="string">'Menu'</span>, <span className="string">'Payment'</span>]</div>
+                        <div>{'}'});</div>
+                        <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Loader2 size={12} className="spin" color="#a855f7" /> 
+                          <span style={{ color: '#a855f7' }}>Sxema chizilmoqda...</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </motion.div>
           </div>
         </div>
       </section>
 
-      <section className="features-premium">
+      <section className="features-premium" id="features">
         <div className="container">
+          <div className="section-header">
+            <div className="l-section-badge"><Zap size={14} style={{ display: 'inline', verticalAlign: 'text-bottom' }}/> {t.featBadge.replace('✨ ', '')}</div>
+            <h2>{t.featTitleLine1} <span className="gradient-text-neon">{t.featTitleLine2}</span></h2>
+            <p>{t.featDesc}</p>
+          </div>
+          
           <div className="features-grid">
             {t.features.map((f, idx) => (
               <motion.div 
                 key={idx} 
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                viewport={{ once: true, margin: "-100px" }}
                 transition={{ delay: idx * 0.1 }}
-                whileHover={{ y: -5 }}
                 className="l-feature-card"
               >
                 <span>{f.icon}</span>
@@ -380,14 +449,21 @@ export default function LandingPage() {
       <section className="pricing-premium" id="pricing">
         <div className="container">
           <div className="section-header animate-on-scroll">
-            <div className="badge-glow">💰 {t.priceBadge.replace('💰 ', '')}</div>
+            <div className="l-section-badge">💰 {t.priceBadge.replace('💰 ', '')}</div>
             <h2>{t.priceTitleLine1} <span className="gradient-text-neon">{t.priceTitleLine2}</span> {t.priceTitleLine3}</h2>
             <p>{t.priceDesc}</p>
           </div>
 
           <div className="pricing-cards">
             {t.plans.map((plan, i) => (
-              <div key={i} className={`price-card ${plan.popular ? 'popular' : ''} animate-on-scroll`} style={{ transitionDelay: `${i * 100}ms` }}>
+              <motion.div 
+                key={i} 
+                className={`price-card ${plan.popular ? 'popular' : ''}`}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ delay: i * 0.15 }}
+              >
                 {plan.popular && <div className="popular-tag">Eng mashhur</div>}
                 <h3 className="plan-name">{plan.name}</h3>
                 <div className="plan-price">
@@ -403,27 +479,34 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <button 
-                  className={plan.popular ? 'btn-primary-neon w-full' : 'btn-secondary-glass w-full'}
+                  className={plan.popular ? 'btn-primary-neon' : 'btn-secondary-glass'}
                   onClick={() => navigate('/register')}
                 >
                   {plan.btn}
                 </button>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* ===== CTA ===== */}
-      <section className="cta-premium animate-on-scroll">
-        <div className="cta-container">
-          <div className="cta-glow-bg"></div>
-          <h2>{t.ctaTitleLine1} <span className="gradient-text-neon">{t.ctaTitleLine2}</span> {t.ctaTitleLine3}</h2>
-          <p>{t.ctaDesc}</p>
-          <button className="btn-primary-neon giant" onClick={() => navigate('/register')}>
-            {t.ctaBtn}
-          </button>
-        </div>
+      <section className="cta-premium">
+        <motion.div 
+          className="container"
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+        >
+          <div className="cta-container">
+            <div className="cta-glow-bg"></div>
+            <h2>{t.ctaTitleLine1} <span className="gradient-text-neon">{t.ctaTitleLine2}</span> {t.ctaTitleLine3}</h2>
+            <p>{t.ctaDesc}</p>
+            <button className="btn-primary-neon giant" onClick={() => navigate('/register')}>
+              {t.ctaBtn}
+            </button>
+          </div>
+        </motion.div>
       </section>
 
       {/* ===== FOOTER ===== */}
@@ -431,7 +514,7 @@ export default function LandingPage() {
         <div className="container">
           <div className="footer-content">
             <div className="footer-logo">
-              <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+              <svg width="32" height="32" viewBox="0 0 28 28" fill="none">
                 <rect x="2" y="2" width="10" height="10" rx="3" fill="#1e90ff"/>
                 <rect x="16" y="2" width="10" height="10" rx="3" fill="#00f5c4" opacity="0.8"/>
                 <rect x="2" y="16" width="10" height="10" rx="3" fill="#00f5c4" opacity="0.8"/>

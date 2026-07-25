@@ -118,61 +118,28 @@ export default function BotSettingsPage() {
       setMenuButtonEnabled(true)
     }
 
-    // Try direct Telegram API call (works without backend!)
+    // Use backend to avoid CORS issues
     try {
-      const telegramUrl = `https://api.telegram.org/bot${token}/setChatMenuButton`
-      const body = {
-        menu_button: {
-          type: 'web_app',
-          text: finalText,
-          web_app: { url: finalUrl }
-        }
-      }
-      const response = await fetch(telegramUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+      const res = await apiClient.post(`/bots/${botId}/menu-button`, { 
+        enabled: true,
+        text: finalText, 
+        url: finalUrl 
       })
-      const data = await response.json()
-
-      if (data.ok) {
+      if (res.data?.success || res.data?.ok || res.status === 200 || res.status === 201) {
         setTestStatus('success')
-        setTestMessage('✅ Tugma muvaffaqiyatli o\'rnatildi! Telegram-ni yangilang.')
-        return
+        setTestMessage('✅ Tugma muvaffaqiyatli o\'rnatildi!')
       } else {
-        // Telegram returned an error
-        const errDesc = data.description || 'Unknown Telegram error'
-        if (errDesc.includes('Unauthorized') || errDesc.includes('401')) {
-          setTestStatus('error')
-          setTestMessage('❌ Token noto\'g\'ri! @BotFather dan tokenni tekshiring.')
-        } else if (errDesc.includes('Bad Request')) {
-          setTestStatus('error')
-          setTestMessage(`❌ URL noto'g'ri: ${errDesc}. HTTPS talab qilinadi.`)
-        } else {
-          setTestStatus('error')
-          setTestMessage(`❌ Telegram xatosi: ${errDesc}`)
-        }
-        return
+        throw new Error(res.data?.message || res.data?.description || 'Telegram xatosi')
       }
-    } catch (fetchErr: any) {
-      // CORS error — fallback to backend
-      if (fetchErr.message?.includes('Failed to fetch') || fetchErr.message?.includes('CORS')) {
-        setTestMessage('Backend orqali urinilmoqda...')
-        try {
-          const res = await apiClient.post(`/bots/${botId}/menu-button`, { text: finalText, url: finalUrl })
-          if (res.data?.success) {
-            setTestStatus('success')
-            setTestMessage('✅ Tugma backend orqali o\'rnatildi!')
-          } else {
-            throw new Error(res.data?.message || 'Backend error')
-          }
-        } catch {
-          setTestStatus('error')
-          setTestMessage('❌ Backend ishlamayapti. Quyidagi yo\'riqnomaga qarang.')
-        }
+    } catch (err: any) {
+      const errDesc = err.response?.data?.description || err.response?.data?.message || err.message || 'Noma\'lum xato'
+      setTestStatus('error')
+      if (errDesc.includes('Unauthorized') || errDesc.includes('401')) {
+        setTestMessage('❌ Token noto\'g\'ri! @BotFather dan tokenni tekshiring.')
+      } else if (errDesc.includes('Bad Request')) {
+        setTestMessage(`❌ Noto'g'ri ma'lumot: ${errDesc}. (Yoki HTTPS talab qilinadi)`)
       } else {
-        setTestStatus('error')
-        setTestMessage(`❌ ${fetchErr.message}`)
+        setTestMessage(`❌ Xatolik yuz berdi: ${errDesc}`)
       }
     }
   }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Bot, Settings, BarChart2, Zap, MessageSquare, TrendingUp, Users, Activity, Globe, Mail, Trash2, Sparkles } from 'lucide-react'
+import { Plus, Bot, Settings, BarChart2, Zap, MessageSquare, TrendingUp, Users, Activity, Globe, Mail, Trash2, Sparkles, AppWindow } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -231,6 +231,13 @@ export default function DashboardPage() {
         {/* BOTS TAB */}
         {activeTab === 'bots' && (
           <>
+            <div className="dash-hero">
+              <div className="dash-hero-content">
+                <h1 className="dash-hero-title">Salom, <span className="text-gradient">{user?.name || 'Foydalanuvchi'}</span>! 👋</h1>
+                <p className="dash-hero-date">{new Date().toLocaleDateString('uz-UZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              </div>
+            </div>
+
             <div className="dash-topbar">
               <div>
                 <h1 className="dash-title">{t('dashboard_title')}</h1>
@@ -252,25 +259,28 @@ export default function DashboardPage() {
 
             <div className="dash-stats">
               {[
-                { icon: <Bot size={20} />, value: botProjects.length, label: t('dashboard_projects'), color: 'blue' },
-                { icon: <Users size={20} />, value: totalUsers.toLocaleString(), label: t('dashboard_total_users'), color: 'aqua' },
-                { icon: <MessageSquare size={20} />, value: totalMessages.toLocaleString(), label: t('dashboard_messages_today'), color: 'amber' },
-                { icon: <Activity size={20} />, value: activeBots, label: t('dashboard_active_bots'), color: 'emerald' },
+                { icon: <Bot size={24} />, value: botProjects.length, label: t('dashboard_projects'), color: 'blue', trend: '+12%' },
+                { icon: <Users size={24} />, value: totalUsers.toLocaleString(), label: t('dashboard_total_users'), color: 'aqua', trend: '+5%' },
+                { icon: <MessageSquare size={24} />, value: totalMessages.toLocaleString(), label: t('dashboard_messages_today'), color: 'amber', trend: '+24%' },
+                { icon: <Activity size={24} />, value: activeBots, label: t('dashboard_active_bots'), color: 'emerald', trend: '+2%' },
               ].map((stat, i) => (
                 <motion.div 
                   key={i}
-                  className="dash-stat-card"
+                  className={`dash-stat-card bg-gradient-${stat.color}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1, duration: 0.4 }}
-                  whileHover={{ scale: 1.05, translateY: -5, boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}
+                  whileHover={{ scale: 1.05, translateY: -5, boxShadow: `0 10px 30px var(--accent-${stat.color}-dim)` }}
                 >
-                  <div className="stat-icon" style={{ background: `var(--accent-${stat.color}-dim)`, color: `var(--accent-${stat.color})` }}>
+                  <div className="stat-icon" style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}>
                     {stat.icon}
                   </div>
-                  <div>
-                    <div className="stat-value">{stat.value}</div>
-                    <div className="stat-label">{stat.label}</div>
+                  <div style={{ flex: 1 }}>
+                    <div className="stat-value" style={{ color: '#fff' }}>{stat.value}</div>
+                    <div className="stat-label" style={{ color: 'rgba(255,255,255,0.9)' }}>{stat.label}</div>
+                  </div>
+                  <div className="stat-trend" style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#fff', fontSize: 12, fontWeight: 600, background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: 12 }}>
+                    <TrendingUp size={12} /> {stat.trend}
                   </div>
                 </motion.div>
               ))}
@@ -291,6 +301,18 @@ export default function DashboardPage() {
                 </motion.div>
 
                 <AnimatePresence>
+                  {botProjects.length === 0 && (
+                    <motion.div className="empty-projects-state" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ gridColumn: '1 / -1', padding: '60px 20px', textAlign: 'center', background: 'var(--bg-card)', borderRadius: 20, border: '1px dashed var(--border-primary)' }}>
+                      <div className="empty-icon" style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--accent-blue-dim)', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                        <Bot size={40} />
+                      </div>
+                      <h3 style={{ fontSize: 24, fontWeight: 700, marginBottom: 10 }}>Birinchi loyihangizni yarating</h3>
+                      <p style={{ color: 'var(--text-muted)', marginBottom: 20 }}>Sizda hali hech qanday loyiha yo'q. Hozir yaratib ko'ring.</p>
+                      <button className="btn btn-primary" onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setModalType('bot'); setShowCreateModal(true); }}>
+                        <Plus size={16} /> Birinchi loyihani yaratish
+                      </button>
+                    </motion.div>
+                  )}
                   {botProjects.map((bot, i) => (
                     <motion.div 
                       key={bot.id} 
@@ -308,7 +330,8 @@ export default function DashboardPage() {
                         <div className="bot-avatar" style={{ background: `${bot.color || '#1e90ff'}22`, color: bot.color || '#1e90ff' }}>
                           <Bot size={22} />
                         </div>
-                        <span className={`bot-status ${bot.status}`} style={{ marginRight: '24px' }}>
+                        <span className={`bot-status ${bot.status}`} style={{ marginRight: '24px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span className="status-dot" style={{ width: 8, height: 8, borderRadius: '50%', display: 'inline-block', background: bot.status === 'active' ? '#10d974' : '#64748b' }}></span>
                           {bot.status === 'active' ? t('status_active') : t('status_inactive')}
                         </span>
                         <button className="btn-icon" style={{ position: 'absolute', top: 0, right: 0 }} onClick={(e) => { e.stopPropagation(); handleDeleteBot(bot.id, bot.name) }}>
@@ -506,11 +529,27 @@ export default function DashboardPage() {
           <>
             <div className="dash-topbar">
               <div>
-                <h1 className="dash-title">Tayyor shablonlar</h1>
-                <p className="dash-subtitle">Loyihangizni tezroq boshlash uchun tayyor shablonlardan foydalaning</p>
+                <h1 className="dash-title">Shablonlar va Kategoriyalar</h1>
+                <p className="dash-subtitle">Loyihangizni tezroq boshlash uchun kategoriyalardan birini tanlang</p>
               </div>
             </div>
 
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginTop: '24px' }}>
+              {[
+                { name: 'Bot Shablonlari', icon: <Bot size={32} />, color: '#1e90ff', desc: 'Telegram botlar uchun tayyor shablonlar' },
+                { name: 'Mini App', icon: <AppWindow size={32} />, color: '#00f5c4', desc: 'Telegram Mini App dizaynlari' },
+                { name: 'Saytlar', icon: <Globe size={32} />, color: '#f59e0b', desc: 'Veb-sayt va portfoliolar' },
+                { name: 'Custom', icon: <Zap size={32} />, color: '#a855f7', desc: 'Noldan boshlab yaratish' },
+              ].map((cat, i) => (
+                <div key={i} className="template-card" style={{ '--t-color': cat.color, padding: '24px' } as React.CSSProperties} onClick={() => {}}>
+                  <div className="template-emoji" style={{ color: cat.color, marginBottom: 16 }}>{cat.icon}</div>
+                  <div className="template-name" style={{ fontSize: 18, marginBottom: 8 }}>{cat.name}</div>
+                  <div className="template-desc">{cat.desc}</div>
+                </div>
+              ))}
+            </div>
+            
+            <h2 className="section-title" style={{ marginTop: 40 }}>Ommabop Shablonlar</h2>
             <div className="templates-grid" style={{ marginTop: '24px' }}>
               {TEMPLATES.map((t, i) => (
                 <div key={i} className="template-card" style={{ '--t-color': t.color } as React.CSSProperties}

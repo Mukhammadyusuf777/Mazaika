@@ -541,3 +541,68 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Dashboard Hero */
+.dash-hero {
+  margin-bottom: var(--space-8);
+  padding: var(--space-8);
+  background: linear-gradient(135deg, rgba(30,144,255,0.1), rgba(0,245,196,0.1));
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(30,144,255,0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.dash-hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 300px;
+  height: 300px;
+  background: var(--accent-blue);
+  filter: blur(100px);
+  opacity: 0.2;
+  border-radius: 50%;
+}
+
+.dash-hero-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #1e90ff, #00f5c4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dash-hero-date {
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+/* Gradient Backgrounds */
+.bg-gradient-blue {
+  background: linear-gradient(135deg, #3b82f6, #1e90ff) !important;
+  border: none !important;
+}
+
+.bg-gradient-aqua {
+  background: linear-gradient(135deg, #06b6d4, #00f5c4) !important;
+  border: none !important;
+}
+
+.bg-gradient-amber {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
+  border: none !important;
+}
+
+.bg-gradient-emerald {
+  background: linear-gradient(135deg, #10b981, #10d974) !important;
+  border: none !important;
+}

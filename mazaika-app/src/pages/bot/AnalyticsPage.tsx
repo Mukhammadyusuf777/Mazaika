@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell } from 'recharts'
 import { Users, MessageSquare, MousePointerClick, TrendingUp } from 'lucide-react'
 import { apiClient } from '../../api/apiClient'
 import { getContacts } from '../../api/firestore'
@@ -73,6 +73,11 @@ export default function AnalyticsPage() {
     fetchAnalytics()
   }, [botId])
 
+  const PIE_DATA = [
+    { name: 'Xabarlar', value: stats.todayMessages || 400, color: '#1e90ff' },
+    { name: 'Tugmalar', value: 300, color: '#00f5c4' },
+    { name: 'Buyurtmalar', value: 150, color: '#a855f7' },
+  ]
 
   if (loading) {
     return <div style={{ padding: 'var(--space-8)' }}>Yuklanmoqda...</div>
@@ -89,7 +94,7 @@ export default function AnalyticsPage() {
         {[
           { icon: Users, label: 'Jami obunachilar', value: stats.totalContacts.toString(), color: 'var(--accent-blue)' },
           { icon: MessageSquare, label: 'Xabarlar (Bugun)', value: stats.todayMessages.toString(), color: 'var(--accent-aqua)' },
-          { icon: MousePointerClick, label: 'Tugmalar bosilishi', value: '45.2%', color: '#a855f7' },
+          { icon: MousePointerClick, label: 'Faol foydalanuvchilar', value: '45.2%', color: '#a855f7' },
           { icon: TrendingUp, label: 'Konversiya', value: '12.8%', color: '#10d974' },
         ].map((stat, i) => (
           <div key={i} style={{ background: 'var(--bg-card)', padding: 'var(--space-5)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-primary)' }}>
@@ -104,7 +109,7 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      <div className="analytics-grid-charts">
+      <div className="analytics-grid-charts" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-6)' }}>
         <div style={{ background: 'var(--bg-card)', padding: 'var(--space-5)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)' }}>
           <h3 style={{ marginBottom: 'var(--space-4)', fontWeight: 600 }}>Obunachilar o'sishi</h3>
           <div style={{ height: 300 }}>
@@ -112,31 +117,55 @@ export default function AnalyticsPage() {
               <AreaChart data={stats.chartData}>
                 <defs>
                   <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--accent-blue)" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="var(--accent-blue)" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#1e90ff" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#1e90ff" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" vertical={false} />
                 <XAxis dataKey="name" stroke="var(--text-muted)" tick={{ fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
                 <YAxis stroke="var(--text-muted)" tick={{ fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', borderRadius: 8 }} />
-                <Area type="monotone" dataKey="users" stroke="var(--accent-blue)" strokeWidth={3} fillOpacity={1} fill="url(#colorUsers)" />
+                <Area type="monotone" dataKey="users" stroke="#1e90ff" strokeWidth={3} fillOpacity={1} fill="url(#colorUsers)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         <div style={{ background: 'var(--bg-card)', padding: 'var(--space-5)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)' }}>
-          <h3 style={{ marginBottom: 'var(--space-4)', fontWeight: 600 }}>Faollik</h3>
+          <h3 style={{ marginBottom: 'var(--space-4)', fontWeight: 600 }}>Kundalik xabarlar</h3>
           <div style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={stats.chartData}>
+              <BarChart data={stats.chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" vertical={false} />
                 <XAxis dataKey="name" stroke="var(--text-muted)" tick={{ fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', borderRadius: 8 }} />
-                <Line type="monotone" dataKey="msgs" stroke="var(--accent-aqua)" strokeWidth={3} dot={{ fill: 'var(--bg-primary)', strokeWidth: 2 }} />
-              </LineChart>
+                <Tooltip contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', borderRadius: 8 }} cursor={{fill: 'rgba(0, 245, 196, 0.1)'}} />
+                <Bar dataKey="msgs" fill="#00f5c4" radius={[4, 4, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div style={{ background: 'var(--bg-card)', padding: 'var(--space-5)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)' }}>
+          <h3 style={{ marginBottom: 'var(--space-4)', fontWeight: 600 }}>Faollik taqsimoti</h3>
+          <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={PIE_DATA} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value">
+                  {PIE_DATA.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', borderRadius: 8 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-4)', marginTop: 'var(--space-2)' }}>
+            {PIE_DATA.map((entry, index) => (
+              <div key={index} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: entry.color }} />
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{entry.name}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
