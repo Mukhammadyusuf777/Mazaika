@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import './styles/global.css'
 import { useAuthStore } from './store/useAuthStore'
 import { AICopilotProvider } from './context/AICopilotContext'
+import { ErrorBoundary } from './components/layout/ErrorBoundary'
 
 // Pages
 import LandingPage from './pages/LandingPage'
@@ -20,6 +21,7 @@ import WebAppViewer from './pages/bot/WebAppViewer'
 import SiteBuilderPage from './pages/bot/SiteBuilderPage'
 import SiteRendererPage from './pages/bot/SiteRendererPage'
 import AiWorkspacePage from './pages/ai/AiWorkspacePage'
+import NotFoundPage from './pages/NotFoundPage'
 
 // Layout
 import AppLayout from './components/layout/AppLayout'
@@ -32,42 +34,44 @@ const ProtectedRoute = () => {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AICopilotProvider>
-        <Routes>
-          {/* Public */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          
-          {/* Public WebApp Viewer */}
-          <Route path="/webapp/:botId/:appId" element={<WebAppViewer />} />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AICopilotProvider>
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            
+            {/* Public WebApp Viewer */}
+            <Route path="/webapp/:botId/:appId" element={<WebAppViewer />} />
 
-          {/* Public Custom Site Renderer */}
-          <Route path="/site/:botId" element={<SiteRendererPage />} />
+            {/* Public Custom Site Renderer */}
+            <Route path="/site/:botId" element={<SiteRendererPage />} />
 
-          {/* App (authenticated) */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/dashboard/ai-workspace" element={<AiWorkspacePage />} />
-            <Route path="/bot/:botId" element={<AppLayout />}>
-              <Route index element={<Navigate to="editor" replace />} />
-              <Route path="editor" element={<EditorPage />} />
-              <Route path="miniapps" element={<MiniAppsPage />} />
-              <Route path="sitebuilder" element={<SiteBuilderPage />} />
-              <Route path="chats" element={<ChatsPage />} />
-              <Route path="broadcasts" element={<BroadcastsPage />} />
-              <Route key="contacts" path="contacts" element={<ContactsPage />} />
-              <Route path="analytics" element={<AnalyticsPage />} />
-              <Route path="webhooks" element={<WebhooksPage />} />
-              <Route path="settings" element={<BotSettingsPage />} />
+            {/* App (authenticated) */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/dashboard/ai-workspace" element={<AiWorkspacePage />} />
+              <Route path="/bot/:botId" element={<AppLayout />}>
+                <Route index element={<Navigate to="editor" replace />} />
+                <Route path="editor" element={<EditorPage />} />
+                <Route path="miniapps" element={<MiniAppsPage />} />
+                <Route path="sitebuilder" element={<SiteBuilderPage />} />
+                <Route path="chats" element={<ChatsPage />} />
+                <Route path="broadcasts" element={<BroadcastsPage />} />
+                <Route key="contacts" path="contacts" element={<ContactsPage />} />
+                <Route path="analytics" element={<AnalyticsPage />} />
+                <Route path="webhooks" element={<WebhooksPage />} />
+                <Route path="settings" element={<BotSettingsPage />} />
+              </Route>
             </Route>
-          </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AICopilotProvider>
-    </BrowserRouter>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </AICopilotProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   )
 }
 

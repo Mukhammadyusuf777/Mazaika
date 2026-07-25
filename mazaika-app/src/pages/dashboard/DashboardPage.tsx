@@ -216,7 +216,11 @@ export default function DashboardPage() {
           <div className="dash-user-info">
             <div className="dash-user-name">{user?.name || 'Foydalanuvchi'}</div>
             <div className="dash-user-plan">
-              <span className="badge badge-aqua">Pro</span>
+              {botProjects.length > 0 ? (
+                <span className="badge badge-aqua">Pro</span>
+              ) : (
+                <span className="badge" style={{ background: 'var(--bg-glass-light)', color: 'var(--text-muted)' }}>Free</span>
+              )}
             </div>
           </div>
         </div>
