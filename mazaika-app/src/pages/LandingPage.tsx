@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Sparkles, Loader2 } from 'lucide-react'
+import { useTranslation } from '../hooks/useTranslation'
 import './LandingPage.css'
 
 const TRANSLATIONS = {
@@ -297,14 +298,9 @@ const TRANSLATIONS = {
 
 export default function LandingPage() {
   const navigate = useNavigate()
-  const [lang, setLang] = useState<keyof typeof TRANSLATIONS>('UZ')
+  const { lang, changeLanguage } = useTranslation()
   
-  useEffect(() => {
-    const saved = localStorage.getItem('mazaika_lang') as keyof typeof TRANSLATIONS
-    if (saved && TRANSLATIONS[saved]) setLang(saved)
-  }, [])
-
-  const t = TRANSLATIONS[lang]
+  const t = TRANSLATIONS[lang as keyof typeof TRANSLATIONS] || TRANSLATIONS['UZ']
 
   return (
     <div className="landing-page">
@@ -319,7 +315,7 @@ export default function LandingPage() {
           <div className="l-header-actions">
             <div className="l-lang-switcher">
               {(['UZ', 'RU', 'EN'] as const).map(l => (
-                <button key={l} className={lang === l ? 'active' : ''} onClick={() => { setLang(l); localStorage.setItem('mazaika_lang', l) }}>{l}</button>
+                <button key={l} className={lang === l ? 'active' : ''} onClick={() => changeLanguage(l)}>{l}</button>
               ))}
             </div>
             <button onClick={() => navigate('/register')}>{t.navStart}</button>

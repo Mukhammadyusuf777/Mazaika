@@ -107,16 +107,16 @@ export default function FloatingAICopilot({ projectType = 'bot' }: { projectType
     await sendMessage(msg, 'FULL_GENERATION', targetEntity, image?.base64, image?.mimeType)
   }, [promptInput, pendingImage, isGenerating, projectType, sendMessage])
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 4 * 1024 * 1024) { alert('Rasm hajmi 4MB dan oshmasligi kerak'); return }
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string
-      setPendingImage({ base64: dataUrl.split(',')[1], mimeType: file.type, previewUrl: dataUrl })
+    try {
+      const { compressImage } = await import('../../utils/imageUtils')
+      const compressed = await compressImage(file)
+      setPendingImage(compressed)
+    } catch (err) {
+      alert('Rasm yuklashda xatolik yuz berdi')
     }
-    reader.readAsDataURL(file)
     e.target.value = ''
   }
 

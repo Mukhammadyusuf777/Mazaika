@@ -46,18 +46,18 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
             const BOT_KEYWORDS = ['bot', 'бот', 'нода', 'сценарий', 'flow', 'scenario', 'blok', 'блок', 'tugma', 'кнопка'];
             const isExplicitSite = SITE_KEYWORDS.some(k => lowerPrompt.includes(k));
             const isEditKeyword = EDIT_KEYWORDS.some(k => lowerPrompt.includes(k));
-            const isBotRequest = BOT_KEYWORDS.some(k => lowerPrompt.includes(k)) && !isExplicitSite;
             const hasExistingHtml = Boolean(existingHtml && existingHtml.trim().length > 50);
-            const isSiteRequest = targetEntity === 'site_only' ||
-                hasImage ||
-                isExplicitSite ||
-                hasExistingHtml ||
-                (isEditKeyword && hasExistingHtml);
+            let isSiteRequest = targetEntity === 'site_only';
+            let isBotRequest = targetEntity === 'bot_and_mini_app';
+            if (!isSiteRequest && !isBotRequest) {
+                isBotRequest = BOT_KEYWORDS.some(k => lowerPrompt.includes(k)) && !isExplicitSite;
+                isSiteRequest = isExplicitSite || hasExistingHtml || (hasImage && !isBotRequest);
+            }
             const googleKey = (process.env.GOOGLE_AI_STUDIO_KEY ||
                 process.env.GEMINI_API_KEY ||
                 '').trim();
             const historyContext = chatHistory.length > 0
-                ? `\n\nPrevious conversation:\n${chatHistory.map(m => `${m.role === 'user' ? 'User' : 'Antigravity'}: ${m.content}`).join('\n')}\n`
+                ? `\n\nPrevious conversation:\n${chatHistory.slice(-5).map(m => `${m.role === 'user' ? 'User' : 'Antigravity'}: ${m.content}`).join('\n')}\n`
                 : '';
             const isEditMode = hasExistingHtml;
             const imageInstruction = hasImage
@@ -142,6 +142,11 @@ ${imageInstruction}
 
 If user attached an image of a bot flow/diagram — analyze it and create matching nodes.
 
+CRITICAL FEATURE - LIMITLESS CREATION:
+If the user asks for advanced features (databases, crypto, weather, payment processing, math, web requests), you MUST use a "custom_code" block. This block executes raw JS code on the backend!
+Example of custom_code block:
+{"id":"node_2","type":"custom_code","position":{"x":300,"y":150},"data":{"label":"Process Payment","code":"const price = 100;\\nreturn price * 2;","color":"#f59e0b"}}
+
 STRICT RULE: Return ONLY a valid JSON object without markdown fences:
 {
   "type": "bot_and_mini_app",
@@ -152,7 +157,7 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
   "project_data": {
     "appName": "Bot Name",
     "bot_blocks": [{"id":"node_start","type":"start","position":{"x":100,"y":150},"data":{"label":"Start","emoji":"▶","color":"#10d974","text":"Salom!"}}],
-    "bot_edges": []
+    "bot_edges": [{"id":"e1","source":"node_start","target":"node_2"}]
   }
 }`;
             }
@@ -290,6 +295,14 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
             projectData.html = htmlCode;
             projectData.website_html = htmlCode;
         }
+        let botBlocks = projectData.bot_blocks?.length ? projectData.bot_blocks : (currentConfig?.bot_blocks || []);
+        let botEdges = projectData.bot_edges?.length ? projectData.bot_edges : (currentConfig?.bot_edges || []);
+        if (targetEntity === 'bot_and_mini_app' && Array.isArray(botBlocks)) {
+            const validNodeIds = new Set(botBlocks.map((b) => b.id));
+            if (Array.isArray(botEdges)) {
+                botEdges = botEdges.filter((e) => validNodeIds.has(e.source) && validNodeIds.has(e.target));
+            }
+        }
         return {
             type: targetEntity === 'site_only' ? 'site' : 'bot_and_mini_app',
             execution_mode: 'FULL_GENERATION',
@@ -308,8 +321,8 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
                 html: htmlCode,
                 website_html: htmlCode,
                 blocks: projectData.blocks?.length ? projectData.blocks : (currentConfig?.blocks || []),
-                bot_blocks: projectData.bot_blocks?.length ? projectData.bot_blocks : (currentConfig?.bot_blocks || []),
-                bot_edges: projectData.bot_edges?.length ? projectData.bot_edges : (currentConfig?.bot_edges || []),
+                bot_blocks: botBlocks,
+                bot_edges: botEdges,
                 site_blocks: projectData.site_blocks?.length ? projectData.site_blocks : (currentConfig?.site_blocks || [])
             }
         };
@@ -323,6 +336,7 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
             htmlContent = htmlMatch[1] || htmlMatch[0];
         }
         let cleanText = text.replace(/```json/gi, '').replace(/```html[\s\S]*?```/gi, '').replace(/```/gi, '').trim();
+        cleanText = cleanText.replace(/,\s*([\]}])/g, '$1');
         try {
             const parsed = JSON.parse(cleanText);
             if (htmlContent && !parsed.html)
@@ -356,7 +370,8 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
                 else if (char === '}') {
                     braceCount--;
                     if (braceCount === 0) {
-                        const candidate = cleanText.substring(startIdx, i + 1);
+                        let candidate = cleanText.substring(startIdx, i + 1);
+                        candidate = candidate.replace(/,\s*([\]}])/g, '$1');
                         try {
                             const parsed = JSON.parse(candidate);
                             if (htmlContent && !parsed.html)

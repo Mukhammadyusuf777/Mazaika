@@ -167,28 +167,20 @@ export default function SiteBuilderPage() {
   }, [activeConfig])
 
   // Image upload handler
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
       alert('Faqat rasm fayllari qabul qilinadi (jpg, png, gif, webp)')
       return
     }
-    if (file.size > 4 * 1024 * 1024) {
-      alert('Rasm hajmi 4MB dan oshmasligi kerak')
-      return
+    try {
+      const { compressImage } = await import('../../utils/imageUtils')
+      const compressed = await compressImage(file)
+      setPendingImage(compressed)
+    } catch (err) {
+      alert('Rasm yuklashda xatolik yuz berdi')
     }
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string
-      const base64 = dataUrl.split(',')[1]
-      setPendingImage({
-        base64,
-        mimeType: file.type,
-        previewUrl: dataUrl
-      })
-    }
-    reader.readAsDataURL(file)
     // Reset input
     e.target.value = ''
   }
