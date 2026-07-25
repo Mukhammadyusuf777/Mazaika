@@ -592,8 +592,31 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; }
   position: relative;
   overflow: hidden;
   z-index: 2;
+  /* Idle float — JS overrides on mousemove */
   animation: phone-float 5s ease-in-out infinite;
-  transition: box-shadow 0.5s;
+  /* Spring-smooth return when mouse leaves */
+  transition: transform 0.6s cubic-bezier(0.23,1,0.32,1),
+              box-shadow 0.6s cubic-bezier(0.23,1,0.32,1);
+  /* Pause idle float once JS takes over via inline style */
+  will-change: transform;
+}
+
+/* While mouse is over the wrap, pause the idle float
+   so JS transform is the only one applied */
+.hero-mockup-wrap:hover .hero-mockup {
+  animation-play-state: paused;
+}
+
+/* Glare highlight layer */
+.mockup-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: 42px;
+  pointer-events: none;
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  mix-blend-mode: overlay;
 }
 /* Glowing background orb behind phone */
 .hero-mockup-wrap::before {

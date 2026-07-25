@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Sparkles, Loader2, Bot, Zap } from 'lucide-react'
 import { useTranslation } from '../hooks/useTranslation'
+import { useRef, useCallback } from 'react'
 import './LandingPage.css'
 
 const TRANSLATIONS = {
@@ -297,8 +298,53 @@ const TRANSLATIONS = {
 export default function LandingPage() {
   const navigate = useNavigate()
   const { lang, changeLanguage } = useTranslation()
-  
   const t = TRANSLATIONS[lang as keyof typeof TRANSLATIONS] || TRANSLATIONS['UZ']
+
+  // ── 3D tilt phone ──────────────────────────────────────────
+  const phoneRef = useRef<HTMLDivElement>(null)
+  const glareRef = useRef<HTMLDivElement>(null)
+  const rafRef   = useRef<number>(0)
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    cancelAnimationFrame(rafRef.current)
+    rafRef.current = requestAnimationFrame(() => {
+      const el = phoneRef.current
+      const glare = glareRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const cx = rect.left + rect.width  / 2
+      const cy = rect.top  + rect.height / 2
+      const dx = (e.clientX - cx) / (rect.width  / 2)   // -1 … 1
+      const dy = (e.clientY - cy) / (rect.height / 2)   // -1 … 1
+      const maxTilt = 18
+      const rotY =  dx * maxTilt
+      const rotX = -dy * maxTilt
+      el.style.transform = `perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.04)`
+      el.style.boxShadow = [
+        `0 0 0 6px rgba(124,60,250,${0.12 + Math.abs(dx)*0.15})`,
+        `${-rotY*1.5}px ${rotX*1.5}px 60px rgba(0,0,0,0.8)`,
+        `0 0 ${60 + Math.abs(dx)*40}px rgba(124,60,250,${0.1 + Math.abs(dx)*0.2})`,
+        `0 0 ${40 + Math.abs(dy)*30}px rgba(0,245,212,${0.05 + Math.abs(dy)*0.12})`,
+      ].join(',')
+      if (glare) {
+        const glareX = ((e.clientX - rect.left) / rect.width  * 100).toFixed(1)
+        const glareY = ((e.clientY - rect.top)  / rect.height * 100).toFixed(1)
+        glare.style.background = `radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255,255,255,0.18) 0%, transparent 60%)`
+        glare.style.opacity = '1'
+      }
+    })
+  }, [])
+
+  const handleMouseLeave = useCallback(() => {
+    cancelAnimationFrame(rafRef.current)
+    const el    = phoneRef.current
+    const glare = glareRef.current
+    if (el) {
+      el.style.transform  = ''
+      el.style.boxShadow  = ''
+    }
+    if (glare) glare.style.opacity = '0'
+  }, [])
 
   return (
     <div className="landing-page">
@@ -378,9 +424,13 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="l-hero-mockup-side">
-            <div className="hero-mockup-wrap">
-
-              {/* Spinning rainbow ring — pure SVG, no border-image */}
+            {/* Outer wrapper catches mouse, stays stable */}
+            <div
+              className="hero-mockup-wrap"
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+            >
+              {/* SVG spinning ring */}
               <svg className="mockup-spin-ring" viewBox="0 0 440 440" fill="none">
                 <defs>
                   <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
@@ -394,12 +444,16 @@ export default function LandingPage() {
                 <circle cx="220" cy="220" r="210" stroke="url(#ring-grad)" strokeWidth="1.5" strokeDasharray="80 60" strokeLinecap="round"/>
               </svg>
 
-              {/* Floating node cards — show bot being built */}
+              {/* Floating node cards */}
               <div className="mock-node mock-node-1">🧩 Greeting node</div>
               <div className="mock-node mock-node-2">💳 Payment node</div>
               <div className="mock-node mock-node-3">✅ Built!</div>
 
-              <div className="hero-mockup">
+              {/* Phone — ref receives 3D transform */}
+              <div className="hero-mockup" ref={phoneRef}>
+                {/* Glare overlay follows cursor */}
+                <div className="mockup-glare" ref={glareRef}></div>
+
                 <div className="hero-mockup-notch"></div>
                 <div className="hero-mockup-screen">
                   <div className="hero-mockup-header">
