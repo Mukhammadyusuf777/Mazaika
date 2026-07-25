@@ -174,6 +174,66 @@ function SmartNode({ data, selected, type }: NodeProps) {
         return <div className="node-text-preview">A'zo qilish</div>
       case 'voteLeaders':
         return <div className="node-text-preview">Natijalarni ko'rsatish</div>
+      case 'photo':
+        return <div className="node-text-preview" style={{ color: '#0ea5e9' }}>📷 {d.caption || 'Rasm yuboriladi'}</div>
+      case 'video':
+        return <div className="node-text-preview" style={{ color: '#6366f1' }}>🎬 {d.caption || 'Video yuboriladi'}</div>
+      case 'document':
+        return <div className="node-text-preview" style={{ color: '#64748b' }}>📄 {d.fileName || 'Fayl yuboriladi'}</div>
+      case 'audio':
+        return <div className="node-text-preview" style={{ color: '#8b5cf6' }}>🎵 {d.caption || 'Audio yuboriladi'}</div>
+      case 'sticker':
+        return <div className="node-text-preview">🎭 Sticker yuboriladi</div>
+      case 'poll':
+        return (
+          <>
+            {d.question && <div className="node-text-preview">{d.question}</div>}
+            <div style={{ fontSize: 10, color: 'var(--accent-aqua)', marginTop: 4 }}>📊 {d.options?.length || 0} variant</div>
+          </>
+        )
+      case 'quiz':
+        return (
+          <>
+            {d.question && <div className="node-text-preview">{d.question}</div>}
+            <div style={{ fontSize: 10, color: '#10b981', marginTop: 4 }}>🎯 Test: {d.options?.length || 0} javob</div>
+          </>
+        )
+      case 'aiReply':
+        return <div className="node-text-preview" style={{ color: '#a855f7' }}>🧠 Model: {d.model || 'gemini-flash'}</div>
+      case 'aiAnalyze':
+        return <div className="node-text-preview" style={{ color: '#6366f1' }}>🔍 Tahlil: {d.field || 'foydalanuvchi xabari'}</div>
+      case 'aiTranslate':
+        return <div className="node-text-preview" style={{ color: '#0ea5e9' }}>🌐 {d.fromLang || 'RU'} → {d.toLang || 'UZ'}</div>
+      case 'aiImage':
+        return <div className="node-text-preview" style={{ color: '#ec4899' }}>🎨 {d.prompt || 'Rasm yaratiladi'}</div>
+      case 'notifyOperator':
+        return <div className="node-text-preview" style={{ color: '#f97316' }}>👨‍💼 {d.chatId || 'Operator chat ID'}</div>
+      case 'notifyGroup':
+        return <div className="node-text-preview" style={{ color: '#0ea5e9' }}>👥 {d.groupId || 'Guruh ID'}</div>
+      case 'notifyChannel':
+        return <div className="node-text-preview" style={{ color: '#8b5cf6' }}>📡 {d.channelId || 'Kanal ID'}</div>
+      case 'email_notify':
+        return <div className="node-text-preview" style={{ color: '#10b981' }}>📨 {d.to || 'email@domain.com'}</div>
+      case 'schedule':
+        return <div className="node-text-preview" style={{ color: '#6366f1' }}>📅 Cron: {d.cron || '0 9 * * *'}</div>
+      case 'reminder':
+        return <div className="node-text-preview" style={{ color: '#f59e0b' }}>⏰ {d.delayAmount || 0} {d.delayUnit || 'daqiqa'}</div>
+      case 'sequence':
+        return <div className="node-text-preview" style={{ color: '#10d974' }}>🔁 {d.count || 0} ta ketma-ket xabar</div>
+      case 'refCreate':
+        return <div className="node-text-preview" style={{ color: '#00f5c4' }}>🔗 Ref-link saqlash: {d.variable || 'ref_link'}</div>
+      case 'refCheck':
+        return <div className="node-text-preview" style={{ color: '#10d974' }}>✅ Ref tekshiruvi</div>
+      case 'refLeaders':
+        return <div className="node-text-preview" style={{ color: '#ffb830' }}>🏆 Top {d.count || 10} referral</div>
+      case 'stars':
+        return <div className="node-text-preview" style={{ fontWeight: 'bold', color: '#fbbf24' }}>⭐ {d.amount || 0} Stars</div>
+      case 'uzumbank':
+        return <div className="node-text-preview" style={{ fontWeight: 'bold', color: '#7c3aed' }}>{d.price ? `${d.price.toLocaleString()} UZS` : 'Narx yo\'q'}</div>
+      case 'amocrm':
+        return <div className="node-text-preview" style={{ color: '#ef4444' }}>💼 AmoCRM: {d.action || 'Kontakt yaratish'}</div>
+      case 'bitrix':
+        return <div className="node-text-preview" style={{ color: '#1e90ff' }}>🏢 Bitrix24: {d.action || 'Lead yaratish'}</div>
       default:
         return <div className="node-text-preview">Leadtex block</div>
     }
@@ -230,7 +290,6 @@ export const nodeTypes = {
   abTest: AbTestNode,
   subscription: SubscriptionNode,
 
-  
   // All other blocks styled dynamically using SmartNode
   chain: (props: NodeProps) => <SmartNode {...props} type="chain" />,
   timer: (props: NodeProps) => <SmartNode {...props} type="timer" />,
@@ -263,4 +322,45 @@ export const nodeTypes = {
   deleteUser: (props: NodeProps) => <SmartNode {...props} type="deleteUser" />,
   voterRegister: (props: NodeProps) => <SmartNode {...props} type="voterRegister" />,
   voteLeaders: (props: NodeProps) => <SmartNode {...props} type="voteLeaders" />,
+
+  // 🆕 Media Blocks
+  photo: (props: NodeProps) => <SmartNode {...props} type="photo" />,
+  video: (props: NodeProps) => <SmartNode {...props} type="video" />,
+  document: (props: NodeProps) => <SmartNode {...props} type="document" />,
+  audio: (props: NodeProps) => <SmartNode {...props} type="audio" />,
+  sticker: (props: NodeProps) => <SmartNode {...props} type="sticker" />,
+
+  // 🆕 Input Blocks
+  poll: (props: NodeProps) => <SmartNode {...props} type="poll" />,
+  quiz: (props: NodeProps) => <SmartNode {...props} type="quiz" />,
+
+  // 🆕 AI Blocks
+  aiReply: (props: NodeProps) => <SmartNode {...props} type="aiReply" />,
+  aiAnalyze: (props: NodeProps) => <SmartNode {...props} type="aiAnalyze" />,
+  aiTranslate: (props: NodeProps) => <SmartNode {...props} type="aiTranslate" />,
+  aiImage: (props: NodeProps) => <SmartNode {...props} type="aiImage" />,
+
+  // 🆕 Notification Blocks
+  notifyOperator: (props: NodeProps) => <SmartNode {...props} type="notifyOperator" />,
+  notifyGroup: (props: NodeProps) => <SmartNode {...props} type="notifyGroup" />,
+  notifyChannel: (props: NodeProps) => <SmartNode {...props} type="notifyChannel" />,
+  email_notify: (props: NodeProps) => <SmartNode {...props} type="email_notify" />,
+
+  // 🆕 Scheduler Blocks
+  schedule: (props: NodeProps) => <SmartNode {...props} type="schedule" />,
+  reminder: (props: NodeProps) => <SmartNode {...props} type="reminder" />,
+  sequence: (props: NodeProps) => <SmartNode {...props} type="sequence" />,
+
+  // 🆕 Referral Blocks
+  refCreate: (props: NodeProps) => <SmartNode {...props} type="refCreate" />,
+  refCheck: (props: NodeProps) => <SmartNode {...props} type="refCheck" />,
+  refLeaders: (props: NodeProps) => <SmartNode {...props} type="refLeaders" />,
+
+  // 🆕 Payment Blocks
+  stars: (props: NodeProps) => <SmartNode {...props} type="stars" />,
+  uzumbank: (props: NodeProps) => <SmartNode {...props} type="uzumbank" />,
+
+  // 🆕 CRM Integrations
+  amocrm: (props: NodeProps) => <SmartNode {...props} type="amocrm" />,
+  bitrix: (props: NodeProps) => <SmartNode {...props} type="bitrix" />,
 }

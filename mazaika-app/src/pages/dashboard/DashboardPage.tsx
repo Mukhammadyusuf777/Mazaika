@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Bot, Settings, BarChart2, Zap, MessageSquare, TrendingUp, Users, Activity, Globe, Mail, Trash2, Sparkles } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../store/useAuthStore'
 import { auth } from '../../api/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { getBotsByUser, createBot, deleteBot, createOrUpdateUser } from '../../api/firestore'
+import { useTranslation } from '../../hooks/useTranslation'
+import { Language } from '../../i18n/translations'
 import './DashboardPage.css'
 
 const TEMPLATES = [
@@ -33,7 +36,7 @@ export default function DashboardPage() {
   
   const [bots, setBots] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'bots' | 'sites' | 'analytics' | 'templates' | 'settings'>('bots')
-  const [language, setLanguage] = useState<'UZ' | 'RU' | 'EN'>('UZ')
+  const { t, lang, changeLanguage } = useTranslation()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [modalType, setModalType] = useState<'bot' | 'site'>('bot')
   const [newBotName, setNewBotName] = useState('')
@@ -170,7 +173,7 @@ export default function DashboardPage() {
         <nav className="dash-nav">
           <button className={`dash-nav-item ${activeTab === 'bots' ? 'active' : ''}`} onClick={() => setActiveTab('bots')}>
             <Bot size={18} />
-            <span>Botlar</span>
+            <span>{t('sidebar_bots')}</span>
           </button>
           <button className={`dash-nav-item ${activeTab === 'sites' ? 'active' : ''}`} onClick={() => setActiveTab('sites')}>
             <Globe size={18} />
@@ -186,24 +189,24 @@ export default function DashboardPage() {
           </button>
           <button className={`dash-nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
             <Settings size={18} />
-            <span>Sozlamalar</span>
+            <span>{t('sidebar_settings')}</span>
           </button>
         </nav>
 
         <div className="dash-lang-switcher" style={{ padding: '0 24px', marginBottom: '16px', display: 'flex', gap: '8px' }}>
-          {['UZ', 'RU', 'EN'].map(lang => (
+          {['UZ', 'RU', 'EN'].map(l => (
             <button 
-              key={lang}
-              onClick={() => setLanguage(lang as 'UZ'|'RU'|'EN')}
+              key={l}
+              onClick={() => changeLanguage(l as Language)}
               style={{ 
-                background: language === lang ? 'rgba(30,144,255,0.2)' : 'transparent',
-                color: language === lang ? '#1e90ff' : '#64748b',
-                border: `1px solid ${language === lang ? 'rgba(30,144,255,0.3)' : 'transparent'}`,
+                background: lang === l ? 'rgba(30,144,255,0.2)' : 'transparent',
+                color: lang === l ? '#1e90ff' : '#64748b',
+                border: `1px solid ${lang === l ? 'rgba(30,144,255,0.3)' : 'transparent'}`,
                 borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700,
                 cursor: 'pointer', flex: 1, transition: '0.2s'
               }}
             >
-              {lang}
+              {l}
             </button>
           ))}
         </div>
@@ -226,7 +229,7 @@ export default function DashboardPage() {
           <>
             <div className="dash-topbar">
               <div>
-                <h1 className="dash-title">Mening botlarim</h1>
+                <h1 className="dash-title">{t('dashboard_title')}</h1>
                 <p className="dash-subtitle">Barcha Telegram botlaringizni boshqaring</p>
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
@@ -244,86 +247,90 @@ export default function DashboardPage() {
             </div>
 
             <div className="dash-stats">
-              <div className="dash-stat-card">
-                <div className="stat-icon" style={{ background: 'var(--accent-blue-dim)', color: 'var(--accent-blue)' }}>
-                  <Bot size={20} />
-                </div>
-                <div>
-                  <div className="stat-value">{botProjects.length}</div>
-                  <div className="stat-label">Jami botlar</div>
-                </div>
-              </div>
-              <div className="dash-stat-card">
-                <div className="stat-icon" style={{ background: 'var(--accent-aqua-dim)', color: 'var(--accent-aqua)' }}>
-                  <Users size={20} />
-                </div>
-                <div>
-                  <div className="stat-value">{totalUsers.toLocaleString()}</div>
-                  <div className="stat-label">Jami foydalanuvchi</div>
-                </div>
-              </div>
-              <div className="dash-stat-card">
-                <div className="stat-icon" style={{ background: 'var(--accent-amber-dim)', color: 'var(--accent-amber)' }}>
-                  <MessageSquare size={20} />
-                </div>
-                <div>
-                  <div className="stat-value">{totalMessages.toLocaleString()}</div>
-                  <div className="stat-label">Jami xabarlar</div>
-                </div>
-              </div>
-              <div className="dash-stat-card">
-                <div className="stat-icon" style={{ background: 'var(--accent-emerald-dim)', color: 'var(--accent-emerald)' }}>
-                  <Activity size={20} />
-                </div>
-                <div>
-                  <div className="stat-value">{activeBots}</div>
-                  <div className="stat-label">Faol botlar</div>
-                </div>
-              </div>
+              {[
+                { icon: <Bot size={20} />, value: botProjects.length, label: t('dashboard_projects'), color: 'blue' },
+                { icon: <Users size={20} />, value: totalUsers.toLocaleString(), label: t('dashboard_total_users'), color: 'aqua' },
+                { icon: <MessageSquare size={20} />, value: totalMessages.toLocaleString(), label: t('dashboard_messages_today'), color: 'amber' },
+                { icon: <Activity size={20} />, value: activeBots, label: t('dashboard_active_bots'), color: 'emerald' },
+              ].map((stat, i) => (
+                <motion.div 
+                  key={i}
+                  className="dash-stat-card"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1, duration: 0.4 }}
+                  whileHover={{ scale: 1.05, translateY: -5, boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}
+                >
+                  <div className="stat-icon" style={{ background: `var(--accent-${stat.color}-dim)`, color: `var(--accent-${stat.color})` }}>
+                    {stat.icon}
+                  </div>
+                  <div>
+                    <div className="stat-value">{stat.value}</div>
+                    <div className="stat-label">{stat.label}</div>
+                  </div>
+                </motion.div>
+              ))}
             </div>
 
             <div className="bots-section">
               <h2 className="section-title">Botlarim</h2>
               <div className="bots-grid">
-                <div className="bot-card create-card" onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setModalType('bot'); setShowCreateModal(true); }}>
+                <motion.div 
+                  className="bot-card create-card" 
+                  onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setModalType('bot'); setShowCreateModal(true); }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
                   <div className="create-icon"><Plus size={32} /></div>
-                  <div className="create-label">Yangi bot yaratish</div>
+                  <div className="create-label">{t('dashboard_create_bot')}</div>
                   <div className="create-sub">Token kiritib boshlang</div>
-                </div>
+                </motion.div>
 
-                {botProjects.map(bot => (
-                  <div key={bot.id} className="bot-card" onClick={() => navigate(`/bot/${bot.id}/editor`)}
-                    style={{ '--bot-color': bot.color || '#1e90ff' } as React.CSSProperties}>
-                    <div className="bot-card-header" style={{ position: 'relative' }}>
-                      <div className="bot-avatar" style={{ background: `${bot.color || '#1e90ff'}22`, color: bot.color || '#1e90ff' }}>
-                        <Bot size={22} />
+                <AnimatePresence>
+                  {botProjects.map((bot, i) => (
+                    <motion.div 
+                      key={bot.id} 
+                      className="bot-card" 
+                      onClick={() => navigate(`/bot/${bot.id}/editor`)}
+                      style={{ '--bot-color': bot.color || '#1e90ff' } as React.CSSProperties}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: i * 0.05 }}
+                      whileHover={{ scale: 1.03, rotateY: 5, rotateX: 5, boxShadow: `0 20px 40px ${bot.color || '#1e90ff'}33` }}
+                      whileTap={{ scale: 0.98 }}
+                      layout
+                    >
+                      <div className="bot-card-header" style={{ position: 'relative' }}>
+                        <div className="bot-avatar" style={{ background: `${bot.color || '#1e90ff'}22`, color: bot.color || '#1e90ff' }}>
+                          <Bot size={22} />
+                        </div>
+                        <span className={`bot-status ${bot.status}`} style={{ marginRight: '24px' }}>
+                          {bot.status === 'active' ? t('status_active') : t('status_inactive')}
+                        </span>
+                        <button className="btn-icon" style={{ position: 'absolute', top: 0, right: 0 }} onClick={(e) => { e.stopPropagation(); handleDeleteBot(bot.id, bot.name) }}>
+                          <Trash2 size={16} />
+                        </button>
                       </div>
-                      <span className={`bot-status ${bot.status}`} style={{ marginRight: '24px' }}>
-                        {bot.status === 'active' ? 'Faol' : 'To\'xtatilgan'}
-                      </span>
-                      <button className="btn-icon" style={{ position: 'absolute', top: 0, right: 0 }} onClick={(e) => { e.stopPropagation(); handleDeleteBot(bot.id, bot.name) }}>
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                    <div className="bot-name">{bot.name}</div>
-                    <div className="bot-username">{(bot.token || '').substring(0, 15)}...</div>
-                    <div className="bot-stats-row">
-                      <div className="bot-stat">
-                        <Users size={12} />
-                        <span>{(bot.users || 0).toLocaleString()}</span>
+                      <div className="bot-name">{bot.name}</div>
+                      <div className="bot-username">{(bot.token || '').substring(0, 15)}...</div>
+                      <div className="bot-stats-row">
+                        <div className="bot-stat">
+                          <Users size={12} />
+                          <span>{(bot.users || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="bot-stat">
+                          <MessageSquare size={12} />
+                          <span>{(bot.messages || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="bot-stat">
+                          <TrendingUp size={12} />
+                          <span>Ssenariy</span>
+                        </div>
                       </div>
-                      <div className="bot-stat">
-                        <MessageSquare size={12} />
-                        <span>{(bot.messages || 0).toLocaleString()}</span>
-                      </div>
-                      <div className="bot-stat">
-                        <TrendingUp size={12} />
-                        <span>Ssenariy</span>
-                      </div>
-                    </div>
-                    <div className="bot-glow" style={{ background: bot.color || '#1e90ff' }} />
-                  </div>
-                ))}
+                      <div className="bot-glow" style={{ background: bot.color || '#1e90ff' }} />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             </div>
 
@@ -331,12 +338,20 @@ export default function DashboardPage() {
               <h2 className="section-title">Tayyor shablonlar</h2>
               <div className="templates-grid">
                 {TEMPLATES.map((t, i) => (
-                  <div key={i} className="template-card" style={{ '--t-color': t.color } as React.CSSProperties}
-                    onClick={() => handleTemplateClick(t.name)}>
+                  <motion.div 
+                    key={i} 
+                    className="template-card" 
+                    style={{ '--t-color': t.color } as React.CSSProperties}
+                    onClick={() => handleTemplateClick(t.name)}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    whileHover={{ scale: 1.05, translateY: -5, boxShadow: `0 15px 30px ${t.color}44` }}
+                  >
                     <div className="template-emoji">{t.emoji}</div>
                     <div className="template-name">{t.name}</div>
                     <div className="template-desc">{t.desc}</div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -380,34 +395,51 @@ export default function DashboardPage() {
             <div className="bots-section">
               <h2 className="section-title">Saytlarim</h2>
               <div className="bots-grid">
-                <div className="bot-card create-card" onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setModalType('site'); setShowCreateModal(true); }}>
+                <motion.div 
+                  className="bot-card create-card" 
+                  onClick={() => { setSelectedTemplate(''); setNewBotName(''); setNewBotToken(''); setModalType('site'); setShowCreateModal(true); }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
                   <div className="create-icon"><Plus size={32} /></div>
                   <div className="create-label">Yangi sayt yaratish</div>
                   <div className="create-sub">Noldan boshlang</div>
-                </div>
+                </motion.div>
 
-                {siteProjects.map(bot => (
-                  <div key={bot.id} className="bot-card" onClick={() => navigate(`/bot/${bot.id}/sitebuilder`)}
-                    style={{ '--bot-color': bot.color || '#00f5c4' } as React.CSSProperties}>
-                    <div className="bot-card-header" style={{ position: 'relative' }}>
-                      <div className="bot-avatar" style={{ background: `${bot.color || '#00f5c4'}22`, color: bot.color || '#00f5c4' }}>
-                        <Globe size={22} />
+                <AnimatePresence>
+                  {siteProjects.map((bot, i) => (
+                    <motion.div 
+                      key={bot.id} 
+                      className="bot-card" 
+                      onClick={() => navigate(`/bot/${bot.id}/sitebuilder`)}
+                      style={{ '--bot-color': bot.color || '#00f5c4' } as React.CSSProperties}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: i * 0.05 }}
+                      whileHover={{ scale: 1.03, rotateY: 5, rotateX: 5, boxShadow: `0 20px 40px ${bot.color || '#00f5c4'}33` }}
+                      whileTap={{ scale: 0.98 }}
+                      layout
+                    >
+                      <div className="bot-card-header" style={{ position: 'relative' }}>
+                        <div className="bot-avatar" style={{ background: `${bot.color || '#00f5c4'}22`, color: bot.color || '#00f5c4' }}>
+                          <Globe size={22} />
+                        </div>
+                        <button className="btn-icon" style={{ position: 'absolute', top: 0, right: 0 }} onClick={(e) => { e.stopPropagation(); handleDeleteBot(bot.id, bot.name) }}>
+                          <Trash2 size={16} />
+                        </button>
                       </div>
-                      <button className="btn-icon" style={{ position: 'absolute', top: 0, right: 0 }} onClick={(e) => { e.stopPropagation(); handleDeleteBot(bot.id, bot.name) }}>
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                    <div className="bot-name">{bot.name || 'Nomsiz sayt'}</div>
-                    <div className="bot-username">Tashriflar: {(bot.users || 0).toLocaleString()}</div>
-                    <div className="bot-stats-row">
-                      <div className="bot-stat">
-                        <Globe size={12} />
-                        <span>Veb-sayt</span>
+                      <div className="bot-name">{bot.name || 'Nomsiz sayt'}</div>
+                      <div className="bot-username">Tashriflar: {(bot.users || 0).toLocaleString()}</div>
+                      <div className="bot-stats-row">
+                        <div className="bot-stat">
+                          <Globe size={12} />
+                          <span>Veb-sayt</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="bot-glow" style={{ background: bot.color || '#00f5c4' }} />
-                  </div>
-                ))}
+                      <div className="bot-glow" style={{ background: bot.color || '#00f5c4' }} />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             </div>
           </>
@@ -611,8 +643,8 @@ export default function DashboardPage() {
                 )}
 
                 <div style={{ display: 'flex', gap: '12px' }}>
-                  <button type="button" className="btn btn-ghost flex-1" onClick={() => setShowCreateModal(false)}>Bekor qilish</button>
-                  <button type="submit" className="btn btn-primary flex-1">Yaratish →</button>
+                  <button type="button" className="btn btn-ghost flex-1" onClick={() => setShowCreateModal(false)}>{t('btn_cancel')}</button>
+                  <button type="submit" className="btn btn-primary flex-1">{t('btn_confirm')} →</button>
                 </div>
               </form>
             </div>

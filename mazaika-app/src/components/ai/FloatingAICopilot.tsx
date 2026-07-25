@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import {
   Sparkles, Send, X, Loader2, Bot, Minimize2, Maximize2,
   Trash2, RefreshCw, Copy, Check, ChevronRight, Zap, Globe,
-  MessageSquare, Code2, Palette, Layout, Plus
+  MessageSquare, Code2, Palette, Layout, Plus, ImagePlus
 } from 'lucide-react'
 import { useAICopilot } from '../../context/AICopilotContext'
+import { useAuthStore } from '../../store/useAuthStore'
 import './FloatingAICopilot.css'
 
 // Simple markdown-like renderer (bold, italic, bullet points, code)
@@ -73,13 +74,21 @@ const SITE_QUICK_PROMPTS = [
 
 export default function FloatingAICopilot({ projectType = 'bot' }: { projectType?: 'bot' | 'site' }) {
   const { isWidgetOpen, setWidgetOpen, messages, isGenerating, sendMessage, clearChat, activeConfig } = useAICopilot()
+  const { user } = useAuthStore()
   const [promptInput, setPromptInput] = useState('')
   const [isMinimized, setIsMinimized] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [isExpanded, setIsExpanded] = useState(false)
+  const [pendingImage, setPendingImage] = useState<{ base64: string; mimeType: string; previewUrl: string } | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
   const quickPrompts = projectType === 'site' ? SITE_QUICK_PROMPTS : BOT_QUICK_PROMPTS
+
+  // User initials from real name
+  const userInitials = user?.name
+    ? user.name.substring(0, 2).toUpperCase()
+    : 'AI'
 
   useEffect(() => {
     if (!isMinimized && isWidgetOpen) {
@@ -90,11 +99,26 @@ export default function FloatingAICopilot({ projectType = 'bot' }: { projectType
   const handleSend = useCallback(async (text?: string) => {
     const msg = text || promptInput
     if (!msg.trim() || isGenerating) return
+    const image = pendingImage
     setPromptInput('')
+    setPendingImage(null)
     if (textareaRef.current) textareaRef.current.style.height = '40px'
     const targetEntity = projectType === 'site' ? 'site_only' : 'bot_and_mini_app'
-    await sendMessage(msg, 'FULL_GENERATION', targetEntity)
-  }, [promptInput, isGenerating, projectType, sendMessage])
+    await sendMessage(msg, 'FULL_GENERATION', targetEntity, image?.base64, image?.mimeType)
+  }, [promptInput, pendingImage, isGenerating, projectType, sendMessage])
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 4 * 1024 * 1024) { alert('Rasm hajmi 4MB dan oshmasligi kerak'); return }
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string
+      setPendingImage({ base64: dataUrl.split(',')[1], mimeType: file.type, previewUrl: dataUrl })
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -243,7 +267,7 @@ export default function FloatingAICopilot({ projectType = 'bot' }: { projectType
                 </div>
                 {m.sender === 'user' && (
                   <div className="fai-avatar user">
-                    <span style={{ fontSize: 10, fontWeight: 700 }}>SZ</span>
+                    <span style={{ fontSize: 10, fontWeight: 700 }}>{userInitials}</span>
                   </div>
                 )}
               </div>
@@ -267,12 +291,20 @@ export default function FloatingAICopilot({ projectType = 'bot' }: { projectType
 
           {/* Input Area */}
           <div className="fai-input-area">
-            <div className={`fai-input-box ${promptInput ? 'active' : ''}`}>
+            {/* Image preview */}
+            {pendingImage && (
+              <div style={{ marginBottom: 8, position: 'relative', display: 'inline-block' }}>
+                <img src={pendingImage.previewUrl} alt="preview" style={{ maxWidth: 100, maxHeight: 70, borderRadius: 8, border: '2px solid rgba(168,85,247,0.5)' }} />
+                <button onClick={() => setPendingImage(null)} style={{ position: 'absolute', top: -6, right: -6, width: 16, height: 16, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9 }}>✕</button>
+              </div>
+            )}
+            <div className={`fai-input-box ${promptInput || pendingImage ? 'active' : ''}`}>
+              <input ref={imageInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageSelect} />
               <textarea
                 ref={textareaRef}
                 placeholder={projectType === 'site'
-                  ? "Saytga nimalar qo'shaylik? Masalan: 'Animatsiyali hero section qo'sh'"
-                  : "Botga nimalar qo'shaylik? Masalan: 'FAQ bo'limi qo'sh'"}
+                  ? "Saytga nimalar qo'shaylik? Yoki 📸 rasm yuboring"
+                  : "Botga nimalar qo'shaylik? Yoki 📸 rasm yuboring"}
                 value={promptInput}
                 onChange={handleTextareaChange}
                 onKeyDown={handleKeyDown}
@@ -280,13 +312,22 @@ export default function FloatingAICopilot({ projectType = 'bot' }: { projectType
                 rows={1}
               />
               <div className="fai-input-actions">
-                {promptInput && (
+                {(promptInput || pendingImage) && (
                   <span className="fai-input-hint">↵ yuborish</span>
                 )}
                 <button
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={isGenerating}
+                  title="📸 Rasm yuborish"
+                  className="fai-icon-btn"
+                  style={{ color: pendingImage ? '#a855f7' : undefined }}
+                >
+                  <ImagePlus size={13} />
+                </button>
+                <button
                   onClick={() => handleSend()}
-                  disabled={!promptInput.trim() || isGenerating}
-                  className={`fai-send-btn ${promptInput.trim() && !isGenerating ? 'active' : ''}`}
+                  disabled={(!promptInput.trim() && !pendingImage) || isGenerating}
+                  className={`fai-send-btn ${(promptInput.trim() || pendingImage) && !isGenerating ? 'active' : ''}`}
                 >
                   {isGenerating ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
                 </button>

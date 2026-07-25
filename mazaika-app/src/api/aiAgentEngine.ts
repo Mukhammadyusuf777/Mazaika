@@ -13,7 +13,7 @@ export interface PatchOperation {
 export interface AgentResponsePayload {
   explanation: string
   execution_mode: 'FULL_GENERATION' | 'PATCH' | 'DISCUSSION'
-  target_entity: 'bot' | 'mini_app' | 'website' | 'bot_and_mini_app' | 'none'
+  target_entity: 'bot' | 'mini_app' | 'website' | 'bot_and_mini_app' | 'site_only' | 'none'
   project_data?: any
   patch_operations?: PatchOperation[]
 }
@@ -31,6 +31,8 @@ export async function queryAntigravityAgent(
     currentConfig?: any
     chatHistory?: { role: string, content: string }[]
     targetEntity?: 'bot_and_mini_app' | 'site_only'
+    imageBase64?: string
+    imageMimeType?: string
   }
 ): Promise<AgentResponsePayload> {
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -49,7 +51,10 @@ export async function queryAntigravityAgent(
         selectedBlockId: contextMeta?.selectedElementId,
         currentConfig: contextMeta?.currentConfig,
         chatHistory: contextMeta?.chatHistory || [],
-        targetEntity: contextMeta?.targetEntity
+        targetEntity: contextMeta?.targetEntity,
+        // Vision fields
+        imageBase64: contextMeta?.imageBase64 || null,
+        imageMimeType: contextMeta?.imageMimeType || null,
       })
     })
 
@@ -65,8 +70,12 @@ export async function queryAntigravityAgent(
     }
 
     const data = await res.json()
-    
-    const executionMode = data.execution_mode || (data.type === 'site' || data.html || data.source_code || data.website_html ? 'FULL_GENERATION' : 'DISCUSSION')
+
+    const executionMode = data.execution_mode || (
+      data.type === 'site' || data.html || data.source_code || data.website_html
+        ? 'FULL_GENERATION'
+        : 'DISCUSSION'
+    )
 
     if (executionMode === 'PATCH') {
       return {
@@ -75,14 +84,35 @@ export async function queryAntigravityAgent(
         target_entity: 'none',
         patch_operations: data.patch_operations || []
       }
-    } else if (executionMode === 'FULL_GENERATION' || data.type === 'site' || data.html || data.source_code || data.website_html) {
-      const projectData = data.project_data || data;
-      const htmlCode = projectData.source_code || projectData.html || projectData.website_html || projectData.site_code || projectData.code || data.html || data.source_code || data.website_html || data.site_code || data.code || '';
-      const targetEntity = (htmlCode || data.type === 'site') ? 'site_only' : (data.target_entity || 'site_only');
-      const isRu = /[а-яА-ЯёЁ]/.test(prompt);
+    } else if (
+      executionMode === 'FULL_GENERATION' ||
+      data.type === 'site' ||
+      data.html ||
+      data.source_code ||
+      data.website_html
+    ) {
+      const projectData = data.project_data || data
+      const htmlCode =
+        projectData.source_code ||
+        projectData.html ||
+        projectData.website_html ||
+        projectData.site_code ||
+        projectData.code ||
+        data.html ||
+        data.source_code ||
+        data.website_html ||
+        data.site_code ||
+        data.code ||
+        ''
+      const targetEntity = (htmlCode || data.type === 'site') ? 'site_only' : (data.target_entity || 'site_only')
+      const isRu = /[а-яА-ЯёЁ]/.test(prompt)
 
       return {
-        explanation: data.explanation || (isRu ? "Ваш сайт успешно создан! 🚀 Вы можете просмотреть его в панели справа." : "Sayt muvaffaqiyatli yaratildi! 🚀 O'ng tomondagi jonli oynada ko'rishingiz mumkin."),
+        explanation: data.explanation || (
+          isRu
+            ? 'Ваш сайт успешно создан! 🚀 Вы можете просмотреть его в панели справа.'
+            : 'Sayt muvaffaqiyatli yaratildi! 🚀 O\'ng tomondagi jonli oynada ko\'rishingiz mumkin.'
+        ),
         execution_mode: 'FULL_GENERATION',
         target_entity: targetEntity,
         project_data: {
@@ -92,25 +122,31 @@ export async function queryAntigravityAgent(
           themeColor: projectData.themeColor || '#1e90ff',
           source_code: htmlCode,
           blocks: projectData.blocks || [],
+          // ✅ FIX: bot_edges was missing — now preserved
           bot_blocks: projectData.bot_blocks || [],
+          bot_edges: projectData.bot_edges || [],
           site_blocks: projectData.site_blocks || []
         }
       }
     } else {
       // DISCUSSION MODE
-      const isRu = /[а-яА-ЯёЁ]/.test(prompt);
+      const isRu = /[а-яА-ЯёЁ]/.test(prompt)
       return {
-        explanation: data.explanation || (isRu ? "Ответ готов! Что мы добавим или изменим дальше?" : "Javob tayyor! Qanday yangi bo'lim qo'shamiz?"),
+        explanation: data.explanation || (
+          isRu
+            ? 'Ответ готов! Что мы добавим или изменим дальше?'
+            : 'Javob tayyor! Qanday yangi bo\'lim qo\'shamiz?'
+        ),
         execution_mode: 'DISCUSSION',
         target_entity: 'none'
       }
     }
   } catch (error: any) {
-    console.error("Failed to fetch from NestJS AI API:", error)
+    console.error('Failed to fetch from NestJS AI API:', error)
     const errMsg = error.message || 'Unknown network error'
-    
+
     return {
-      explanation: `API Error: ${errMsg}. Please ensure the backend is running.`,
+      explanation: `Xatolik: ${errMsg}. Backend ishga tushirilganini tekshiring.`,
       execution_mode: 'DISCUSSION',
       target_entity: 'none'
     }

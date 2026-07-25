@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { queryAntigravityAgent } from '../api/aiAgentEngine'
 import type { AgentResponsePayload, PatchOperation } from '../api/aiAgentEngine'
+import { useAuthStore } from '../store/useAuthStore'
 
 export interface ChatMessage {
   id: string
@@ -10,6 +11,7 @@ export interface ChatMessage {
   timestamp: Date
   projectData?: any
   patchOperations?: PatchOperation[]
+  imageUrl?: string // for vision messages
 }
 
 interface AICopilotContextType {
@@ -20,7 +22,13 @@ interface AICopilotContextType {
   setActiveElementId: (id: string | null) => void
   messages: ChatMessage[]
   isGenerating: boolean
-  sendMessage: (text: string, overrideMode?: 'FULL_GENERATION' | 'PATCH', targetEntity?: 'bot_and_mini_app' | 'site_only') => Promise<AgentResponsePayload | null>
+  sendMessage: (
+    text: string,
+    overrideMode?: 'FULL_GENERATION' | 'PATCH',
+    targetEntity?: 'bot_and_mini_app' | 'site_only',
+    imageBase64?: string,
+    imageMimeType?: string
+  ) => Promise<AgentResponsePayload | null>
   activeConfig: any
   setActiveConfig: React.Dispatch<React.SetStateAction<any>>
   applyPatchOperations: (ops: PatchOperation[]) => void
@@ -31,55 +39,76 @@ interface AICopilotContextType {
 
 const AICopilotContext = createContext<AICopilotContextType | undefined>(undefined)
 
+function makeKey(userId: string | undefined, type: 'config' | 'messages', projectId: string) {
+  return `mazaika_ai_${userId || 'anon'}_${type}_${projectId}`
+}
+
 export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-const [isWidgetOpen, setWidgetOpen] = useState(false)
+  const { user } = useAuthStore()
+  const userId = user?.id
+
+  const [isWidgetOpen, setWidgetOpen] = useState(false)
   const [activeElementId, setActiveElementId] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [activeProjectId, setActiveProjectId] = useState<string>('default')
-  
+  const prevUserIdRef = useRef<string | undefined>(userId)
+
   const [activeConfig, setActiveConfig] = useState<any>(() => {
-    const savedConfig = localStorage.getItem('mazaika_ai_config_default')
-    return savedConfig ? JSON.parse(savedConfig) : null
+    const saved = localStorage.getItem(makeKey(userId, 'config', 'default'))
+    return saved ? JSON.parse(saved) : null
   })
 
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    const savedMessages = localStorage.getItem('mazaika_ai_messages_default')
-    if (savedMessages) {
-      const parsed = JSON.parse(savedMessages)
+    const saved = localStorage.getItem(makeKey(userId, 'messages', 'default'))
+    if (saved) {
+      const parsed = JSON.parse(saved)
       return parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }))
     }
     return [
       {
         id: 'welcome_1',
         sender: 'agent',
-        text: `Salom! Men **Mazaika AI** — sizning shaxsiy AI developeringizman! 🚀
-
-Men quyidagilarda yordam bera olaman:
-- 🤖 **Telegram bot** yaratish yoki takomillashtirish
-- 🌐 **Sayt** yaratish — to'liq HTML/CSS/JS
-- ✨ Mavjud loyihani o'zgartirish yoki kengaytirish
-
-G'oyangizni yozing va men uni lahzalarda tayyor loyihaga aylantirib beraman!`,
+        text: `Salom! Men **Mazaika AI** — sizning shaxsiy AI developeringizman! 🚀\n\nMen quyidagilarda yordam bera olaman:\n- 🤖 **Telegram bot** yaratish yoki takomillashtirish\n- 🌐 **Sayt** yaratish — to'liq HTML/CSS/JS\n- ✨ Mavjud loyihani o'zgartirish yoki kengaytirish\n- 📸 **Rasm yuboring** — men uni tahlil qilib sizga kerakli narsani yarataman!\n\nG'oyangizni yozing yoki rasm yuboring!`,
         timestamp: new Date()
       }
     ]
   })
 
+  // Re-initialize when user changes (login/logout)
+  useEffect(() => {
+    if (prevUserIdRef.current !== userId) {
+      prevUserIdRef.current = userId
+      // Reload data for new user
+      const savedConfig = localStorage.getItem(makeKey(userId, 'config', 'default'))
+      const savedMessages = localStorage.getItem(makeKey(userId, 'messages', 'default'))
+      setActiveConfig(savedConfig ? JSON.parse(savedConfig) : null)
+      if (savedMessages) {
+        const parsed = JSON.parse(savedMessages)
+        setMessages(parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })))
+      } else {
+        setMessages([{
+          id: 'welcome_' + Date.now(),
+          sender: 'agent',
+          text: `Salom! Men **Mazaika AI** — sizning shaxsiy AI developeringizman! 🚀\n\nG'oyangizni yozing yoki rasm yuboring!`,
+          timestamp: new Date()
+        }])
+      }
+      setActiveProjectId('default')
+    }
+  }, [userId])
+
   const switchProject = (projectId: string, config: any) => {
     setActiveProjectId(projectId)
-    // Only override config if a non-null config was explicitly passed
     if (config !== null) {
       setActiveConfig(config)
     }
-    
-    // Load project-specific saved config from localStorage
-    const savedConfig = localStorage.getItem('mazaika_ai_config_' + projectId)
+
+    const savedConfig = localStorage.getItem(makeKey(userId, 'config', projectId))
     if (savedConfig) {
       try { setActiveConfig(JSON.parse(savedConfig)) } catch {}
     }
-    
-    // Load project messages
-    const savedMessages = localStorage.getItem('mazaika_ai_messages_' + projectId)
+
+    const savedMessages = localStorage.getItem(makeKey(userId, 'messages', projectId))
     if (savedMessages) {
       const parsed = JSON.parse(savedMessages)
       setMessages(parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })))
@@ -88,7 +117,7 @@ G'oyangizni yozing va men uni lahzalarda tayyor loyihaga aylantirib beraman!`,
         {
           id: 'welcome_' + projectId,
           sender: 'agent',
-          text: `Bu loyiha uchun AI tayyor! ✨\n\nBotni yaxshilash, yangi bloklar qo'shish yoki Mini App yaratish uchun yozing.`,
+          text: `Bu loyiha uchun AI tayyor! ✨\n\nBotni yaxshilash, yangi bloklar qo'shish yoki sayt yaratish uchun yozing.\n\n📸 Rasm yuborib ham ko'rsatishingiz mumkin!`,
           timestamp: new Date()
         }
       ])
@@ -96,65 +125,58 @@ G'oyangizni yozing va men uni lahzalarda tayyor loyihaga aylantirib beraman!`,
   }
 
   const clearChat = () => {
-    setActiveConfig(null);
-    const welcomeText = `Salom! Men **Mazaika AI** — sizning shaxsiy AI developeringizman! 🚀\n\nChat tozalandi. Yangi g'oyangizni yozing!`;
-    setMessages([
-      {
-        id: 'welcome_' + Date.now(),
-        sender: 'agent',
-        text: welcomeText,
-        timestamp: new Date()
-      }
-    ]);
-    localStorage.removeItem('mazaika_ai_config_' + activeProjectId);
-    localStorage.removeItem('mazaika_ai_messages_' + activeProjectId);
+    setActiveConfig(null)
+    const welcomeText = `Salom! Men **Mazaika AI** — sizning shaxsiy AI developeringizman! 🚀\n\nChat tozalandi. Yangi g'oyangizni yozing!`
+    setMessages([{ id: 'welcome_' + Date.now(), sender: 'agent', text: welcomeText, timestamp: new Date() }])
+    localStorage.removeItem(makeKey(userId, 'config', activeProjectId))
+    localStorage.removeItem(makeKey(userId, 'messages', activeProjectId))
   }
-
-
 
   const toggleWidget = () => setWidgetOpen(prev => !prev)
 
   const applyPatchOperations = (ops: PatchOperation[]) => {
     if (!ops || ops.length === 0) return
-
     setActiveConfig((prevConfig: any) => {
       if (!prevConfig) return prevConfig
-      let updated = { ...prevConfig }
-
+      const updated = { ...prevConfig }
       try {
-        // Fast JSON Patch supports RFC6902 (path: '/blocks/0/title' instead of 'blocks.0.title')
-        // We will adapt the AI's paths if they use dot notation to slash notation for safety.
         const normalizedOps = ops.map(op => ({
           ...op,
           path: op.path.startsWith('/') ? op.path : '/' + op.path.replace(/\./g, '/')
-        }));
-        
+        }))
         import('fast-json-patch').then(jsonpatch => {
-          const newDoc = jsonpatch.applyPatch(updated, normalizedOps).newDocument;
-          setActiveConfig(newDoc);
-          localStorage.setItem('mazaika_ai_config_' + activeProjectId, JSON.stringify(newDoc));
-        });
-        return updated; // Temporary return while async patch processes
+          const newDoc = jsonpatch.applyPatch(updated, normalizedOps).newDocument
+          setActiveConfig(newDoc)
+          localStorage.setItem(makeKey(userId, 'config', activeProjectId), JSON.stringify(newDoc))
+        })
+        return updated
       } catch (e) {
-        console.error("Patch application failed:", e);
-        return updated;
+        console.error('Patch application failed:', e)
+        return updated
       }
     })
   }
 
-  const sendMessage = async (text: string, overrideMode?: 'FULL_GENERATION' | 'PATCH', targetEntity?: 'bot_and_mini_app' | 'site_only') => {
+  const sendMessage = async (
+    text: string,
+    overrideMode?: 'FULL_GENERATION' | 'PATCH',
+    targetEntity?: 'bot_and_mini_app' | 'site_only',
+    imageBase64?: string,
+    imageMimeType?: string
+  ) => {
     if (!text.trim() || isGenerating) return null
 
     const userMsg: ChatMessage = {
       id: 'msg_' + Date.now(),
       sender: 'user',
       text,
-      timestamp: new Date()
+      timestamp: new Date(),
+      imageUrl: imageBase64 ? `data:${imageMimeType || 'image/jpeg'};base64,${imageBase64}` : undefined
     }
 
     setMessages(prev => {
       const updated = [...prev, userMsg]
-      localStorage.setItem('mazaika_ai_messages_' + activeProjectId, JSON.stringify(updated))
+      localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated))
       return updated
     })
     setIsGenerating(true)
@@ -163,7 +185,7 @@ G'oyangizni yozing va men uni lahzalarda tayyor loyihaga aylantirib beraman!`,
       const chatHistory = messages.slice(-10).map(m => ({
         role: m.sender,
         content: m.text
-      }));
+      }))
 
       const response = await queryAntigravityAgent(text, {
         executionMode: overrideMode as 'FULL_GENERATION' | 'PATCH' | 'DISCUSSION' | undefined,
@@ -171,7 +193,9 @@ G'oyangizni yozing va men uni lahzalarda tayyor loyihaga aylantirib beraman!`,
         currentConfig: activeConfig,
         currentPage: window.location.pathname,
         chatHistory,
-        targetEntity
+        targetEntity,
+        imageBase64,
+        imageMimeType
       })
 
       const agentMsg: ChatMessage = {
@@ -186,7 +210,7 @@ G'oyangizni yozing va men uni lahzalarda tayyor loyihaga aylantirib beraman!`,
 
       setMessages(prev => {
         const updated = [...prev, agentMsg]
-        localStorage.setItem('mazaika_ai_messages_' + activeProjectId, JSON.stringify(updated))
+        localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated))
         return updated
       })
 
@@ -194,21 +218,21 @@ G'oyangizni yozing va men uni lahzalarda tayyor loyihaga aylantirib beraman!`,
         applyPatchOperations(response.patch_operations)
       } else if (response.execution_mode === 'FULL_GENERATION' && response.project_data) {
         setActiveConfig(response.project_data)
-        localStorage.setItem('mazaika_ai_config_' + activeProjectId, JSON.stringify(response.project_data))
+        localStorage.setItem(makeKey(userId, 'config', activeProjectId), JSON.stringify(response.project_data))
       }
 
       return response
     } catch (err) {
-      console.error("AI Agent error:", err)
+      console.error('AI Agent error:', err)
       const errorMsg: ChatMessage = {
         id: 'err_' + Date.now(),
         sender: 'agent',
-        text: 'Kechirasiz, sorovni qayta ishlashda xatolik yuz berdi. Qaytadan urinib koring.',
+        text: 'Kechirasiz, so\'rovni qayta ishlashda xatolik yuz berdi. Qaytadan urinib ko\'ring.',
         timestamp: new Date()
       }
       setMessages(prev => {
         const updated = [...prev, errorMsg]
-        localStorage.setItem('mazaika_ai_messages_' + activeProjectId, JSON.stringify(updated))
+        localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated))
         return updated
       })
       return null
@@ -216,6 +240,7 @@ G'oyangizni yozing va men uni lahzalarda tayyor loyihaga aylantirib beraman!`,
       setIsGenerating(false)
     }
   }
+
   return (
     <AICopilotContext.Provider value={{
       isWidgetOpen,

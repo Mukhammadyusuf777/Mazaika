@@ -1164,6 +1164,291 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
             </p>
           </div>
         )}
+        
+        {/* === NEW MEDIA BLOCKS === */}
+        {node.type === 'photo' && (
+          <div className="form-group">
+            <label className="form-label">Rasm havolasi (URL)</label>
+            <input type="text" className="input" value={data.fileUrl || ''} onChange={(e) => onUpdate({ fileUrl: e.target.value })} placeholder="https://site.com/photo.jpg" />
+            <label className="form-label" style={{marginTop: 12}}>Taglavha (Caption)</label>
+            <textarea className="input" rows={2} value={data.caption || ''} onChange={(e) => onUpdate({ caption: e.target.value })} placeholder="Rasm ostidagi matn..." />
+          </div>
+        )}
+        {node.type === 'video' && (
+          <div className="form-group">
+            <label className="form-label">Video havolasi (URL yoki File ID)</label>
+            <input type="text" className="input" value={data.fileUrl || ''} onChange={(e) => onUpdate({ fileUrl: e.target.value })} placeholder="https://site.com/video.mp4" />
+            <label className="form-label" style={{marginTop: 12}}>Taglavha (Caption)</label>
+            <textarea className="input" rows={2} value={data.caption || ''} onChange={(e) => onUpdate({ caption: e.target.value })} placeholder="Video ostidagi matn..." />
+          </div>
+        )}
+        {node.type === 'document' && (
+          <div className="form-group">
+            <label className="form-label">Hujjat havolasi (URL)</label>
+            <input type="text" className="input" value={data.fileUrl || ''} onChange={(e) => onUpdate({ fileUrl: e.target.value })} placeholder="https://site.com/doc.pdf" />
+            <label className="form-label" style={{marginTop: 12}}>Fayl nomi (ixtiyoriy)</label>
+            <input type="text" className="input" value={data.fileName || ''} onChange={(e) => onUpdate({ fileName: e.target.value })} placeholder="Masalan: hisobot.pdf" />
+          </div>
+        )}
+        {node.type === 'audio' && (
+          <div className="form-group">
+            <label className="form-label">Audio havolasi (URL)</label>
+            <input type="text" className="input" value={data.fileUrl || ''} onChange={(e) => onUpdate({ fileUrl: e.target.value })} placeholder="https://site.com/audio.mp3" />
+            <label className="form-label" style={{marginTop: 12}}>Taglavha (Caption)</label>
+            <textarea className="input" rows={2} value={data.caption || ''} onChange={(e) => onUpdate({ caption: e.target.value })} placeholder="Audio izohi..." />
+          </div>
+        )}
+        {node.type === 'sticker' && (
+          <div className="form-group">
+            <label className="form-label">Sticker File ID</label>
+            <input type="text" className="input" value={data.fileId || ''} onChange={(e) => onUpdate({ fileId: e.target.value })} placeholder="CAACAgIAAxkBAAE..." />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Telegram stikerining file_id raqamini kiriting.</span>
+          </div>
+        )}
+
+        {/* === NEW INPUT BLOCKS (POLL / QUIZ) === */}
+        {(node.type === 'poll' || node.type === 'quiz') && (
+          <>
+            <div className="form-group">
+              <label className="form-label">Savol (So'rovnoma matni)</label>
+              <textarea className="input" rows={2} value={data.question || ''} onChange={(e) => onUpdate({ question: e.target.value })} placeholder="Savolingizni yozing..." />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Variantlar</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {(data.options || []).map((opt: string, i: number) => (
+                  <div key={i} style={{ display: 'flex', gap: '8px' }}>
+                    <input type="text" className="input" value={opt} onChange={(e) => {
+                      const newOpts = [...data.options]; newOpts[i] = e.target.value; onUpdate({ options: newOpts });
+                    }} placeholder={`Variant ${i + 1}`} />
+                    {node.type === 'quiz' && (
+                      <input type="radio" name="correctOption" checked={data.correctIndex === i} onChange={() => onUpdate({ correctIndex: i })} title="To'g'ri javob" />
+                    )}
+                    <button className="btn btn-ghost btn-icon" onClick={() => {
+                      const newOpts = data.options.filter((_: any, idx: number) => idx !== i); onUpdate({ options: newOpts });
+                    }}><Trash2 size={14} /></button>
+                  </div>
+                ))}
+                <button className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => onUpdate({ options: [...(data.options || []), 'Yangi variant'] })}>
+                  <Plus size={14} /> Variant qo'shish
+                </button>
+              </div>
+              {node.type === 'poll' && (
+                <div style={{marginTop: 12}}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-main)' }}>
+                    <input type="checkbox" checked={data.isMultiple || false} onChange={(e) => onUpdate({ isMultiple: e.target.checked })} />
+                    Ko'p variantli (Multiple choice)
+                  </label>
+                </div>
+              )}
+              {node.type === 'quiz' && (
+                <div className="form-group" style={{marginTop: 12}}>
+                  <label className="form-label">Tushuntirish (To'g'ri javob topilganda yoki xato qilinganda ko'rinadi)</label>
+                  <input type="text" className="input" value={data.explanation || ''} onChange={(e) => onUpdate({ explanation: e.target.value })} placeholder="Masalan: To'g'ri javob A edi, chunki..." />
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* === NEW AI BLOCKS === */}
+        {node.type === 'aiReply' && (
+          <div className="form-group">
+            <label className="form-label">AI Model</label>
+            <select className="input" value={data.model || 'gemini-1.5-flash'} onChange={(e) => onUpdate({ model: e.target.value })}>
+              <option value="gemini-1.5-flash">Google Gemini 1.5 Flash</option>
+              <option value="gemini-1.5-pro">Google Gemini 1.5 Pro</option>
+              <option value="gpt-4o">OpenAI GPT-4o</option>
+              <option value="gpt-4o-mini">OpenAI GPT-4o Mini</option>
+              <option value="claude-3-5-sonnet">Anthropic Claude 3.5 Sonnet</option>
+            </select>
+            <label className="form-label" style={{marginTop: 12}}>Sistemaviy prompt (Prompts)</label>
+            <textarea className="input" rows={4} value={data.prompt || ''} onChange={(e) => onUpdate({ prompt: e.target.value })} placeholder="Sen foydali yordamchisan..." />
+            <label className="form-label" style={{marginTop: 12}}>Max tokens</label>
+            <input type="number" className="input" value={data.maxTokens || 1000} onChange={(e) => onUpdate({ maxTokens: parseInt(e.target.value) })} />
+          </div>
+        )}
+        {node.type === 'aiAnalyze' && (
+          <div className="form-group">
+            <label className="form-label">Tahlil qilinadigan matn</label>
+            <input type="text" className="input" value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="{user_message}" />
+            <label className="form-label" style={{marginTop: 12}}>Ajratib olinadigan ma'lumot</label>
+            <input type="text" className="input" value={data.field || ''} onChange={(e) => onUpdate({ field: e.target.value })} placeholder="Masalan: ism, telefon raqam" />
+            <label className="form-label" style={{marginTop: 12}}>Natijani saqlash (O'zgaruvchi)</label>
+            <input type="text" className="input" value={data.variable || ''} onChange={(e) => onUpdate({ variable: e.target.value })} placeholder="Masalan: extracted_phone" />
+          </div>
+        )}
+        {node.type === 'aiTranslate' && (
+          <div className="form-group">
+            <label className="form-label">Asl matn</label>
+            <input type="text" className="input" value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="{user_message}" />
+            <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+              <div style={{flex: 1}}>
+                <label className="form-label">Qaysi tildan</label>
+                <input type="text" className="input" value={data.fromLang || 'auto'} onChange={(e) => onUpdate({ fromLang: e.target.value })} placeholder="auto" />
+              </div>
+              <div style={{flex: 1}}>
+                <label className="form-label">Qaysi tilga</label>
+                <input type="text" className="input" value={data.toLang || 'UZ'} onChange={(e) => onUpdate({ toLang: e.target.value })} placeholder="UZ" />
+              </div>
+            </div>
+            <label className="form-label" style={{marginTop: 12}}>Natijani saqlash (O'zgaruvchi)</label>
+            <input type="text" className="input" value={data.variable || 'translated_text'} onChange={(e) => onUpdate({ variable: e.target.value })} placeholder="translated_text" />
+          </div>
+        )}
+        {node.type === 'aiImage' && (
+          <div className="form-group">
+            <label className="form-label">Rasm g'oyasi (Prompt)</label>
+            <textarea className="input" rows={3} value={data.prompt || ''} onChange={(e) => onUpdate({ prompt: e.target.value })} placeholder="Dengiz bo'yida quyosh botishi..." />
+            <label className="form-label" style={{marginTop: 12}}>Model</label>
+            <select className="input" value={data.model || 'dall-e-3'} onChange={(e) => onUpdate({ model: e.target.value })}>
+              <option value="dall-e-3">DALL-E 3</option>
+              <option value="midjourney">Midjourney API</option>
+              <option value="stable-diffusion">Stable Diffusion 3</option>
+            </select>
+          </div>
+        )}
+
+        {/* === NEW NOTIFICATION BLOCKS === */}
+        {node.type === 'notifyOperator' && (
+          <div className="form-group">
+            <label className="form-label">Operator Telegram ID</label>
+            <input type="text" className="input" value={data.chatId || ''} onChange={(e) => onUpdate({ chatId: e.target.value })} placeholder="123456789" />
+            <label className="form-label" style={{marginTop: 12}}>Xabar matni</label>
+            <textarea className="input" rows={3} value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="Yangi mijoz: {user_name}..." />
+          </div>
+        )}
+        {node.type === 'notifyGroup' && (
+          <div className="form-group">
+            <label className="form-label">Guruh ID</label>
+            <input type="text" className="input" value={data.groupId || ''} onChange={(e) => onUpdate({ groupId: e.target.value })} placeholder="-1001234567890" />
+            <label className="form-label" style={{marginTop: 12}}>Xabar matni</label>
+            <textarea className="input" rows={3} value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="Guruhga xabar..." />
+          </div>
+        )}
+        {node.type === 'notifyChannel' && (
+          <div className="form-group">
+            <label className="form-label">Kanal ID</label>
+            <input type="text" className="input" value={data.channelId || ''} onChange={(e) => onUpdate({ channelId: e.target.value })} placeholder="@kanal_username yoki -100123" />
+            <label className="form-label" style={{marginTop: 12}}>Xabar matni</label>
+            <textarea className="input" rows={3} value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="Kanalga xabar..." />
+          </div>
+        )}
+        {node.type === 'email_notify' && (
+          <div className="form-group">
+            <label className="form-label">Email manzil</label>
+            <input type="email" className="input" value={data.to || ''} onChange={(e) => onUpdate({ to: e.target.value })} placeholder="admin@site.com" />
+            <label className="form-label" style={{marginTop: 12}}>Mavzu (Subject)</label>
+            <input type="text" className="input" value={data.subject || ''} onChange={(e) => onUpdate({ subject: e.target.value })} placeholder="Yangi buyurtma" />
+            <label className="form-label" style={{marginTop: 12}}>Xabar matni</label>
+            <textarea className="input" rows={3} value={data.body || ''} onChange={(e) => onUpdate({ body: e.target.value })} placeholder="Mijoz ma'lumotlari: {user_name}..." />
+          </div>
+        )}
+
+        {/* === NEW SCHEDULER BLOCKS === */}
+        {node.type === 'schedule' && (
+          <div className="form-group">
+            <label className="form-label">Cron jadvali</label>
+            <input type="text" className="input" value={data.cron || '* * * * *'} onChange={(e) => onUpdate({ cron: e.target.value })} placeholder="0 9 * * 1-5" />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Vaqti-vaqti bilan avtomatik yuborish (Cron format).</span>
+          </div>
+        )}
+        {node.type === 'reminder' && (
+          <div className="form-group">
+            <label className="form-label">Kutish vaqti</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input type="number" className="input" value={data.delayAmount || ''} onChange={(e) => onUpdate({ delayAmount: parseInt(e.target.value) || 0 })} placeholder="24" />
+              <select className="input" value={data.delayUnit || 'hours'} onChange={(e) => onUpdate({ delayUnit: e.target.value })}>
+                <option value="minutes">Daqiqa</option>
+                <option value="hours">Soat</option>
+                <option value="days">Kun</option>
+              </select>
+            </div>
+            <label className="form-label" style={{marginTop: 12}}>Eslatma xabari</label>
+            <textarea className="input" rows={2} value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="Siz xaridingizni unutingiz..." />
+          </div>
+        )}
+        {node.type === 'sequence' && (
+          <div className="form-group">
+            <label className="form-label">Ketma-ket xabarlar soni</label>
+            <input type="number" className="input" value={data.count || 3} onChange={(e) => onUpdate({ count: parseInt(e.target.value) })} />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Ushbu blok orqali bir necha kunga mo'ljallangan avtomatik funnel qursangiz bo'ladi.</span>
+          </div>
+        )}
+
+        {/* === NEW REFERRAL BLOCKS === */}
+        {node.type === 'refCreate' && (
+          <div className="form-group">
+            <label className="form-label">Referal havola o'zgaruvchisi</label>
+            <input type="text" className="input" value={data.variable || 'ref_link'} onChange={(e) => onUpdate({ variable: e.target.value })} placeholder="ref_link" />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Mijozning shaxsiy referal havolasi shu nomli o'zgaruvchiga saqlanadi.</span>
+          </div>
+        )}
+        {node.type === 'refCheck' && (
+          <div className="form-group">
+            <label className="form-label">Taklif qilgan odamga bonus (so'm/ball)</label>
+            <input type="number" className="input" value={data.bonus || 0} onChange={(e) => onUpdate({ bonus: parseInt(e.target.value) })} placeholder="5000" />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Yangi foydalanuvchi referal link orqali kirsa, egasiga shu miqdorda bonus yoziladi.</span>
+          </div>
+        )}
+        {node.type === 'refLeaders' && (
+          <div className="form-group">
+            <label className="form-label">Top nechta yetakchi ko'rsatilsin</label>
+            <input type="number" className="input" value={data.count || 10} onChange={(e) => onUpdate({ count: parseInt(e.target.value) })} placeholder="10" />
+            <label className="form-label" style={{marginTop: 12}}>Sarlavha</label>
+            <input type="text" className="input" value={data.title || 'Referal yetakchilar:'} onChange={(e) => onUpdate({ title: e.target.value })} />
+          </div>
+        )}
+
+        {/* === NEW PAYMENT BLOCKS === */}
+        {node.type === 'stars' && (
+          <div className="form-group">
+            <label className="form-label">Telegram Stars miqdori</label>
+            <input type="number" className="input" value={data.amount || ''} onChange={(e) => onUpdate({ amount: parseInt(e.target.value) || 0 })} placeholder="Masalan: 50" />
+            <label className="form-label" style={{marginTop: 12}}>Mahsulot/Xizmat nomi</label>
+            <input type="text" className="input" value={data.title || ''} onChange={(e) => onUpdate({ title: e.target.value })} placeholder="VIP Obuna" />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Mijoz bevosita Telegram bot ichida Stars orqali to'lov qila oladi.</span>
+          </div>
+        )}
+        {node.type === 'uzumbank' && (
+          <div className="form-group">
+            <label className="form-label">Narx (UZS)</label>
+            <input type="number" className="input" value={data.price || ''} onChange={(e) => onUpdate({ price: parseInt(e.target.value) || 0 })} placeholder="Masalan: 50000" />
+            <label className="form-label" style={{marginTop: 12}}>To'lov maqsadi</label>
+            <input type="text" className="input" value={data.title || ''} onChange={(e) => onUpdate({ title: e.target.value })} placeholder="To'lov maqsadi..." />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Uzum Bank orqali to'lov qabul qilish havolasi yaratiladi.</span>
+          </div>
+        )}
+
+        {/* === NEW CRM INTEGRATION BLOCKS === */}
+        {node.type === 'amocrm' && (
+          <div className="form-group">
+            <label className="form-label">AmoCRM Harakati</label>
+            <select className="input" value={data.action || 'create_contact'} onChange={(e) => onUpdate({ action: e.target.value })}>
+              <option value="create_contact">Kontakt yaratish</option>
+              <option value="create_lead">Bitim (Lead) yaratish</option>
+              <option value="add_note">Izoh qo'shish</option>
+            </select>
+            <label className="form-label" style={{marginTop: 12}}>Ism o'zgaruvchisi</label>
+            <input type="text" className="input" value={data.nameVar || '{name}'} onChange={(e) => onUpdate({ nameVar: e.target.value })} />
+            <label className="form-label" style={{marginTop: 12}}>Telefon o'zgaruvchisi</label>
+            <input type="text" className="input" value={data.phoneVar || '{phone}'} onChange={(e) => onUpdate({ phoneVar: e.target.value })} />
+          </div>
+        )}
+        {node.type === 'bitrix' && (
+          <div className="form-group">
+            <label className="form-label">Bitrix24 Harakati</label>
+            <select className="input" value={data.action || 'crm.lead.add'} onChange={(e) => onUpdate({ action: e.target.value })}>
+              <option value="crm.lead.add">Lead yaratish</option>
+              <option value="crm.contact.add">Kontakt yaratish</option>
+              <option value="crm.deal.add">Deal (Bitim) yaratish</option>
+            </select>
+            <label className="form-label" style={{marginTop: 12}}>Ism o'zgaruvchisi</label>
+            <input type="text" className="input" value={data.nameVar || '{name}'} onChange={(e) => onUpdate({ nameVar: e.target.value })} />
+            <label className="form-label" style={{marginTop: 12}}>Telefon o'zgaruvchisi</label>
+            <input type="text" className="input" value={data.phoneVar || '{phone}'} onChange={(e) => onUpdate({ phoneVar: e.target.value })} />
+          </div>
+        )}
       </div>
 
       <div className="properties-footer" style={{ display: 'flex', gap: '8px' }}>

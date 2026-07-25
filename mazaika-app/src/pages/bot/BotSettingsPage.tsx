@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Save, Copy, RefreshCw, AlertTriangle, Globe, Zap, CheckCircle, XCircle, Info } from 'lucide-react'
 import { getBotById, updateBot, deleteBot } from '../../api/firestore'
 import { apiClient } from '../../api/apiClient'
+import { useTranslation } from '../../hooks/useTranslation'
+import { Language } from '../../i18n/translations'
 
 export default function BotSettingsPage() {
   const { botId } = useParams<{ botId: string }>()
@@ -11,7 +13,7 @@ export default function BotSettingsPage() {
   const [name, setName] = useState('')
   const [token, setToken] = useState('')
   const [username, setUsername] = useState('')
-  const [language, setLanguage] = useState("O'zbekcha")
+  const { t, lang, changeLanguage } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -199,7 +201,7 @@ export default function BotSettingsPage() {
   return (
     <div className="settings-container">
       <div style={{ marginBottom: 'var(--space-6)' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 700 }}>Bot Sozlamalari</h2>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 700 }}>{t('settings_title')}</h2>
         <p style={{ color: 'var(--text-muted)' }}>Asosiy ma'lumotlar va API ulanishlar</p>
       </div>
 
@@ -261,11 +263,11 @@ export default function BotSettingsPage() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Asosiy Til</label>
-              <select className="input" value={language} onChange={(e) => setLanguage(e.target.value)}>
-                <option>O'zbekcha</option>
-                <option>Русский</option>
-                <option>English</option>
+              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{t('settings_language')}</label>
+              <select className="input" value={lang} onChange={(e) => changeLanguage(e.target.value as Language)}>
+                <option value="UZ">O'zbekcha</option>
+                <option value="RU">Русский</option>
+                <option value="EN">English</option>
               </select>
             </div>
           </div>
@@ -428,14 +430,14 @@ export default function BotSettingsPage() {
             style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid #ef4444' }}
             disabled={isLoading}
           >
-            Botni o'chirish
+            {t('btn_delete')}
           </button>
         </div>
 
         {/* SAVE BUTTON */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--space-2)' }}>
           <button type="submit" className={`btn ${isSaved ? 'btn-success' : 'btn-primary'}`} style={{ padding: '0 32px' }} disabled={isLoading}>
-            <Save size={18} /> {isSaved ? 'Saqlandi! ✓' : 'Saqlash'}
+            <Save size={18} /> {isSaved ? t('settings_saved') : t('settings_save')}
           </button>
         </div>
       </form>

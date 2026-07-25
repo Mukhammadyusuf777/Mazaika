@@ -32,10 +32,39 @@ export default function AnalyticsPage() {
         // Fallback: Query Firestore collections directly
         try {
           const contacts = await getContacts(botId)
+          let totalContacts = contacts.length;
+          
+          const days = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Juma', 'Shan'];
+          const now = new Date();
+          const chartDataMap = new Map();
+          for (let i = 6; i >= 0; i--) {
+            const d = new Date(now);
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            const dayName = days[d.getDay()];
+            chartDataMap.set(dateStr, { name: dayName, dateStr, users: 0, msgs: 0 });
+          }
+
+          let todayMessages = 0;
+          const todayStr = now.toISOString().split('T')[0];
+
+          for (const contact of contacts) {
+            if (contact.createdAt) {
+              const d = contact.createdAt.toDate ? contact.createdAt.toDate() : new Date(contact.createdAt);
+              const dateStr = d.toISOString().split('T')[0];
+              if (chartDataMap.has(dateStr)) {
+                chartDataMap.get(dateStr).users += 1;
+              }
+            }
+            
+            // Only fetch messages if really necessary in fallback, it could be slow.
+            // But we will do a mock fallback just to be safe if backend fails.
+          }
+
           setStats(prev => ({
             ...prev,
-            totalContacts: contacts.length,
-            todayMessages: contacts.length * 3, // mock average activity
+            totalContacts,
+            chartData: Array.from(chartDataMap.values()).map(({ name, users, msgs }) => ({ name, users, msgs }))
           }))
         } catch {
           // ignore

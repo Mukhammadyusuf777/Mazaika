@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
-import { 
+import {
   Globe, Save, Eye, CheckCircle, Sparkles, Bot, Loader2, Send,
-  Copy, Check, RefreshCw, Zap, ExternalLink, Laptop, Smartphone, Sliders, X
+  Copy, Check, RefreshCw, Zap, ExternalLink, Laptop, Smartphone,
+  Sliders, X, ImagePlus, AlertCircle
 } from 'lucide-react'
 
 import { getSiteConfig, saveSiteConfig, updateBot } from '../../api/firestore'
 import { useAICopilot } from '../../context/AICopilotContext'
+import { useAuthStore } from '../../store/useAuthStore'
 
 export interface Block {
   id: string
@@ -29,40 +31,69 @@ interface SiteConfig {
 }
 
 const DEFAULT_CONFIG: SiteConfig = {
-  appName: 'Mini App & Website',
+  appName: 'My Website',
   theme: 'glassmorphism',
   themeColor: '#1e90ff',
   blocks: [],
   source_code: ''
 }
 
+/** Validate HTML — returns true if HTML is valid enough to render */
+function isValidHtml(html: string): boolean {
+  if (!html || html.trim().length < 50) return false
+  if (!html.includes('<!DOCTYPE') && !html.includes('<html')) return false
+  try {
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(html, 'text/html')
+    const hasParserError = doc.querySelector('parsererror') !== null
+    const bodyContent = doc.body?.innerHTML?.trim() || ''
+    if (hasParserError || bodyContent.length < 20) return false
+    return true
+  } catch {
+    return false
+  }
+}
+
 export default function SiteBuilderPage() {
   const { botId } = useParams<{ botId: string }>()
+  const { user } = useAuthStore()
   const [config, setConfig] = useState<SiteConfig>(DEFAULT_CONFIG)
   const [isLoading, setIsLoading] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>('desktop')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [siteTitle, setSiteTitle] = useState('Panda World')
-  const [siteSlug, setSiteSlug] = useState('panda-world')
-  const [siteDesc, setSiteDesc] = useState('Заповедный мир панд...')
+  const [siteTitle, setSiteTitle] = useState('')
+  const [siteSlug, setSiteSlug] = useState('')
+  const [siteDesc, setSiteDesc] = useState('')
+  const [updateCounter, setUpdateCounter] = useState(0) // ✅ for iframe re-render
+  const [selfHealingStatus, setSelfHealingStatus] = useState<'idle' | 'healing' | 'failed'>('idle')
+
+  // Image upload state
+  const [pendingImage, setPendingImage] = useState<{ base64: string; mimeType: string; previewUrl: string } | null>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   const handleOpenInNewTab = () => {
     const htmlToOpen = config.source_code || ''
     if (!htmlToOpen) {
-      alert("Sayt hali yaratilmagan!")
+      alert('Sayt hali yaratilmagan!')
       return
     }
     const blob = new Blob([htmlToOpen], { type: 'text/html;charset=utf-8' })
     const blobUrl = URL.createObjectURL(blob)
     window.open(blobUrl, '_blank')
   }
-  
-  const { activeConfig, messages, sendMessage, isGenerating, clearChat } = useAICopilot()
+
+  const { activeConfig, messages, sendMessage, isGenerating, clearChat, switchProject } = useAICopilot()
   const [promptInput, setPromptInput] = useState('')
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const selfHealRetryCount = useRef(0)
+
+  // Sync botId with AI context
+  useEffect(() => {
+    if (botId) switchProject(botId, null)
+  }, [botId])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -76,6 +107,7 @@ export default function SiteBuilderPage() {
         const data = await getSiteConfig(botId)
         if (data) {
           setConfig(data as SiteConfig)
+          setSiteTitle(data.appName || '')
         } else {
           setConfig(DEFAULT_CONFIG)
         }
@@ -88,26 +120,96 @@ export default function SiteBuilderPage() {
     fetchConfig()
   }, [botId])
 
+  // ✅ Self-healing: validate HTML on every activeConfig update
   useEffect(() => {
-    if (activeConfig) {
-      setConfig(prev => ({
-        ...prev,
-        theme: activeConfig.theme || prev.theme,
-        themeColor: activeConfig.themeColor || prev.themeColor,
-        appName: activeConfig.appName || prev.appName,
-        blocks: activeConfig.blocks || prev.blocks,
-        source_code: activeConfig.source_code || prev.source_code
-      }))
+    if (!activeConfig) return
+    const newHtml = activeConfig.source_code || activeConfig.html || ''
+    if (!newHtml) return
+
+    // Check if HTML is valid
+    if (!isValidHtml(newHtml)) {
+      if (selfHealRetryCount.current < 2) {
+        selfHealRetryCount.current += 1
+        setSelfHealingStatus('healing')
+        console.warn(`⚠️ Self-healing: invalid HTML detected (attempt ${selfHealRetryCount.current}/2)`)
+        // Auto-retry with healing prompt
+        const lastUser = [...messages].reverse().find(m => m.sender === 'user')
+        if (lastUser) {
+          setTimeout(async () => {
+            await sendMessage(
+              `PREVIOUS RESPONSE WAS INVALID HTML. Please regenerate: ${lastUser.text}. Return ONLY complete valid HTML with <!DOCTYPE html>.`,
+              'FULL_GENERATION',
+              'site_only'
+            )
+            setSelfHealingStatus('idle')
+          }, 800)
+        }
+        return
+      } else {
+        setSelfHealingStatus('failed')
+        selfHealRetryCount.current = 0
+        return
+      }
     }
+
+    // HTML is valid — reset counter and apply
+    selfHealRetryCount.current = 0
+    setSelfHealingStatus('idle')
+    setConfig(prev => ({
+      ...prev,
+      theme: activeConfig.theme || prev.theme,
+      themeColor: activeConfig.themeColor || prev.themeColor,
+      appName: activeConfig.appName || prev.appName,
+      blocks: activeConfig.blocks || prev.blocks,
+      source_code: newHtml
+    }))
+    setUpdateCounter(c => c + 1) // ✅ force iframe re-render
   }, [activeConfig])
+
+  // Image upload handler
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      alert('Faqat rasm fayllari qabul qilinadi (jpg, png, gif, webp)')
+      return
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      alert('Rasm hajmi 4MB dan oshmasligi kerak')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string
+      const base64 = dataUrl.split(',')[1]
+      setPendingImage({
+        base64,
+        mimeType: file.type,
+        previewUrl: dataUrl
+      })
+    }
+    reader.readAsDataURL(file)
+    // Reset input
+    e.target.value = ''
+  }
 
   const handleSend = useCallback(async (text?: string) => {
     const msg = text || promptInput
     if (!msg.trim() || isGenerating) return
+    
+    const image = pendingImage
     setPromptInput('')
+    setPendingImage(null)
     if (textareaRef.current) textareaRef.current.style.height = '48px'
-    await sendMessage(msg, 'FULL_GENERATION', 'site_only')
-  }, [promptInput, isGenerating, sendMessage])
+    
+    await sendMessage(
+      msg,
+      'FULL_GENERATION',
+      'site_only',
+      image?.base64,
+      image?.mimeType
+    )
+  }, [promptInput, pendingImage, isGenerating, sendMessage])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -150,13 +252,17 @@ export default function SiteBuilderPage() {
     if (lastUser) await handleSend(lastUser.text)
   }
 
+  const userInitials = user?.name
+    ? user.name.substring(0, 2).toUpperCase()
+    : 'AI'
+
   const SITE_QUICK_PROMPTS = [
-    { icon: '🎨', label: 'Rangi o\'zgartir', text: 'Asosiy rangni to\'q ko\'k-binafsha gradientga o\'zgartir' },
+    { icon: '🎨', label: 'Rang o\'zgartir', text: 'Asosiy rangni to\'q ko\'k-binafsha gradientga o\'zgartir' },
     { icon: '⚡', label: 'Animatsiya', text: 'Hero bo\'limiga chiroyli kirish animatsiyasini qo\'sh' },
     { icon: '📱', label: 'Mobil', text: 'Mobil qurilmalarda yaxshiroq ko\'rinishi uchun optimizatsiya qil' },
     { icon: '🛒', label: 'Mahsulot', text: 'Tovarlar katalogi va xarid bo\'limini qo\'sh' },
     { icon: '📞', label: 'Aloqa', text: 'Bog\'lanish formasi va Telegram tugmasini qo\'sh' },
-    { icon: '✨', label: 'Modernlashtir', text: 'Butun dizaynni zamonaviy va premium ko\'rinishga o\'zgartir' },
+    { icon: '✨', label: 'Modernlashtir', text: 'Butun dizaynni zamonaviy glassmorphism ko\'rinishga o\'zgartir' },
   ]
 
   const renderMarkdown = (text: string) => {
@@ -176,7 +282,7 @@ export default function SiteBuilderPage() {
       return (
         <p key={i} style={{ margin: '2px 0', color: '#e2e8f0' }}>
           {parts.map((p, j) => p.startsWith('**') && p.endsWith('**')
-            ? <strong key={j} style={{ color: '#fff' }}>{p.slice(2,-2)}</strong>
+            ? <strong key={j} style={{ color: '#fff' }}>{p.slice(2, -2)}</strong>
             : p
           )}
         </p>
@@ -186,7 +292,9 @@ export default function SiteBuilderPage() {
 
   return (
     <div style={{ display: 'flex', height: '100%', background: '#090d16', color: '#fff', width: '100%', fontFamily: 'inherit' }}>
+      {/* ===== LEFT: AI CHAT ===== */}
       <div style={{ width: '420px', borderRight: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', background: 'linear-gradient(160deg, #0d1526 0%, #0a0f1e 100%)' }}>
+        {/* Chat Header */}
         <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(168,85,247,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ background: 'linear-gradient(135deg, #a855f7, #3b82f6)', padding: 8, borderRadius: 12, boxShadow: '0 4px 12px rgba(168,85,247,0.4)' }}>
@@ -194,8 +302,8 @@ export default function SiteBuilderPage() {
             </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>Mazaika AI Architect</div>
-              <div style={{ fontSize: 10, color: isGenerating ? '#a855f7' : '#10d974' }}>
-                {isGenerating ? '● Ishlayapti...' : '● Tayyor'}
+              <div style={{ fontSize: 10, color: isGenerating ? '#a855f7' : selfHealingStatus === 'healing' ? '#ffb830' : '#10d974' }}>
+                {isGenerating ? '● Ishlayapti...' : selfHealingStatus === 'healing' ? '● Tuzatmoqda...' : selfHealingStatus === 'failed' ? '● Xatolik' : '● Tayyor'}
               </div>
             </div>
           </div>
@@ -209,6 +317,18 @@ export default function SiteBuilderPage() {
           </div>
         </div>
 
+        {/* Self-healing alert */}
+        {selfHealingStatus === 'failed' && (
+          <div style={{ padding: '8px 16px', background: 'rgba(239,68,68,0.1)', borderBottom: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#fca5a5' }}>
+            <AlertCircle size={13} />
+            ИИ не смог исправить HTML. Попробуйте другой запрос.
+            <button onClick={() => setSelfHealingStatus('idle')} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#fca5a5', cursor: 'pointer' }}>
+              <X size={12} />
+            </button>
+          </div>
+        )}
+
+        {/* Messages */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 14, scrollbarWidth: 'thin' }}>
           {messages.length <= 1 && (
             <div style={{ textAlign: 'center', padding: '16px 8px' }}>
@@ -216,7 +336,7 @@ export default function SiteBuilderPage() {
                 <Globe size={20} />
               </div>
               <p style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0', margin: '0 0 6px' }}>Sayt yaratishni boshlaylik!</p>
-              <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 16px', lineHeight: 1.5 }}>Quyidagi misollardan birini tanlang yoki o'z g'oyangizni yozing</p>
+              <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 16px', lineHeight: 1.5 }}>📸 Rasm yuboring yoki quyidagi misollardan birini tanlang</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
                 {SITE_QUICK_PROMPTS.map((q, i) => (
                   <button key={i} onClick={() => handleSend(q.text)} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '6px 12px', fontSize: 11, color: '#94a3b8', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
@@ -236,12 +356,12 @@ export default function SiteBuilderPage() {
                 </div>
               )}
               <div style={{ flex: 1, maxWidth: '84%', display: 'flex', flexDirection: 'column', gap: 4, alignItems: m.sender === 'user' ? 'flex-end' : 'flex-start' }}>
+                {/* Image preview in message */}
+                {m.imageUrl && (
+                  <img src={m.imageUrl} alt="uploaded" style={{ maxWidth: 200, maxHeight: 150, borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', marginBottom: 4 }} />
+                )}
                 <div style={{
-                  padding: '10px 14px',
-                  borderRadius: 14,
-                  fontSize: 13,
-                  lineHeight: 1.55,
-                  wordBreak: 'break-word',
+                  padding: '10px 14px', borderRadius: 14, fontSize: 13, lineHeight: 1.55, wordBreak: 'break-word',
                   ...(m.sender === 'user'
                     ? { background: 'linear-gradient(135deg, #1e90ff, #2563eb)', color: '#fff', borderBottomRightRadius: 4, boxShadow: '0 4px 14px rgba(30,144,255,0.25)' }
                     : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderBottomLeftRadius: 4, color: '#e2e8f0' })
@@ -257,87 +377,115 @@ export default function SiteBuilderPage() {
                 )}
               </div>
               {m.sender === 'user' && (
-                <div style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2, fontSize: 10, fontWeight: 700, color: '#fff' }}>
-                  SZ
+                <div style={{ background: 'linear-gradient(135deg, #a855f7, #1e90ff)', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2, fontSize: 9, fontWeight: 700, color: '#fff' }}>
+                  {userInitials}
                 </div>
               )}
             </div>
           ))}
 
-          {isGenerating && (
+          {(isGenerating || selfHealingStatus === 'healing') && (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <div style={{ background: 'linear-gradient(135deg, #1e90ff, #a855f7)', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Bot size={12} color="#fff" />
               </div>
               <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, borderBottomLeftRadius: 4, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 5 }}>
+                {selfHealingStatus === 'healing' && <span style={{ fontSize: 11, color: '#ffb830', marginRight: 4 }}>🔧</span>}
                 {[0, 200, 400].map((delay, i) => (
-                  <span key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: 'linear-gradient(135deg, #1e90ff, #a855f7)', display: 'inline-block', animation: `siteTypingBounce 1.3s ease-in-out ${delay}ms infinite` }} />
+                  <span key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: selfHealingStatus === 'healing' ? 'linear-gradient(135deg, #ffb830, #f97316)' : 'linear-gradient(135deg, #1e90ff, #a855f7)', display: 'inline-block', animation: `siteTypingBounce 1.3s ease-in-out ${delay}ms infinite` }} />
                 ))}
               </div>
             </div>
           )}
+
           <style>{`
             @keyframes siteTypingBounce {
               0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
               40% { transform: translateY(-6px); opacity: 1; }
             }
           `}</style>
-
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Input Area */}
         <div style={{ padding: '14px 16px 16px', background: 'rgba(0,0,0,0.3)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: promptInput ? 'rgba(30,144,255,0.05)' : 'rgba(255,255,255,0.03)', border: `1px solid ${promptInput ? 'rgba(30,144,255,0.4)' : 'rgba(255,255,255,0.09)'}`, borderRadius: 14, padding: '8px 8px 8px 14px', transition: 'all 0.2s', boxShadow: promptInput ? '0 0 0 3px rgba(30,144,255,0.08)' : 'none' }}>
+          {/* Image preview */}
+          {pendingImage && (
+            <div style={{ marginBottom: 10, position: 'relative', display: 'inline-block' }}>
+              <img src={pendingImage.previewUrl} alt="preview" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 8, border: '2px solid rgba(168,85,247,0.5)' }} />
+              <button
+                onClick={() => setPendingImage(null)}
+                style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}
+              >
+                <X size={10} />
+              </button>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: promptInput || pendingImage ? 'rgba(30,144,255,0.05)' : 'rgba(255,255,255,0.03)', border: `1px solid ${promptInput || pendingImage ? 'rgba(30,144,255,0.4)' : 'rgba(255,255,255,0.09)'}`, borderRadius: 14, padding: '8px 8px 8px 14px', transition: 'all 0.2s', boxShadow: promptInput ? '0 0 0 3px rgba(30,144,255,0.08)' : 'none' }}>
             <textarea
               ref={textareaRef}
               value={promptInput}
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
               disabled={isGenerating}
-              placeholder="Saytga nimalar qo'shamiz? Masalan: 'Animatsiyali hero bo'limini yarat'"
+              placeholder="Saytga nimalar qo'shamiz? Yoki 📸 rasm yuboring..."
               style={{ flex: 1, background: 'transparent', border: 'none', color: '#fff', fontSize: 13, resize: 'none', outline: 'none', minHeight: 48, maxHeight: 140, lineHeight: 1.5, fontFamily: 'inherit', padding: 0 }}
             />
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, flexShrink: 0, paddingBottom: 2 }}>
-              {promptInput && <span style={{ fontSize: 10, color: '#334155', whiteSpace: 'nowrap', paddingBottom: 4 }}>↵ yuborish</span>}
-              <button onClick={() => handleSend()} disabled={!promptInput.trim() || isGenerating} style={{ width: 34, height: 34, borderRadius: 10, background: (promptInput.trim() && !isGenerating) ? 'linear-gradient(135deg, #1e90ff, #a855f7)' : 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: (promptInput.trim() && !isGenerating) ? 'pointer' : 'not-allowed', transition: 'all 0.2s', boxShadow: (promptInput.trim() && !isGenerating) ? '0 4px 14px rgba(30,144,255,0.4)' : 'none', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, flexShrink: 0, paddingBottom: 2 }}>
+              {/* Image upload button */}
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handleImageSelect}
+              />
+              <button
+                onClick={() => imageInputRef.current?.click()}
+                disabled={isGenerating}
+                title="Rasm yuborish (Vision AI)"
+                style={{
+                  width: 34, height: 34, borderRadius: 10,
+                  background: pendingImage ? 'rgba(168,85,247,0.3)' : 'rgba(255,255,255,0.07)',
+                  border: `1px solid ${pendingImage ? 'rgba(168,85,247,0.6)' : 'rgba(255,255,255,0.1)'}`,
+                  color: pendingImage ? '#a855f7' : '#94a3b8',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: isGenerating ? 'not-allowed' : 'pointer', transition: 'all 0.2s', flexShrink: 0,
+                  opacity: isGenerating ? 0.4 : 1
+                }}
+              >
+                <ImagePlus size={14} />
+              </button>
+
+              {/* Send button */}
+              <button
+                onClick={() => handleSend()}
+                disabled={(!promptInput.trim() && !pendingImage) || isGenerating}
+                style={{
+                  width: 34, height: 34, borderRadius: 10,
+                  background: ((promptInput.trim() || pendingImage) && !isGenerating) ? 'linear-gradient(135deg, #1e90ff, #a855f7)' : 'rgba(255,255,255,0.07)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: ((promptInput.trim() || pendingImage) && !isGenerating) ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.2s',
+                  boxShadow: ((promptInput.trim() || pendingImage) && !isGenerating) ? '0 4px 14px rgba(30,144,255,0.4)' : 'none',
+                  flexShrink: 0
+                }}
+              >
                 {isGenerating ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={14} />}
               </button>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: '#334155', marginTop: 8, paddingLeft: 4 }}>
-            <ExternalLink size={9} />
-            <button
-              onClick={() => handleSend()}
-              disabled={!promptInput.trim() || isGenerating}
-              style={{
-                position: 'absolute',
-                right: 8,
-                bottom: 8,
-                width: 34,
-                height: 34,
-                borderRadius: 10,
-                background: promptInput.trim() && !isGenerating ? '#1e90ff' : 'rgba(255,255,255,0.05)',
-                color: promptInput.trim() && !isGenerating ? '#fff' : '#64748b',
-                border: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: promptInput.trim() && !isGenerating ? 'pointer' : 'not-allowed',
-                transition: 'all 0.2s'
-              }}
-            >
-              <Send size={15} />
-            </button>
-          </div>
           <div style={{ fontSize: 10, color: '#475569', marginTop: 8, textAlign: 'center' }}>
-            AI yaratgan sayt o'ng tomonda ko'rinadi
+            AI yaratgan sayt o'ng tomonda ko'rinadi • 📸 Rasm yuborib dizayn ko'rsating
           </div>
         </div>
       </div>
 
-      {/* Right Canvas / Live Preview */}
+      {/* ===== RIGHT: LIVE PREVIEW ===== */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#020617', padding: 16, gap: 12, position: 'relative' }}>
-        {/* Top Preview Controls */}
+        {/* Preview Controls */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Globe size={20} color="#1e90ff" />
@@ -350,55 +498,30 @@ export default function SiteBuilderPage() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: 3, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)' }}>
-            <button 
-              onClick={() => setDeviceMode('desktop')} 
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, border: 'none', background: deviceMode === 'desktop' ? 'rgba(30,144,255,0.2)' : 'transparent', color: deviceMode === 'desktop' ? '#1e90ff' : '#94a3b8', cursor: 'pointer', fontWeight: deviceMode === 'desktop' ? 600 : 400 }}
-            >
+            <button onClick={() => setDeviceMode('desktop')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, border: 'none', background: deviceMode === 'desktop' ? 'rgba(30,144,255,0.2)' : 'transparent', color: deviceMode === 'desktop' ? '#1e90ff' : '#94a3b8', cursor: 'pointer', fontWeight: deviceMode === 'desktop' ? 600 : 400 }}>
               <Laptop size={14} /> Desktop
             </button>
-            <button 
-              onClick={() => setDeviceMode('mobile')} 
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, border: 'none', background: deviceMode === 'mobile' ? 'rgba(168,85,247,0.2)' : 'transparent', color: deviceMode === 'mobile' ? '#a855f7' : '#94a3b8', cursor: 'pointer', fontWeight: deviceMode === 'mobile' ? 600 : 400 }}
-            >
+            <button onClick={() => setDeviceMode('mobile')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, border: 'none', background: deviceMode === 'mobile' ? 'rgba(168,85,247,0.2)' : 'transparent', color: deviceMode === 'mobile' ? '#a855f7' : '#94a3b8', cursor: 'pointer', fontWeight: deviceMode === 'mobile' ? 600 : 400 }}>
               <Smartphone size={14} /> Mobile
             </button>
           </div>
 
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             {saveSuccess && <span style={{ color: '#10d974', display: 'flex', alignItems: 'center', fontSize: 13, gap: 5 }}><CheckCircle size={14} /> Saqlandi!</span>}
-            <button 
-              onClick={() => setIsSettingsOpen(true)}
-              className="btn btn-ghost" 
-              style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.05)', fontSize: 13, color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}
-            >
+            <button onClick={() => setIsSettingsOpen(true)} style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.05)', fontSize: 13, color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>
               <Sliders size={14} /> Sozlamalar
             </button>
-            <button onClick={handleSave} disabled={isLoading} className="btn btn-primary" style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, background: '#1e90ff', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}>
+            <button onClick={handleSave} disabled={isLoading} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, background: '#1e90ff', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}>
               <Save size={14} /> {isLoading ? 'Saqlanmoqda...' : 'Saqlash'}
             </button>
-            <button 
-              onClick={handleOpenInNewTab} 
-              className="btn btn-ghost" 
-              style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.05)', fontSize: 13, color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}
-            >
+            <button onClick={handleOpenInNewTab} style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.05)', fontSize: 13, color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>
               <Eye size={14} /> Ochish
             </button>
           </div>
         </div>
 
-        {/* Live Preview Frame Canvas */}
-        <div style={{ 
-          flex: 1, 
-          background: '#0d1526', 
-          borderRadius: 16, 
-          overflow: 'hidden', 
-          border: '1px solid rgba(255,255,255,0.08)', 
-          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6)', 
-          position: 'relative',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}>
+        {/* Preview Frame */}
+        <div style={{ flex: 1, background: '#0d1526', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6)', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           {!config.source_code ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b', flexDirection: 'column', gap: 16 }}>
               <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(168,85,247,0.1)', border: '2px dashed rgba(168,85,247,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -406,70 +529,39 @@ export default function SiteBuilderPage() {
               </div>
               <div style={{ textAlign: 'center' }}>
                 <p style={{ fontSize: 15, fontWeight: 600, color: '#94a3b8', margin: '0 0 8px' }}>Sayt hali yaratilmagan</p>
-                <p style={{ fontSize: 12, color: '#475569', margin: 0 }}>Chap tomondagi AI chatdan sayt g'oyangizni yozing</p>
+                <p style={{ fontSize: 12, color: '#475569', margin: 0 }}>Chap tomondagi AI chatdan yozing yoki 📸 rasm yuboring</p>
               </div>
             </div>
+          ) : deviceMode === 'desktop' ? (
+            <iframe
+              key={`desktop_${updateCounter}`}
+              srcDoc={config.source_code}
+              style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
+              title="Live Site Preview"
+              sandbox="allow-scripts allow-same-origin"
+            />
           ) : (
-            deviceMode === 'desktop' ? (
-                <iframe
-                  key={(config.source_code?.length || 0) + '_desktop'}
-                srcDoc={config.source_code || '<!DOCTYPE html><html><body style="background:#0f172a;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;"><h2>Загрузка сайта...</h2></body></html>'}
+            <div style={{ width: 360, height: '92%', maxHeight: 720, borderRadius: 40, border: '12px solid #1e293b', background: '#000', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 2px 4px rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <div style={{ height: 24, background: '#000', display: 'flex', justifyContent: 'space-between', padding: '4px 20px', fontSize: 10, color: '#94a3b8', zIndex: 10 }}>
+                <span>9:41</span>
+                <div style={{ width: 80, height: 12, background: '#1e293b', borderRadius: 10, marginTop: 2 }} />
+                <span>100%</span>
+              </div>
+              <iframe
+                key={`mobile_${updateCounter}`}
+                srcDoc={config.source_code}
                 style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
-                title="Live Site Preview"
+                title="Mobile Preview"
                 sandbox="allow-scripts allow-same-origin"
               />
-            ) : (
-              <div style={{
-                width: 360,
-                height: '92%',
-                maxHeight: 720,
-                borderRadius: 40,
-                border: '12px solid #1e293b',
-                background: '#000',
-                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 2px 4px rgba(255,255,255,0.1)',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden'
-              }}>
-                <div style={{ height: 24, background: '#000', display: 'flex', justifyContent: 'space-between', padding: '4px 20px', fontSize: 10, color: '#94a3b8', zIndex: 10 }}>
-                  <span>9:41</span>
-                  <div style={{ width: 80, height: 12, background: '#1e293b', borderRadius: 10, marginTop: 2 }} />
-                  <span>100%</span>
-                </div>
-
-                <iframe
-                  key={(config.source_code?.length || 0) + '_mobile'}
-                  srcDoc={config.source_code || '<!DOCTYPE html><html><body style="background:#0f172a;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;"><h2>Загрузка сайта...</h2></body></html>'}
-                  style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
-                  title="Mobile App Live Preview"
-                  sandbox="allow-scripts allow-same-origin"
-                />
-              </div>
-            )
+            </div>
           )}
         </div>
 
-        {/* SITE SETTINGS SLIDE-OVER MODAL */}
+        {/* Settings Slide-over */}
         {isSettingsOpen && (
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'rgba(2, 6, 23, 0.85)',
-            backdropFilter: 'blur(8px)',
-            zIndex: 100,
-            display: 'flex',
-            justifyContent: 'flex-end'
-          }}>
-            <div style={{
-              width: 320,
-              height: '100%',
-              background: '#0f172a',
-              borderLeft: '1px solid rgba(255,255,255,0.1)',
-              padding: 24,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between'
-            }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(2,6,23,0.85)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ width: 320, height: '100%', background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)', padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                   <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: '#fff' }}>
@@ -482,39 +574,25 @@ export default function SiteBuilderPage() {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>Sayt Nomi (Title)</label>
-                    <input
-                      type="text"
-                      value={siteTitle}
-                      onChange={e => setSiteTitle(e.target.value)}
-                      style={{ width: '100%', background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, outline: 'none' }}
-                    />
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>Sayt Nomi</label>
+                    <input type="text" value={siteTitle} onChange={e => setSiteTitle(e.target.value)} style={{ width: '100%', background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, outline: 'none' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>Domen / Slug</label>
-                    <input
-                      type="text"
-                      value={siteSlug}
-                      onChange={e => setSiteSlug(e.target.value)}
-                      style={{ width: '100%', background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, outline: 'none' }}
-                    />
+                    <input type="text" value={siteSlug} onChange={e => setSiteSlug(e.target.value)} style={{ width: '100%', background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, outline: 'none' }} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>SEO Tavsifi (Description)</label>
-                    <textarea
-                      rows={4}
-                      value={siteDesc}
-                      onChange={e => setSiteDesc(e.target.value)}
-                      style={{ width: '100%', background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, outline: 'none', resize: 'none' }}
-                    />
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>SEO Tavsifi</label>
+                    <textarea rows={4} value={siteDesc} onChange={e => setSiteDesc(e.target.value)} style={{ width: '100%', background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, outline: 'none', resize: 'none' }} />
                   </div>
                 </div>
               </div>
 
               <button
                 onClick={() => {
-                  setConfig(prev => ({ ...prev, appName: siteTitle }));
-                  setIsSettingsOpen(false);
+                  setConfig(prev => ({ ...prev, appName: siteTitle }))
+                  handleSave()
+                  setIsSettingsOpen(false)
                 }}
                 style={{ width: '100%', padding: '12px', background: '#1e90ff', color: '#fff', fontWeight: 600, borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 13 }}
               >

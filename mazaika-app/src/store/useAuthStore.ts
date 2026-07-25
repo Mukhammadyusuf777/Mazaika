@@ -13,6 +13,24 @@ interface AuthState {
   logout: () => void;
 }
 
+/** Clears all AI data for a given userId from localStorage */
+function clearUserAIData(userId?: string) {
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key) continue;
+    // Remove all mazaika AI keys: both old format and new user-scoped format
+    if (
+      key.startsWith('mazaika_ai_') ||
+      key.startsWith('mazaika_site_') ||
+      (userId && key.includes(userId))
+    ) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: JSON.parse(localStorage.getItem('mazaika_user') || 'null'),
   setUser: (user) => {
@@ -24,6 +42,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user });
   },
   logout: () => {
+    const currentUser = JSON.parse(localStorage.getItem('mazaika_user') || 'null');
+    clearUserAIData(currentUser?.id);
     localStorage.removeItem('mazaika_user');
     set({ user: null });
   }

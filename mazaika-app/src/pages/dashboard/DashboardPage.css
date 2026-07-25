@@ -196,6 +196,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: var(--space-4);
+  perspective: 1200px;
 }
 
 /* CREATE CARD */
@@ -347,6 +348,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: var(--space-3);
+  perspective: 1000px;
 }
 
 .template-card {
