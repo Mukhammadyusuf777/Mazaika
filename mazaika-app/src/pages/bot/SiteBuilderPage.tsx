@@ -190,7 +190,8 @@ export default function SiteBuilderPage() {
       themeColor: activeConfig.themeColor || config.themeColor,
       appName: activeConfig.appName || config.appName,
       blocks: activeConfig.blocks || config.blocks,
-      source_code: newHtml
+      source_code: newHtml,
+      files: activeConfig.files || config.files
     };
     
     setConfig(nextConfig)

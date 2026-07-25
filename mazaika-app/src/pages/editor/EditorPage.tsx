@@ -15,6 +15,7 @@ import { Plus, Save } from 'lucide-react'
 import { apiClient } from '../../api/apiClient'
 import { useParams } from 'react-router-dom'
 import { useAICopilot } from '../../context/AICopilotContext'
+import { saveSiteConfig, getSiteConfig } from '../../api/firestore'
 
 const edgeTypes = {
   buttonEdge: ButtonEdge,
@@ -40,9 +41,9 @@ export default function EditorPage() {
 
   const { activeConfig, switchProject } = useAICopilot()
 
-  // Sync AI-generated bot_blocks into the ReactFlow editor
+  // Sync AI-generated bot_blocks into the ReactFlow editor and custom Mini App code
   useEffect(() => {
-    if (!activeConfig) return
+    if (!activeConfig || !botId) return
     const aiNodes = activeConfig.bot_blocks
     const aiEdges = activeConfig.bot_edges
     if (Array.isArray(aiNodes) && aiNodes.length > 0) {
@@ -53,7 +54,18 @@ export default function EditorPage() {
         setEdges(Array.isArray(aiEdges) ? aiEdges : [])
       }
     }
-  }, [activeConfig])
+    
+    // If AI generated frontend code for the bot's Mini App, save it
+    if (activeConfig.html || (activeConfig.files && Object.keys(activeConfig.files).length > 0)) {
+      getSiteConfig(botId).then(current => {
+        saveSiteConfig(botId, {
+          ...(current || {}),
+          source_code: activeConfig.html || current?.source_code,
+          files: activeConfig.files || current?.files
+        }).catch(console.error)
+      }).catch(console.error)
+    }
+  }, [activeConfig, botId])
 
   const checkStatus = useCallback(async () => {
     if (!botId) return
