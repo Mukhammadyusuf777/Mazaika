@@ -63,29 +63,28 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
             const CONTINUE_KEYWORDS = ['продолжи', 'продолжить', 'дальше', 'допиши', 'продолжение', 'dovom', 'continue', 'more', 'добавь страницу'];
             const isContinuationMode = CONTINUE_KEYWORDS.some(k => lowerPrompt.includes(k)) && hasExistingHtml;
             let systemInstruction = '';
-            if (isContinuationMode) {
+            const filesContext = Object.keys(currentConfig?.files || {}).length > 0
+                ? Object.entries(currentConfig.files).map(([path, content]) => `<file path="${path}">\n${content}\n</file>`).join('\n')
+                : `<file path="index.html">\n${existingHtml}\n</file>`;
+            if (isContinuationMode && !isBotRequest) {
                 systemInstruction = `You are a Senior Web UI/UX Engineer.
-MODE: CONTINUE & EXPAND EXISTING MULTI-PAGE SITE
+MODE: CONTINUATION (EXPANDING EXISTING SITE)
 ${historyContext}
 ${imageInstruction}
 
 USER REQUEST: "${promptText}"
 
-INSTRUCTIONS:
-1. The user wants you to CONTINUE building and expanding the website code below.
-2. Add the remaining pages, sections, features, styles, or scripts requested.
-3. SPA NAVIGATION: NEVER use href="/" or href="page.html" in <a> tags! This breaks the live preview. Use href="#" and onclick="showPage('about'); return false;".
-4. Output the COMPLETE updated and expanded HTML document from <!DOCTYPE html> to </html>.
+CRITICAL INSTRUCTIONS:
+1. You MUST expand and continue building the site, adding new pages, sections, or logic requested.
+2. The user has provided the existing codebase in <file> tags below.
+3. You must output the ENTIRE updated files using <file path="...">...</file>.
 
-EXISTING HTML CODE:
-\`\`\`html
-${existingHtml}
-\`\`\`
+CURRENT FILES TO MODIFY:
+${filesContext}
 
 STRICT OUTPUT RULES:
 1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
-2. Then, AFTER the JSON, output the full updated HTML wrapped in a \`\`\`html code block!
-3. Do NOT put the HTML inside the JSON object!
+2. Then, AFTER the JSON, output the full updated files wrapped in <file path="...">...</file>.
 
 JSON FORMAT:
 {
@@ -93,11 +92,14 @@ JSON FORMAT:
   "execution_mode": "FULL_GENERATION",
   "target_entity": "site_only",
   "title": "Expanded Site",
-  "explanation": "${isUzbek ? 'Sayt muvaffaqiyatli kengaytirildi va yangi sahifalar qo\'shildi!' : isRussian ? 'Сайт успешно дополнен и расширен новыми страницами!' : 'Website expanded with new pages!'}"
+  "explanation": "${isUzbek ? "Sayt muvaffaqiyatli kengaytirildi va yangi sahifalar qo'shildi!" : isRussian ? "Сайт успешно дополнен и расширен новыми страницами!" : "Website expanded with new pages!"}"
 }
-\`\`\`html
-<!DOCTYPE html><html>...FULL EXPANDED HTML...</html>
-\`\`\`
+<file path="index.html">
+...
+</file>
+<file path="style.css">
+...
+</file>
 `;
             }
             else if (isEditMode && isSiteRequest && !isBotRequest) {
@@ -109,21 +111,18 @@ ${imageInstruction}
 USER REQUEST: "${promptText}"
 
 CRITICAL EDITING INSTRUCTIONS:
-1. You MUST modify the HTML code below according to the user request.
+1. You MUST modify the code below according to the user request.
 2. IF the user attached an image — match its design, colors, layout or style as closely as possible.
 3. Keep all existing functionality — only change what was requested.
-4. SPA NAVIGATION: NEVER use href="/" or href="page.html" in <a> tags! This breaks the live preview. Use href="#" and onclick="showPage('about'); return false;".
-5. NEVER truncate the HTML. You MUST output the entire document from <!DOCTYPE html> to </html>.
+4. SPA NAVIGATION: NEVER use href="/" or href="page.html" in <a> tags! Use a JS function to hide/show sections.
 
-CURRENT HTML CODE TO MODIFY:
-\`\`\`html
-${existingHtml}
-\`\`\`
+CURRENT FILES TO MODIFY:
+${filesContext}
 
 STRICT OUTPUT RULES:
 1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
-2. Then, AFTER the JSON, output the full updated HTML wrapped in a \`\`\`html code block!
-3. Do NOT put the HTML inside the JSON object!
+2. Then, AFTER the JSON, output all updated files wrapped in <file path="...">...</file> blocks!
+3. Do NOT put the code inside the JSON object!
 
 JSON FORMAT:
 {
@@ -133,31 +132,38 @@ JSON FORMAT:
   "title": "Updated Site",
   "explanation": "Specific description of changes made..."
 }
-\`\`\`html
-<!DOCTYPE html><html>...FULL UPDATED HTML...</html>
-\`\`\`
+<file path="index.html">
+...
+</file>
 `;
             }
             else if (isSiteRequest && !isBotRequest) {
-                systemInstruction = `You are a Senior UI/UX Frontend Architect.
-Generate a high-end FULLY RESPONSIVE multi-page SPA inside ONE standalone HTML file.
+                systemInstruction = `You are a Senior UI/UX Frontend Architect and Full-Stack Developer.
+Generate a high-end FULLY RESPONSIVE multi-page SPA.
 ${historyContext}
 ${imageInstruction}
 
 CRITICAL CREATION RULES:
-1. MOBILE-FIRST: Include working Hamburger Menu for mobile.
-2. MULTI-PAGE ROUTING: JS page switcher (Home, About, Gallery, Contact).
-3. SPA NAVIGATION: NEVER use href="/" or href="page.html" in <a> tags! This breaks the live preview. Use href="#" and onclick="showPage('about'); return false;".
-4. STYLING: Tailwind CSS CDN + Google Font Inter + Glassmorphism + smooth animations.
+1. MULTI-FILE ARCHITECTURE: You must split your code into multiple files (e.g. index.html, style.css, script.js).
+2. Use the exact format:
+<file path="index.html">
+...html code here...
+</file>
+<file path="style.css">
+...css code here...
+</file>
+<file path="script.js">
+...js code here...
+</file>
+
+3. STRICT SPA NAVIGATION: Your script.js MUST include a router that hides all sections and shows only the active one (e.g. display:none for inactive). DO NOT just anchor-scroll down a long page.
+4. PREMIUM DESIGN: Use Tailwind CSS + Glassmorphism (e.g., bg-white/10 backdrop-blur-xl border border-white/20) + smooth animations + gorgeous gradients + large spacing (p-12, gap-8). NEVER output plain/ugly layouts!
 5. IMAGES: Real Unsplash high-res photos.
-6. If user attached an image — match that design style, layout, and color palette.
-7. HTML must be at least 200 lines, complete, with all CSS and JS inline.
-8. NEVER truncate the HTML. You MUST output the entire document from <!DOCTYPE html> to </html>.
 
 STRICT OUTPUT RULES:
 1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
-2. Then, AFTER the JSON, output the full generated HTML wrapped in a \`\`\`html code block!
-3. Do NOT put the HTML inside the JSON object!
+2. Then, AFTER the JSON, output all the files wrapped in <file path="...">...</file> blocks.
+3. Do NOT put the HTML/CSS inside the JSON object!
 
 JSON OUTPUT:
 {
@@ -165,12 +171,31 @@ JSON OUTPUT:
   "execution_mode": "FULL_GENERATION",
   "target_entity": "site_only",
   "title": "Site Title",
-  "explanation": "${isUzbek ? 'Mobil va PC uchun moslashuvchan premium sayt yaratildi!' : isRussian ? 'Адаптированный сайт успешно создан!' : 'Responsive website generated!'}"
+  "explanation": "${isUzbek ? "Premium ko'p faylli loyiha yaratildi!" : isRussian ? "Премиум проект с файловой системой успешно создан!" : "Premium multi-file project generated!"}"
 }
 
-\`\`\`html
-<!DOCTYPE html><html>...COMPLETE HTML...</html>
-\`\`\`
+<file path="index.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-black text-white">
+...
+<script src="script.js"></script>
+</body>
+</html>
+</file>
+<file path="style.css">
+.glass { ... }
+.page { display: none; }
+.page.active { display: block; animation: fadeIn 0.5s; }
+</file>
+<file path="script.js">
+function showPage(id) { ... }
+</file>
 `;
             }
             else {
@@ -408,7 +433,8 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
                 blocks: projectData.blocks?.length ? projectData.blocks : (currentConfig?.blocks || []),
                 bot_blocks: botBlocks,
                 bot_edges: botEdges,
-                site_blocks: projectData.site_blocks?.length ? projectData.site_blocks : (currentConfig?.site_blocks || [])
+                site_blocks: projectData.site_blocks?.length ? projectData.site_blocks : (currentConfig?.site_blocks || []),
+                files: parsed.files || projectData.files || {}
             }
         };
     }
@@ -511,6 +537,20 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
                     : '⚡ Saytning asosiy qismi yaratildi! Qolgan sahifa va bo\'limlarni qo\'shish uchun "Davom ettirish" tugmasini bosing!';
             }
             parsedJson.html = htmlPart;
+        }
+        const files = {};
+        const fileRegex = /<file\s+path=["']([^"']+)["']>([\s\S]*?)<\/file>/gi;
+        let match;
+        while ((match = fileRegex.exec(text)) !== null) {
+            const path = match[1];
+            const content = match[2].trim();
+            files[path] = content;
+        }
+        if (Object.keys(files).length > 0) {
+            parsedJson.files = files;
+            if (!parsedJson.html && files['index.html']) {
+                parsedJson.html = files['index.html'];
+            }
         }
         return parsedJson;
     }

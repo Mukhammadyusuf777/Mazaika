@@ -30,6 +30,7 @@ interface SiteConfig {
   appName: string
   blocks: Block[]
   source_code?: string
+  files?: Record<string, string> // VFS files
 }
 
 const DEFAULT_CONFIG: SiteConfig = {
@@ -37,7 +38,8 @@ const DEFAULT_CONFIG: SiteConfig = {
   theme: 'glassmorphism',
   themeColor: '#1e90ff',
   blocks: [],
-  source_code: ''
+  source_code: '',
+  files: {}
 }
 
 const getSafeSourceCode = (html: string | undefined) => {
