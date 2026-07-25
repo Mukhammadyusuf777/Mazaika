@@ -302,22 +302,28 @@ export default function LandingPage() {
 
   return (
     <div className="landing-page">
+      <div className="l-particles">
+        {[...Array(12)].map((_, i) => <div key={i} className="l-particle"></div>)}
+      </div>
       <div className="l-animated-orb l-orb-1"></div>
       <div className="l-animated-orb l-orb-2"></div>
       <div className="l-animated-orb l-orb-3"></div>
       <div className="l-animated-orb l-orb-4"></div>
       <div className="l-animated-orb l-orb-5"></div>
+      <div className="l-animated-orb l-orb-6"></div>
 
       {/* HEADER */}
       <header className="l-header">
         <div className="l-container header-inner">
           <div className="l-logo">
-            <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
-              <rect x="2" y="2" width="10" height="10" rx="3" fill="#2563eb"/>
-              <rect x="16" y="2" width="10" height="10" rx="3" fill="#06b6d4"/>
-              <rect x="2" y="16" width="10" height="10" rx="3" fill="#06b6d4"/>
-              <rect x="16" y="16" width="10" height="10" rx="3" fill="#7c3aed"/>
-            </svg>
+            <div className="l-logo-icon">
+              <svg width="18" height="18" viewBox="0 0 28 28" fill="none">
+                <rect x="2" y="2" width="10" height="10" rx="3" fill="white"/>
+                <rect x="16" y="2" width="10" height="10" rx="3" fill="rgba(255,255,255,0.6)"/>
+                <rect x="2" y="16" width="10" height="10" rx="3" fill="rgba(255,255,255,0.6)"/>
+                <rect x="16" y="16" width="10" height="10" rx="3" fill="rgba(255,255,255,0.3)"/>
+              </svg>
+            </div>
             Mazaika
           </div>
           <nav className="l-nav-desktop">
@@ -331,7 +337,7 @@ export default function LandingPage() {
                 <button key={l} className={lang === l ? 'active' : ''} onClick={() => changeLanguage(l)}>{l}</button>
               ))}
             </div>
-            <button onClick={() => navigate('/register')}>{t.navStart}</button>
+            <button className="l-btn-nav" onClick={() => navigate('/register')}>{t.navStart}</button>
           </div>
         </div>
       </header>
@@ -340,7 +346,7 @@ export default function LandingPage() {
       <section className="l-hero">
         <div className="l-container l-hero-inner">
           <div className="l-hero-content">
-            <div className="l-hero-badge"><Zap size={16} /> {t.heroBadge}</div>
+            <div className="l-hero-badge"><span className="l-hero-badge-dot"></span> <Zap size={16} /> {t.heroBadge}</div>
             <h1 className="l-hero-title">
               {t.heroTitleLine1} <br/>
               <span className="l-gradient-text">Lego</span> <span className="l-gradient-text-2">{t.heroTitleLine2}</span>
@@ -400,19 +406,8 @@ export default function LandingPage() {
       {/* MARQUEE */}
       <section className="l-marquee-section">
         <div className="l-marquee-track">
-          {[...Array(2)].map((_, i) => (
-            <div key={i} style={{ display: 'flex', gap: '32px' }}>
-              <div className="l-marquee-item">💳 Payme</div>
-              <div className="l-marquee-item">💳 Click</div>
-              <div className="l-marquee-item">🏦 Uzum</div>
-              <div className="l-marquee-item">📱 Telegram</div>
-              <div className="l-marquee-item">📊 Google Sheets</div>
-              <div className="l-marquee-item">🌐 HTTP API</div>
-              <div className="l-marquee-item">🤖 Gemini AI</div>
-              <div className="l-marquee-item">⚡ Zapier</div>
-              <div className="l-marquee-item">📧 Email</div>
-              <div className="l-marquee-item">📦 WooCommerce</div>
-            </div>
+          {['💳 Payme','💳 Click','🏦 Uzum','📱 Telegram','📊 Google Sheets','🌐 HTTP API','🤖 Gemini AI','⚡ Zapier','📧 Email','📦 WooCommerce','🔗 Webhook','💰 To\'lov','📈 Analitika','🛒 E-commerce','💳 Payme','💳 Click','🏦 Uzum','📱 Telegram','📊 Google Sheets','🌐 HTTP API'].map((item, i) => (
+            <div key={i} className="l-marquee-item">{item}</div>
           ))}
         </div>
       </section>
@@ -421,15 +416,14 @@ export default function LandingPage() {
       <section className="features-premium" id="features">
         <div className="container">
           <div className="section-header">
-            <div className="l-section-badge"><Zap size={14} style={{ display: 'inline', verticalAlign: 'text-bottom' }}/> {t.featBadge.replace('✨ ', '')}</div>
+            <div className="l-section-badge blue"><Zap size={13} /> {t.featBadge.replace('✨ ', '')}</div>
             <h2>{t.featTitleLine1} <span className="gradient-text-neon">{t.featTitleLine2}</span></h2>
             <p>{t.featDesc}</p>
           </div>
-          
           <div className="features-grid">
             {t.features.map((f, idx) => (
               <div key={idx} className="l-feature-card">
-                <span>{f.icon}</span>
+                <span className="l-feature-icon">{f.icon}</span>
                 <h3>{f.title}</h3>
                 <p>{f.desc}</p>
               </div>
@@ -443,19 +437,21 @@ export default function LandingPage() {
         <div className="l-container">
           <div className="l-ai-grid">
             <div>
-              <div className="l-section-badge"><Sparkles size={14} style={{ display: 'inline', verticalAlign: 'text-bottom' }}/> AI Yordamchi</div>
-              <h2>Mazaika AI Architect</h2>
+              <div className="l-section-badge violet"><Sparkles size={13} /> AI Yordamchi</div>
+              <h2>Mazaika <span className="gradient-text-neon">AI</span> Architect</h2>
               <p>{lang === 'UZ' ? 'Faqat so\'z bilan tushuntiring, AI yaratadi. Kod yozish shart emas.' : lang === 'RU' ? 'Просто объясните словами, AI создаст всё сам.' : 'Just explain in words, AI will create it.'}</p>
               <ul>
-                <li><Sparkles size={20}/> {lang === 'UZ' ? 'Matndan bot yaratish' : lang === 'RU' ? 'Создание ботов из текста' : 'Text to Bot'}</li>
-                <li><Bot size={20}/> {lang === 'UZ' ? 'Bloklarni avtomatik ulash' : lang === 'RU' ? 'Авто-соединение блоков' : 'Auto block linking'}</li>
+                <li><Sparkles size={18}/> {lang === 'UZ' ? 'Matndan bot yaratish — 30 soniyada' : lang === 'RU' ? 'Создание ботов из текста — за 30 секунд' : 'Text to Bot — in 30 seconds'}</li>
+                <li><Bot size={18}/> {lang === 'UZ' ? 'Bloklarni avtomatik ulash' : lang === 'RU' ? 'Авто-соединение блоков' : 'Auto block linking'}</li>
+                <li><Zap size={18}/> {lang === 'UZ' ? 'Mini App HTML generatsiya' : lang === 'RU' ? 'Генерация Mini App HTML' : 'Mini App HTML generation'}</li>
+                <li><Sparkles size={18}/> {lang === 'UZ' ? "To'lov va API integratsiyalar" : lang === 'RU' ? 'Платёжные и API-интеграции' : 'Payment & API integrations'}</li>
               </ul>
             </div>
             
             <div className="ai-mockup">
               <div className="ai-mockup-header">
                 <div className="ai-mockup-dots"><span></span><span></span><span></span></div>
-                <div className="ai-mockup-title">Mazaika AI Agent</div>
+                <div className="ai-mockup-title">Mazaika AI Agent — Active</div>
               </div>
               <div className="ai-mockup-body">
                 <div className="chat-msg user">
@@ -489,38 +485,43 @@ export default function LandingPage() {
       <section className="l-testimonials">
         <div className="container">
           <div className="section-header">
-            <h2>Mijozlarimiz <span className="gradient-text-neon">Fikri</span></h2>
+            <div className="l-section-badge cyan"><Sparkles size={13} /> Mijozlar</div>
+            <h2>Haqiqiy <span className="gradient-text-neon">Natijalar</span></h2>
+            <p>{lang === 'UZ' ? "O'zbekiston bo'ylab 500+ biznes Mazaika ishlatmoqda" : lang === 'RU' ? 'Более 500 бизнесов по всему Узбекистану' : '500+ businesses across Uzbekistan'}</p>
           </div>
           <div className="testimonials-grid">
             <div className="testimonial-card">
+              <div className="t-stars">⭐⭐⭐⭐⭐</div>
+              <div className="t-text">"Mazaika tufayli botimni 1 kunda yaratdim. Endi har kuni 50+ buyurtma kelmoqda! AI barcha bloklarni o'zi uladi."</div>
               <div className="t-header">
-                <div className="t-avatar">BT</div>
+                <div className="t-avatar blue">BT</div>
                 <div className="t-info">
                   <h4>Bobur Toshmatov</h4>
-                  <p>Online Do'kon Egasi</p>
+                  <p>Online Do'kon Egasi · Toshkent</p>
                 </div>
               </div>
-              <div className="t-text">"Mazaika tufayli botimni 1 kunda yaratdim. Endi har kuni 50+ buyurtma kelmoqda!"</div>
             </div>
             <div className="testimonial-card">
+              <div className="t-stars">⭐⭐⭐⭐⭐</div>
+              <div className="t-text">"Telegram orqali dars jadvalini ulashdim va to'lovni ham. Mazaika — bu kelajak!"</div>
               <div className="t-header">
-                <div className="t-avatar" style={{ background: '#7c3aed' }}>DR</div>
+                <div className="t-avatar violet">DR</div>
                 <div className="t-info">
                   <h4>Dilnoza Rashidova</h4>
-                  <p>Fitnes Trener</p>
+                  <p>Fitnes Trener · Samarqand</p>
                 </div>
               </div>
-              <div className="t-text">"Telegram orqali dars jadvalini ulashdim. Mijozlar juda xursand!"</div>
             </div>
             <div className="testimonial-card">
+              <div className="t-stars">⭐⭐⭐⭐⭐</div>
+              <div className="t-text">"Mazaika AI 10 daqiqada bizning menuimizni yaratdi va Payme'ni uladi. Hayron qoldim!"</div>
               <div className="t-header">
-                <div className="t-avatar" style={{ background: '#f59e0b' }}>SM</div>
+                <div className="t-avatar amber">SM</div>
                 <div className="t-info">
                   <h4>Sardor Mirzayev</h4>
-                  <p>Restoran Egasi</p>
+                  <p>Restoran Egasi · Buxoro</p>
                 </div>
               </div>
-              <div className="t-text">"Mazaika AI 10 daqiqada bizning menuimizni yaratdi. Hayron qoldim!"</div>
             </div>
           </div>
         </div>
@@ -530,7 +531,7 @@ export default function LandingPage() {
       <section className="pricing-premium" id="pricing">
         <div className="container">
           <div className="section-header">
-            <div className="l-section-badge">💰 {t.priceBadge.replace('💰 ', '')}</div>
+            <div className="l-section-badge blue">💰 {t.priceBadge.replace('💰 ', '')}</div>
             <h2>{t.priceTitleLine1} <span className="gradient-text-neon">{t.priceTitleLine2}</span> {t.priceTitleLine3}</h2>
             <p>{t.priceDesc}</p>
           </div>
@@ -566,8 +567,8 @@ export default function LandingPage() {
 
       {/* CTA */}
       <section className="l-cta-section">
-        <div className="container">
-          <h2>{t.ctaTitleLine1} <span className="gradient-text-neon">{t.ctaTitleLine2}</span> {t.ctaTitleLine3}</h2>
+        <div className="l-cta-inner">
+          <h2><span className="l-gradient-text">{t.ctaTitleLine1}</span><br/><span className="l-gradient-text-2">{t.ctaTitleLine2}</span> {t.ctaTitleLine3}</h2>
           <p>{t.ctaDesc}</p>
           <button className="btn-3d" onClick={() => navigate('/register')}>
             {t.ctaBtn}
@@ -579,20 +580,26 @@ export default function LandingPage() {
       <footer className="footer-premium">
         <div className="container">
           <div className="footer-content">
-            <div className="footer-logo">
-              <svg width="32" height="32" viewBox="0 0 28 28" fill="none" style={{ marginRight: 8, verticalAlign: 'middle' }}>
-                <rect x="2" y="2" width="10" height="10" rx="3" fill="#2563eb"/>
-                <rect x="16" y="2" width="10" height="10" rx="3" fill="#06b6d4"/>
-                <rect x="2" y="16" width="10" height="10" rx="3" fill="#06b6d4"/>
-                <rect x="16" y="16" width="10" height="10" rx="3" fill="#7c3aed"/>
-              </svg>
-              Mazaika
+            <div>
+              <div className="footer-logo">
+                <div className="l-logo-icon" style={{ width:28, height:28 }}>
+                  <svg width="16" height="16" viewBox="0 0 28 28" fill="none">
+                    <rect x="2" y="2" width="10" height="10" rx="3" fill="white"/>
+                    <rect x="16" y="2" width="10" height="10" rx="3" fill="rgba(255,255,255,0.6)"/>
+                    <rect x="2" y="16" width="10" height="10" rx="3" fill="rgba(255,255,255,0.6)"/>
+                    <rect x="16" y="16" width="10" height="10" rx="3" fill="rgba(255,255,255,0.3)"/>
+                  </svg>
+                </div>
+                Mazaika
+              </div>
+              <p className="footer-desc">{lang === 'UZ' ? "O'zbek biznes uchun professional Telegram bot va Mini App platformasi." : lang === 'RU' ? 'Профессиональная платформа для бизнеса Узбекистана.' : 'Professional bot platform for Uzbek businesses.'}</p>
             </div>
             <div className="footer-col">
               <h4>Platforma</h4>
               <a href="#features">{t.navFeatures}</a>
               <a href="#pricing">{t.navPricing}</a>
-              <a href="#">Mazaika AI</a>
+              <a href="#ai-agent">Mazaika AI</a>
+              <a href="/register">Boshlash</a>
             </div>
             <div className="footer-col">
               <h4>Huquqiy</h4>
