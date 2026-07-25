@@ -32,6 +32,7 @@ interface SiteConfig {
   themeColor: string
   blocks: Block[]
   source_code?: string
+  files?: Record<string, string>
 }
 
 export default function SiteRendererPage() {
@@ -236,13 +237,45 @@ export default function SiteRendererPage() {
     )
   }
 
-  if (!config || !Array.isArray(config.blocks)) {
+  if (!config || (!Array.isArray(config.blocks) && !config.source_code && (!config.files || Object.keys(config.files).length === 0))) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#0b0f19', color: '#fff', padding: 20, textAlign: 'center' }}>
         <Globe size={48} style={{ color: '#ef4444', marginBottom: 16 }} />
         <h3>Ushbu loyiha uchun sayt yoki mini-ilova hali yaratilmagan.</h3>
         <p style={{ color: '#94a3b8' }}>Mazaika Builder orqali ilk sahifangizni yarating.</p>
       </div>
+    )
+  }
+
+  const generateUnifiedHtml = (files: Record<string, string> | undefined, fallbackHtml: string | undefined) => {
+    if (!files || Object.keys(files).length === 0) return fallbackHtml || ''
+    
+    let combinedHtml = files['index.html'] || files['index.tsx'] || ''
+    if (!combinedHtml) return fallbackHtml || ''
+
+    const cssContent = files['style.css'] || files['index.css'] || files['styles.css']
+    const jsContent = files['script.js'] || files['main.js'] || files['app.js']
+    
+    if (cssContent && combinedHtml.includes('</head>')) {
+      combinedHtml = combinedHtml.replace('</head>', `<style>\n${cssContent}\n</style>\n</head>`)
+    }
+    
+    if (jsContent && combinedHtml.includes('</body>')) {
+      combinedHtml = combinedHtml.replace('</body>', `<script>\n${jsContent}\n</script>\n</body>`)
+    }
+    
+    return combinedHtml
+  }
+
+  const generatedHtml = generateUnifiedHtml(config.files, config.source_code)
+  if (generatedHtml) {
+    return (
+      <iframe
+        srcDoc={generatedHtml}
+        style={{ width: '100%', height: '100vh', border: 'none', background: '#fff', display: 'block' }}
+        title="Site Content"
+        sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+      />
     )
   }
 

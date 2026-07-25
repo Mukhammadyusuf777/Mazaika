@@ -91,13 +91,34 @@ export default function SiteBuilderPage() {
   const [updateCounter, setUpdateCounter] = useState(0) // ✅ for iframe re-render
   const [selfHealingStatus, setSelfHealingStatus] = useState<'idle' | 'healing' | 'failed'>('idle')
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview')
+  const [activeFile, setActiveFile] = useState<string>('index.html')
 
   // Image upload state
   const [pendingImage, setPendingImage] = useState<{ base64: string; mimeType: string; previewUrl: string } | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
+  const generateUnifiedHtml = (files: Record<string, string> | undefined, fallbackHtml: string | undefined) => {
+    if (!files || Object.keys(files).length === 0) return fallbackHtml || ''
+    
+    let combinedHtml = files['index.html'] || files['index.tsx'] || ''
+    if (!combinedHtml) return fallbackHtml || ''
+
+    const cssContent = files['style.css'] || files['index.css'] || files['styles.css']
+    const jsContent = files['script.js'] || files['main.js'] || files['app.js']
+    
+    if (cssContent && combinedHtml.includes('</head>')) {
+      combinedHtml = combinedHtml.replace('</head>', `<style>\n${cssContent}\n</style>\n</head>`)
+    }
+    
+    if (jsContent && combinedHtml.includes('</body>')) {
+      combinedHtml = combinedHtml.replace('</body>', `<script>\n${jsContent}\n</script>\n</body>`)
+    }
+    
+    return combinedHtml
+  }
+
   const handleOpenInNewTab = () => {
-    const htmlToOpen = config.source_code || ''
+    const htmlToOpen = generateUnifiedHtml(config.files, config.source_code)
     if (!htmlToOpen) {
       alert('Sayt hali yaratilmagan!')
       return
@@ -556,53 +577,119 @@ export default function SiteBuilderPage() {
         {/* Preview / Code Frame */}
         <div style={{ flex: 1, background: '#0d1526', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6)', position: 'relative', display: 'flex', flexDirection: 'column' }}>
           {activeTab === 'code' ? (
-            <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#1e1e1e' }}>
-              {/* VS Code Top File Bar */}
-              <div style={{ height: 36, background: '#252526', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', borderBottom: '1px solid #333', userSelect: 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1e1e1e', padding: '6px 12px', borderTop: '2px solid #007acc', fontSize: 12, color: '#cccccc', borderRight: '1px solid #333' }}>
-                  <span style={{ color: '#e34c26', fontWeight: 'bold' }}>&lt;&gt;</span>
-                  <span>index.html</span>
-                  {isGenerating && <Loader2 size={12} style={{ animation: 'spin 1s linear infinite', color: '#1e90ff', marginLeft: 4 }} />}
+            <div style={{ width: '100%', height: '100%', display: 'flex', background: '#1e1e1e' }}>
+              {/* VS Code Left Sidebar (File Explorer) */}
+              <div style={{ width: 220, borderRight: '1px solid #333', display: 'flex', flexDirection: 'column', background: '#252526' }}>
+                <div style={{ padding: '10px 12px', fontSize: 11, fontWeight: 600, color: '#cccccc', textTransform: 'uppercase', letterSpacing: 0.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Explorer</span>
+                  <button 
+                    onClick={() => {
+                      const name = window.prompt('Fayl nomini kiriting (masalan, style.css):')
+                      if (name && name.trim()) {
+                        const fileName = name.trim()
+                        if (!config.files?.[fileName]) {
+                          setConfig(prev => ({
+                            ...prev,
+                            files: { ...(prev.files || {}), [fileName]: '' }
+                          }))
+                          setActiveFile(fileName)
+                        } else {
+                          alert('Bunday fayl allaqachon mavjud!')
+                        }
+                      }
+                    }}
+                    style={{ background: 'none', border: 'none', color: '#cccccc', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    title="Yangi fayl qo'shish"
+                  >
+                    +
+                  </button>
                 </div>
-                {isGenerating && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: '#1e90ff', background: 'rgba(30,144,255,0.1)', padding: '3px 10px', borderRadius: 12, border: '1px solid rgba(30,144,255,0.2)' }}>
-                    <Sparkles size={12} style={{ animation: 'pulse 1.5s infinite' }} />
-                    <span>AI kod yozmoqda...</span>
+                <div style={{ flex: 1, overflowY: 'auto' }}>
+                  {Object.keys(config.files || { 'index.html': config.source_code || '' }).map(fileName => (
+                    <div 
+                      key={fileName}
+                      onClick={() => setActiveFile(fileName)}
+                      style={{ 
+                        padding: '6px 12px 6px 24px', 
+                        fontSize: 13, 
+                        color: activeFile === fileName ? '#fff' : '#cccccc',
+                        background: activeFile === fileName ? '#37373d' : 'transparent',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6
+                      }}
+                      onMouseEnter={e => { if (activeFile !== fileName) (e.currentTarget as any).style.background = '#2a2d2e' }}
+                      onMouseLeave={e => { if (activeFile !== fileName) (e.currentTarget as any).style.background = 'transparent' }}
+                    >
+                      <span style={{ color: fileName.endsWith('.html') ? '#e34c26' : fileName.endsWith('.css') ? '#264de4' : fileName.endsWith('.js') ? '#f7df1e' : '#cccccc' }}>
+                        {fileName.endsWith('.js') ? '{}' : fileName.endsWith('.css') ? '#' : '<>'}
+                      </span>
+                      {fileName}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* VS Code Main Editor Area */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                {/* VS Code Top File Bar */}
+                <div style={{ height: 36, background: '#252526', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0', borderBottom: '1px solid #333', userSelect: 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1e1e1e', padding: '6px 12px', borderTop: '2px solid #007acc', fontSize: 12, color: '#cccccc', borderRight: '1px solid #333', height: '100%' }}>
+                    <span style={{ color: activeFile.endsWith('.html') ? '#e34c26' : activeFile.endsWith('.css') ? '#264de4' : activeFile.endsWith('.js') ? '#f7df1e' : '#cccccc', fontWeight: 'bold' }}>
+                      {activeFile.endsWith('.js') ? '{}' : activeFile.endsWith('.css') ? '#' : '<>'}
+                    </span>
+                    <span>{activeFile}</span>
+                    {isGenerating && <Loader2 size={12} style={{ animation: 'spin 1s linear infinite', color: '#1e90ff', marginLeft: 4 }} />}
                   </div>
-                )}
-              </div>
-
-              {/* Editor */}
-              <div style={{ flex: 1, position: 'relative' }}>
-                <Editor
-                  height="100%"
-                  defaultLanguage="html"
-                  theme="vs-dark"
-                  value={config.source_code || ''}
-                  onChange={(value) => {
-                    setConfig(prev => ({ ...prev, source_code: value || '' }))
-                  }}
-                  options={{
-                    minimap: { enabled: false },
-                    fontSize: 14,
-                    wordWrap: 'on',
-                    padding: { top: 12, bottom: 12 },
-                    formatOnPaste: true,
-                    scrollBeyondLastLine: false,
-                    smoothScrolling: true
-                  }}
-                />
-              </div>
-
-              {/* VS Code Bottom Status Bar */}
-              <div style={{ height: 24, background: '#007acc', color: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 12px', fontSize: 11, fontWeight: 500 }}>
-                <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-                  <span>● Ready</span>
-                  <span>UTF-8</span>
-                  <span>HTML</span>
+                  {isGenerating && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: '#1e90ff', background: 'rgba(30,144,255,0.1)', padding: '3px 10px', borderRadius: 12, border: '1px solid rgba(30,144,255,0.2)', marginRight: 12 }}>
+                      <Sparkles size={12} style={{ animation: 'pulse 1.5s infinite' }} />
+                      <span>AI kod yozmoqda...</span>
+                    </div>
+                  )}
                 </div>
-                <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-                  <span>Mazaika AI Architect</span>
+
+                {/* Editor */}
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <Editor
+                    height="100%"
+                    language={activeFile.endsWith('.html') ? 'html' : activeFile.endsWith('.css') ? 'css' : activeFile.endsWith('.js') ? 'javascript' : 'plaintext'}
+                    theme="vs-dark"
+                    value={config.files ? (config.files[activeFile] || '') : (activeFile === 'index.html' ? config.source_code || '' : '')}
+                    onChange={(value) => {
+                      const files = config.files || { 'index.html': config.source_code || '' }
+                      setConfig(prev => ({
+                        ...prev,
+                        files: {
+                          ...files,
+                          [activeFile]: value || ''
+                        },
+                        source_code: activeFile === 'index.html' ? (value || '') : prev.source_code
+                      }))
+                    }}
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 14,
+                      wordWrap: 'on',
+                      padding: { top: 12, bottom: 12 },
+                      formatOnPaste: true,
+                      scrollBeyondLastLine: false,
+                      smoothScrolling: true
+                    }}
+                  />
+                </div>
+
+                {/* VS Code Bottom Status Bar */}
+                <div style={{ height: 24, background: '#007acc', color: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 12px', fontSize: 11, fontWeight: 500 }}>
+                  <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                    <span>● Ready</span>
+                    <span>UTF-8</span>
+                    <span style={{ textTransform: 'uppercase' }}>{activeFile.split('.').pop()}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                    <span>Mazaika AI Architect</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -619,7 +706,7 @@ export default function SiteBuilderPage() {
           ) : deviceMode === 'desktop' ? (
             <iframe
               key={`desktop_${updateCounter}`}
-              srcDoc={getSafeSourceCode(config.source_code)}
+              srcDoc={getSafeSourceCode(generateUnifiedHtml(config.files, config.source_code))}
               style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
               title="Live Site Preview"
               sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
@@ -633,7 +720,7 @@ export default function SiteBuilderPage() {
               </div>
               <iframe
                 key={`mobile_${updateCounter}`}
-                srcDoc={getSafeSourceCode(config.source_code)}
+                srcDoc={getSafeSourceCode(generateUnifiedHtml(config.files, config.source_code))}
                 style={{ width: '100%', flex: 1, border: 'none', background: '#fff' }}
                 title="Mobile Site Preview"
                 sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
