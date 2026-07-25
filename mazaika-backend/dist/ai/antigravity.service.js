@@ -211,7 +211,22 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
                     this.logger.error(`OpenRouter Error: ${err.message}`);
                 }
             }
-            return this.formatResponse({ html: existingHtml || null }, isSiteRequest && !isBotRequest, isRussian, isUzbek, isEditMode, existingHtml, currentConfig);
+            this.logger.error('❌ All Gemini and OpenRouter models failed to generate response');
+            return {
+                type: (isSiteRequest && !isBotRequest) ? 'site' : 'bot_and_mini_app',
+                execution_mode: 'FULL_GENERATION',
+                target_entity: (isSiteRequest && !isBotRequest) ? 'site_only' : 'bot_and_mini_app',
+                title: 'Error',
+                explanation: isRussian
+                    ? '⚠️ Сервер ИИ временно перегружен или недоступен. Пожалуйста, повторите попытку через минуту.'
+                    : isUzbek
+                        ? '⚠️ AI serveri vaqtincha band. Iltimos, 1 daqiqadan so\'ng qayta urinib ko\'ring.'
+                        : '⚠️ AI service unavailable. Please retry in a moment.',
+                html: existingHtml || '',
+                source_code: existingHtml || '',
+                website_html: existingHtml || '',
+                project_data: currentConfig || null
+            };
         }
         catch (fatalError) {
             this.logger.error(`Fatal Service Error: ${fatalError.message}`);
@@ -226,59 +241,71 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
         }
     }
     async callGemini(apiKey, systemInstruction, userPrompt, imageBase64, imageMimeType, attempt) {
-        try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-            const temperature = attempt === 0 ? 0.2 : 0.1;
-            const parts = [{ text: `${systemInstruction}\n\nUser Input: ${userPrompt}` }];
-            if (imageBase64 && imageBase64.length > 10) {
-                parts.push({
-                    inline_data: {
-                        mime_type: imageMimeType || 'image/jpeg',
-                        data: imageBase64
-                    }
+        const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-pro'];
+        const temperature = attempt === 0 ? 0.2 : 0.1;
+        for (const model of models) {
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+                const parts = [{ text: `${systemInstruction}\n\nUser Input: ${userPrompt}` }];
+                if (imageBase64 && imageBase64.length > 10) {
+                    parts.push({
+                        inline_data: {
+                            mime_type: imageMimeType || 'image/jpeg',
+                            data: imageBase64
+                        }
+                    });
+                    this.logger.log('🖼️ Vision mode: image attached to request');
+                }
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts }],
+                        generationConfig: {
+                            temperature,
+                            maxOutputTokens: 16384
+                        }
+                    })
                 });
-                this.logger.log('🖼️ Vision mode: image attached to request');
+                if (!res.ok) {
+                    const errText = await res.text().catch(() => '');
+                    this.logger.warn(`Gemini Model ${model} HTTP ${res.status}: ${errText.substring(0, 200)}`);
+                    continue;
+                }
+                const data = await res.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!text)
+                    continue;
+                const parsed = this.extractJsonObject(text);
+                if (parsed) {
+                    this.logger.log(`✅ Gemini model ${model} succeeded!`);
+                    return parsed;
+                }
             }
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts }],
-                    generationConfig: {
-                        temperature,
-                        maxOutputTokens: 16384
-                    }
-                })
-            });
-            if (!res.ok) {
-                this.logger.error(`Gemini HTTP ${res.status}`);
-                return null;
+            catch (e) {
+                this.logger.warn(`Gemini model ${model} call error: ${e.message}`);
             }
-            const data = await res.json();
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!text)
-                return null;
-            const parsed = this.extractJsonObject(text);
-            return parsed;
         }
-        catch (e) {
-            this.logger.error(`Gemini call error: ${e.message}`);
-            return null;
-        }
+        return null;
     }
     async generatePatch(promptText, currentPageUrl, selectedBlockId, currentConfig) {
         return this.generateFullProject(promptText, [], currentConfig, 'bot_and_mini_app');
     }
     formatResponse(parsed, isSiteRequest, isRussian, isUzbek, isEditMode, fallbackHtml, currentConfig) {
-        const htmlCode = parsed.html ||
+        let htmlCode = parsed.html ||
             parsed.source_code ||
             parsed.website_html ||
             parsed.site_code ||
             parsed.code ||
             parsed.project_data?.source_code ||
+            parsed.project_data?.html ||
+            parsed.project_data?.website_html ||
             fallbackHtml ||
             '';
-        const targetEntity = (isSiteRequest || htmlCode) ? 'site_only' : (parsed.target_entity || 'bot_and_mini_app');
+        if (isSiteRequest && !htmlCode) {
+            htmlCode = '<!-- INVALID_HTML_FORCE_RETRY -->';
+        }
+        const targetEntity = (isSiteRequest || htmlCode && htmlCode !== '<!-- INVALID_HTML_FORCE_RETRY -->') ? 'site_only' : (parsed.target_entity || 'bot_and_mini_app');
         const defaultExpl = isEditMode
             ? (isRussian ? 'Сайт успешно обновлён! 🚀' : isUzbek ? 'Sayt muvaffaqiyatli yangilandi! 🚀' : 'Website updated!')
             : targetEntity === 'site_only'
@@ -330,10 +357,13 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
     extractJsonObject(text) {
         if (!text)
             return null;
-        const htmlMatch = text.match(/```html\s*([\s\S]*?)\s*```/i) || text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i);
+        const htmlMatch = text.match(/```(?:html)?\s*([\s\S]*?)```/i) || text.match(/<!DOCTYPE html>[\s\S]*<\/html>/i) || text.match(/<html[\s\S]*<\/html>/i);
         let htmlContent = '';
         if (htmlMatch) {
-            htmlContent = htmlMatch[1] || htmlMatch[0];
+            let possibleHtml = htmlMatch[1] || htmlMatch[0];
+            if (possibleHtml && possibleHtml.toLowerCase().includes('<html')) {
+                htmlContent = possibleHtml;
+            }
         }
         let cleanText = text.replace(/```json/gi, '').replace(/```html[\s\S]*?```/gi, '').replace(/```/gi, '').trim();
         cleanText = cleanText.replace(/,\s*([\]}])/g, '$1');
