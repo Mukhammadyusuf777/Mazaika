@@ -640,9 +640,24 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences:
 
     if (Object.keys(files).length > 0) {
       parsedJson.files = files;
-      // If we got multiple files, but no htmlPart yet, maybe set index.html as main html
-      if (!parsedJson.html && files['index.html']) {
-        parsedJson.html = files['index.html'];
+      
+      let combinedHtml = files['index.html'] || files['index.tsx'] || '';
+      if (combinedHtml) {
+        combinedHtml = combinedHtml.replace(/^```[a-z]*\s*/im, '').replace(/```\s*$/m, '');
+        const cssContent = files['style.css'] || files['index.css'] || files['styles.css'];
+        const jsContent = files['script.js'] || files['main.js'] || files['app.js'];
+        
+        if (cssContent && combinedHtml.includes('</head>')) {
+           const cleanCss = cssContent.replace(/^```[a-z]*\s*/im, '').replace(/```\s*$/m, '');
+           combinedHtml = combinedHtml.replace('</head>', `<style>\n${cleanCss}\n</style>\n</head>`);
+        }
+        
+        if (jsContent && combinedHtml.includes('</body>')) {
+           const cleanJs = jsContent.replace(/^```[a-z]*\s*/im, '').replace(/```\s*$/m, '');
+           combinedHtml = combinedHtml.replace('</body>', `<script>\n${cleanJs}\n</script>\n</body>`);
+        }
+        
+        parsedJson.html = combinedHtml; // Overwrite the monolith htmlPart
       }
     }
 
