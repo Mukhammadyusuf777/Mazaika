@@ -40,8 +40,32 @@ const DEFAULT_CONFIG: SiteConfig = {
   source_code: ''
 }
 
-
-
+const getSafeSourceCode = (html: string | undefined) => {
+  if (!html) return '';
+  // Inject a script at the end of the body to prevent ALL default link navigation inside iframe
+  const scriptToInject = `
+    <script>
+      document.addEventListener('click', function(e) {
+        let target = e.target;
+        while (target && target.tagName !== 'A') {
+          target = target.parentNode;
+        }
+        if (target && target.tagName === 'A') {
+          const href = target.getAttribute('href');
+          if (href && !href.startsWith('#')) {
+            e.preventDefault();
+            console.log('Navigation intercepted and blocked to prevent iframe reload:', href);
+          }
+        }
+      });
+    </script>
+  `;
+  
+  if (html.includes('</body>')) {
+    return html.replace('</body>', scriptToInject + '</body>');
+  }
+  return html + scriptToInject;
+};
 export default function SiteBuilderPage() {
   const { botId } = useParams<{ botId: string }>()
   const { user } = useAuthStore()
@@ -124,16 +148,24 @@ export default function SiteBuilderPage() {
 
     selfHealRetryCount.current = 0
     setSelfHealingStatus('idle')
-    setConfig(prev => ({
-      ...prev,
-      theme: activeConfig.theme || prev.theme,
-      themeColor: activeConfig.themeColor || prev.themeColor,
-      appName: activeConfig.appName || prev.appName,
-      blocks: activeConfig.blocks || prev.blocks,
+    
+    const nextConfig = {
+      ...config,
+      theme: activeConfig.theme || config.theme,
+      themeColor: activeConfig.themeColor || config.themeColor,
+      appName: activeConfig.appName || config.appName,
+      blocks: activeConfig.blocks || config.blocks,
       source_code: newHtml
-    }))
+    };
+    
+    setConfig(nextConfig)
     setUpdateCounter(c => c + 1) // ✅ force iframe re-render
-  }, [activeConfig])
+
+    // ✅ AUTO-SAVE to prevent data loss on reload
+    if (botId && newHtml !== config.source_code) {
+      saveSiteConfig(botId, nextConfig as any).catch(console.error);
+    }
+  }, [activeConfig, botId])
 
   // Image upload handler
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -573,7 +605,7 @@ export default function SiteBuilderPage() {
           ) : deviceMode === 'desktop' ? (
             <iframe
               key={`desktop_${updateCounter}`}
-              srcDoc={config.source_code}
+              srcDoc={getSafeSourceCode(config.source_code)}
               style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
               title="Live Site Preview"
               sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
@@ -587,7 +619,7 @@ export default function SiteBuilderPage() {
               </div>
               <iframe
                 key={`mobile_${updateCounter}`}
-                srcDoc={config.source_code}
+                srcDoc={getSafeSourceCode(config.source_code)}
                 style={{ width: '100%', flex: 1, border: 'none', background: '#fff' }}
                 title="Mobile Site Preview"
                 sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
