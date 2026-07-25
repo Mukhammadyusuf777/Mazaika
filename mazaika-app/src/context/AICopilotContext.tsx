@@ -176,7 +176,12 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     setMessages(prev => {
       const updated = [...prev, userMsg]
-      localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated))
+      try {
+        localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated))
+      } catch (e) {
+        console.warn('LocalStorage quota exceeded, truncating messages')
+        localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated.slice(-10)))
+      }
       return updated
     })
     setIsGenerating(true)
@@ -210,7 +215,12 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       setMessages(prev => {
         const updated = [...prev, agentMsg]
-        localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated))
+        try {
+          localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated))
+        } catch (e) {
+          console.warn('LocalStorage quota exceeded, truncating messages')
+          localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated.slice(-10)))
+        }
         return updated
       })
 
@@ -232,7 +242,13 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
       setMessages(prev => {
         const updated = [...prev, errorMsg]
-        localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated))
+        try {
+          localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated))
+        } catch (e) {
+          console.warn('LocalStorage quota exceeded, truncating messages')
+          // Truncate to last 10 messages if quota exceeded
+          localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated.slice(-10)))
+        }
         return updated
       })
       return null
