@@ -62,7 +62,9 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const saved = localStorage.getItem(makeKey(userId, 'messages', 'default'))
     if (saved) {
       const parsed = JSON.parse(saved)
-      return parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }))
+      return parsed
+        .filter((m: any) => !m.text?.includes('PREVIOUS RESPONSE WAS INVALID HTML'))
+        .map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }))
     }
     return [
       {
@@ -109,10 +111,10 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     const savedMessages = localStorage.getItem(makeKey(userId, 'messages', projectId))
-    if (savedMessages) {
-      const parsed = JSON.parse(savedMessages)
-      setMessages(parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })))
-    } else {
+      if (savedMessages) {
+        const parsed = JSON.parse(savedMessages)
+        setMessages(parsed.filter((m: any) => !m.text?.includes('PREVIOUS RESPONSE WAS INVALID HTML')).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })))
+      } else {
       setMessages([
         {
           id: 'welcome_' + projectId,

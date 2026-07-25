@@ -99,6 +99,13 @@ export default function SiteBuilderPage() {
     if (botId) switchProject(botId, null)
   }, [botId])
 
+  // Automatically switch to 'code' tab when AI starts generating
+  useEffect(() => {
+    if (isGenerating) {
+      setActiveTab('code')
+    }
+  }, [isGenerating])
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -527,8 +534,59 @@ export default function SiteBuilderPage() {
         </div>
 
         {/* Preview / Code Frame */}
-        <div style={{ flex: 1, background: '#0d1526', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6)', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          {!config.source_code ? (
+        <div style={{ flex: 1, background: '#0d1526', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6)', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+          {activeTab === 'code' ? (
+            <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#1e1e1e' }}>
+              {/* VS Code Top File Bar */}
+              <div style={{ height: 36, background: '#252526', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', borderBottom: '1px solid #333', userSelect: 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1e1e1e', padding: '6px 12px', borderTop: '2px solid #007acc', fontSize: 12, color: '#cccccc', borderRight: '1px solid #333' }}>
+                  <span style={{ color: '#e34c26', fontWeight: 'bold' }}>&lt;&gt;</span>
+                  <span>index.html</span>
+                  {isGenerating && <Loader2 size={12} style={{ animation: 'spin 1s linear infinite', color: '#1e90ff', marginLeft: 4 }} />}
+                </div>
+                {isGenerating && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: '#1e90ff', background: 'rgba(30,144,255,0.1)', padding: '3px 10px', borderRadius: 12, border: '1px solid rgba(30,144,255,0.2)' }}>
+                    <Sparkles size={12} style={{ animation: 'pulse 1.5s infinite' }} />
+                    <span>AI kod yozmoqda...</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Editor */}
+              <div style={{ flex: 1, position: 'relative' }}>
+                <Editor
+                  height="100%"
+                  defaultLanguage="html"
+                  theme="vs-dark"
+                  value={config.source_code || ''}
+                  onChange={(value) => {
+                    setConfig(prev => ({ ...prev, source_code: value || '' }))
+                  }}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    wordWrap: 'on',
+                    padding: { top: 12, bottom: 12 },
+                    formatOnPaste: true,
+                    scrollBeyondLastLine: false,
+                    smoothScrolling: true
+                  }}
+                />
+              </div>
+
+              {/* VS Code Bottom Status Bar */}
+              <div style={{ height: 24, background: '#007acc', color: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 12px', fontSize: 11, fontWeight: 500 }}>
+                <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                  <span>● Ready</span>
+                  <span>UTF-8</span>
+                  <span>HTML</span>
+                </div>
+                <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                  <span>Mazaika AI Architect</span>
+                </div>
+              </div>
+            </div>
+          ) : !config.source_code ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b', flexDirection: 'column', gap: 16 }}>
               <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(168,85,247,0.1)', border: '2px dashed rgba(168,85,247,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Globe size={36} style={{ opacity: 0.4, color: '#a855f7' }} />
@@ -537,27 +595,6 @@ export default function SiteBuilderPage() {
                 <p style={{ fontSize: 15, fontWeight: 600, color: '#94a3b8', margin: '0 0 8px' }}>Sayt hali yaratilmagan</p>
                 <p style={{ fontSize: 12, color: '#475569', margin: 0 }}>Chap tomondagi AI chatdan yozing yoki 📸 rasm yuboring</p>
               </div>
-            </div>
-          ) : activeTab === 'code' ? (
-            <div style={{ width: '100%', height: '100%' }}>
-              <Editor
-                height="100%"
-                defaultLanguage="html"
-                theme="vs-dark"
-                value={config.source_code}
-                onChange={(value) => {
-                  setConfig(prev => ({ ...prev, source_code: value || '' }))
-                }}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 14,
-                  wordWrap: 'on',
-                  padding: { top: 16, bottom: 16 },
-                  formatOnPaste: true,
-                  scrollBeyondLastLine: false,
-                  smoothScrolling: true
-                }}
-              />
             </div>
           ) : deviceMode === 'desktop' ? (
             <iframe
