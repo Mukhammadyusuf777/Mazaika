@@ -107,7 +107,7 @@ export default function SiteBuilderPage() {
     window.open(blobUrl, '_blank')
   }
 
-  const { activeConfig, messages, sendMessage, isGenerating, clearChat, switchProject } = useAICopilot()
+  const { activeConfig, messages, sendMessage, isGenerating, clearChat, switchProject, activeProjectId } = useAICopilot()
   const [promptInput, setPromptInput] = useState('')
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -134,6 +134,7 @@ export default function SiteBuilderPage() {
     const fetchConfig = async () => {
       if (!botId) return
       setIsLoading(true)
+      setConfig(DEFAULT_CONFIG) // Clear immediately
       try {
         const data = await getSiteConfig(botId)
         if (data) {
@@ -154,6 +155,8 @@ export default function SiteBuilderPage() {
   // ✅ Sync activeConfig to SiteConfig
   useEffect(() => {
     if (!activeConfig) return
+    if (botId && activeProjectId !== botId) return // Prevent race conditions!
+
     const newHtml = activeConfig.source_code || activeConfig.html || ''
     if (!newHtml) return
 
@@ -176,7 +179,7 @@ export default function SiteBuilderPage() {
     if (botId && newHtml !== config.source_code) {
       saveSiteConfig(botId, nextConfig as any).catch(console.error);
     }
-  }, [activeConfig, botId])
+  }, [activeConfig, botId, activeProjectId])
 
   // Image upload handler
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {

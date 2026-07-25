@@ -108,6 +108,8 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const savedConfig = localStorage.getItem(makeKey(userId, 'config', projectId))
     if (savedConfig) {
       try { setActiveConfig(JSON.parse(savedConfig)) } catch {}
+    } else if (config === null) {
+      setActiveConfig(null)
     }
 
     const savedMessages = localStorage.getItem(makeKey(userId, 'messages', projectId))
