@@ -233,17 +233,26 @@ If user attached an image of a bot flow/diagram — analyze it and create matchi
 
 CRITICAL CREATION RULES:
 1. If the user writes in Russian or Uzbek, you MUST use Russian or Uzbek text respectively in bot messages.
-2. ALWAYS lay out nodes with proper x/y coordinates. Start node should be at x:100 y:150, and each subsequent node should be placed logically (e.g., y + 200).
+2. ALWAYS lay out nodes with proper x/y coordinates. Place nodes in a grid/branching layout, NOT a single vertical column. Use x values: 100, 400, 700, 1000 for different branches. Use y values that increase by 200 per row. For buttons creating branches, place child nodes with different x positions.
 3. Include 5-10 meaningful nodes for ANY bot request. Build a complete flow.
 
-NODE TYPES AND EXACT FORMATS:
-- start: {"id":"node_1", "type":"start", "position":{"x":100,"y":150}, "data":{"label":"Start", "emoji":"▶", "color":"#10d974", "text":"Welcome message"}}
-- message: {"id":"node_2", "type":"message", "position":{"x":100,"y":350}, "data":{"label":"Message", "emoji":"💬", "color":"#1e90ff", "text":"Your message here"}}
-- question: {"id":"node_3", "type":"question", "position":{"x":100,"y":550}, "data":{"label":"Question", "emoji":"❓", "color":"#ffb830", "text":"Ask something", "variable":"user_answer"}}
-- button_group: {"id":"node_4", "type":"button_group", "position":{"x":100,"y":750}, "data":{"label":"Buttons", "emoji":"🔘", "color":"#a855f7", "buttons":[{"label":"Option 1","nextNodeId":"node_5"}]}}
-- condition: {"id":"node_5", "type":"condition", "position":{"x":100,"y":950}, "data":{"label":"Condition", "emoji":"🔀", "color":"#ff6b6b", "variable":"user_answer", "value":"yes"}}
-- api_call: {"id":"node_6", "type":"api_call", "position":{"x":100,"y":1150}, "data":{"label":"API Call", "emoji":"🌐", "color":"#00f5c4", "url":"https://api.example.com/data", "method":"GET", "resultVariable":"api_result"}}
-- custom_code: {"id":"node_7", "type":"custom_code", "position":{"x":100,"y":1350}, "data":{"label":"Custom Code", "emoji":"⚡", "color":"#ff9f43", "code":"return { success: true };"}}
+NODE TYPES (ONLY use these exact type strings):
+- start: {"id":"node_1", "type":"start", "position":{"x":100,"y":150}, "data":{"label":"Boshlash", "emoji":"▶", "color":"#10d974", "text":"Assalomu alaykum! Botga xush kelibsiz."}}
+- message: {"id":"node_2", "type":"message", "position":{"x":400,"y":150}, "data":{"label":"Xabar", "emoji":"💬", "color":"#1e90ff", "text":"Sizga qanday yordam bera olaman?", "buttons":["Mahsulotlar", "Aloqa", "Haqida"]}}
+- question: {"id":"node_3", "type":"question", "position":{"x":100,"y":350}, "data":{"label":"Savol", "emoji":"❓", "color":"#ffb830", "text":"Ismingizni kiriting:", "variable":"user_name"}}
+- condition: {"id":"node_4", "type":"condition", "position":{"x":400,"y":550}, "data":{"label":"Tekshiruv", "emoji":"🔀", "color":"#ff6b6b", "variable":"user_name", "operator":"!=", "value":""}}
+- http: {"id":"node_5", "type":"http", "position":{"x":100,"y":750}, "data":{"label":"API So'rov", "emoji":"🌐", "color":"#00f5c4", "url":"https://api.example.com/data", "method":"GET", "resultVariable":"api_result"}}
+- javascript: {"id":"node_6", "type":"javascript", "position":{"x":400,"y":750}, "data":{"label":"Kod", "emoji":"⚡", "color":"#ff9f43", "code":"return { message: 'Hello ' + variables.user_name };"}}
+- timer: {"id":"node_7", "type":"timer", "position":{"x":100,"y":950}, "data":{"label":"Kechiktirish", "emoji":"⏱", "color":"#6366f1", "delayAmount":3, "delayUnit":"seconds"}}
+- payme: {"id":"node_8", "type":"payme", "position":{"x":400,"y":950}, "data":{"label":"To'lov (Payme)", "emoji":"💳", "color":"#10d974", "price":99000, "description":"Tovar uchun to'lov"}}
+- variable: {"id":"node_9", "type":"variable", "position":{"x":100,"y":1150}, "data":{"label":"O'zgaruvchi", "emoji":"📝", "color":"#a855f7", "variableName":"order_id", "variableValue":"{{timestamp}}"}}
+- photo: {"id":"node_10", "type":"photo", "position":{"x":400,"y":1150}, "data":{"label":"Rasm", "emoji":"📷", "color":"#0ea5e9", "fileId":"", "caption":"Mahsulot rasmi"}}
+- aiReply: {"id":"node_11", "type":"aiReply", "position":{"x":100,"y":1350}, "data":{"label":"AI Javob", "emoji":"🧠", "color":"#a855f7", "model":"gemini-flash", "prompt":"Foydalanuvchining savoliga professional javob bering"}}
+
+IMPORTANT rules for the message node:
+- To add buttons to a message, put them in the buttons array of the MESSAGE node (NOT a separate button_group node)
+- Buttons can be simple strings: {"buttons": ["Mahsulotlar", "Biz haqimizda", "Aloqa"]}
+- Or objects: {"buttons": [{"text": "Buyurtma", "nextNodeId": "node_3"}]}
 
 STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then optionally output files:
 {
@@ -251,10 +260,10 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then o
   "execution_mode": "FULL_GENERATION",
   "target_entity": "bot_and_mini_app",
   "title": "Telegram Bot",
-  "explanation": "${isUzbek ? 'Telegram bot va Mini App loyihangiz tayyorlandi!' : isRussian ? 'Логика Telegram-бота успешно создана!' : 'Telegram Bot workflow generated!'}",
+  "explanation": "Telegram botingiz yaratildi! Bot ushbu imkoniyatlarga ega: xabarlar, savollar, shartli mantiq, HTTP API so'rovlar, to'lov tizimlari (Payme, Click), rasmlar va AI javoblar.",
   "project_data": {
     "appName": "Bot Name",
-    "bot_blocks": [{"id":"node_1","type":"start","position":{"x":100,"y":150},"data":{"label":"Start","emoji":"▶","color":"#10d974","text":"Salom!"}}],
+    "bot_blocks": [{"id":"node_1","type":"start","position":{"x":100,"y":150},"data":{"label":"Boshlash","emoji":"▶","color":"#10d974","text":"Salom!"}}],
     "bot_edges": [{"id":"e1","source":"node_1","target":"node_2"}]
   }
 }`;
