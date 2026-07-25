@@ -3,8 +3,10 @@ import { useParams } from 'react-router-dom'
 import {
   Globe, Save, Eye, CheckCircle, Sparkles, Bot, Loader2, Send,
   Copy, Check, RefreshCw, Zap, Laptop, Smartphone,
-  Sliders, X, ImagePlus, AlertCircle
+  Sliders, X, ImagePlus, AlertCircle, Code
 } from 'lucide-react'
+
+import Editor from '@monaco-editor/react'
 
 import { getSiteConfig, saveSiteConfig, updateBot } from '../../api/firestore'
 import { useAICopilot } from '../../context/AICopilotContext'
@@ -68,6 +70,7 @@ export default function SiteBuilderPage() {
   const [siteDesc, setSiteDesc] = useState('')
   const [updateCounter, setUpdateCounter] = useState(0) // ✅ for iframe re-render
   const [selfHealingStatus, setSelfHealingStatus] = useState<'idle' | 'healing' | 'failed'>('idle')
+  const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview')
 
   // Image upload state
   const [pendingImage, setPendingImage] = useState<{ base64: string; mimeType: string; previewUrl: string } | null>(null)
@@ -481,8 +484,18 @@ export default function SiteBuilderPage() {
         {/* Preview Controls */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Globe size={20} color="#1e90ff" />
-            <h1 style={{ margin: 0, fontSize: 17, fontWeight: 600, color: '#fff' }}>Live Preview</h1>
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: 3 }}>
+              <button 
+                onClick={() => setActiveTab('code')}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: activeTab === 'code' ? 600 : 400, color: activeTab === 'code' ? '#fff' : '#94a3b8', background: activeTab === 'code' ? 'rgba(30,144,255,0.2)' : 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}>
+                <Code size={14} color={activeTab === 'code' ? '#1e90ff' : 'currentColor'} /> Code
+              </button>
+              <button 
+                onClick={() => setActiveTab('preview')}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: activeTab === 'preview' ? 600 : 400, color: activeTab === 'preview' ? '#fff' : '#94a3b8', background: activeTab === 'preview' ? 'rgba(168,85,247,0.2)' : 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}>
+                <Globe size={14} color={activeTab === 'preview' ? '#a855f7' : 'currentColor'} /> Preview
+              </button>
+            </div>
             {config.source_code && (
               <span style={{ fontSize: 10, color: '#10d974', background: 'rgba(16,217,116,0.1)', border: '1px solid rgba(16,217,116,0.2)', borderRadius: 20, padding: '2px 8px' }}>
                 ● Tayyor
@@ -490,7 +503,7 @@ export default function SiteBuilderPage() {
             )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: 3, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: 3, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', visibility: activeTab === 'preview' ? 'visible' : 'hidden' }}>
             <button onClick={() => setDeviceMode('desktop')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, border: 'none', background: deviceMode === 'desktop' ? 'rgba(30,144,255,0.2)' : 'transparent', color: deviceMode === 'desktop' ? '#1e90ff' : '#94a3b8', cursor: 'pointer', fontWeight: deviceMode === 'desktop' ? 600 : 400 }}>
               <Laptop size={14} /> Desktop
             </button>
@@ -513,7 +526,7 @@ export default function SiteBuilderPage() {
           </div>
         </div>
 
-        {/* Preview Frame */}
+        {/* Preview / Code Frame */}
         <div style={{ flex: 1, background: '#0d1526', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6)', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           {!config.source_code ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b', flexDirection: 'column', gap: 16 }}>
@@ -525,13 +538,34 @@ export default function SiteBuilderPage() {
                 <p style={{ fontSize: 12, color: '#475569', margin: 0 }}>Chap tomondagi AI chatdan yozing yoki 📸 rasm yuboring</p>
               </div>
             </div>
+          ) : activeTab === 'code' ? (
+            <div style={{ width: '100%', height: '100%' }}>
+              <Editor
+                height="100%"
+                defaultLanguage="html"
+                theme="vs-dark"
+                value={config.source_code}
+                onChange={(value) => {
+                  setConfig(prev => ({ ...prev, source_code: value || '' }))
+                }}
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  wordWrap: 'on',
+                  padding: { top: 16, bottom: 16 },
+                  formatOnPaste: true,
+                  scrollBeyondLastLine: false,
+                  smoothScrolling: true
+                }}
+              />
+            </div>
           ) : deviceMode === 'desktop' ? (
             <iframe
               key={`desktop_${updateCounter}`}
               srcDoc={config.source_code}
               style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
               title="Live Site Preview"
-              sandbox="allow-scripts allow-same-origin"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
             />
           ) : (
             <div style={{ width: 360, height: '92%', maxHeight: 720, borderRadius: 40, border: '12px solid #1e293b', background: '#000', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 2px 4px rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -543,10 +577,13 @@ export default function SiteBuilderPage() {
               <iframe
                 key={`mobile_${updateCounter}`}
                 srcDoc={config.source_code}
-                style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
-                title="Mobile Preview"
-                sandbox="allow-scripts allow-same-origin"
+                style={{ width: '100%', flex: 1, border: 'none', background: '#fff' }}
+                title="Mobile Site Preview"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
               />
+              <div style={{ height: 20, background: '#000', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <div style={{ width: 120, height: 4, background: '#334155', borderRadius: 4 }} />
+              </div>
             </div>
           )}
         </div>

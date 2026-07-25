@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
+    "@monaco-editor/react": "^4.7.0",
     "@supabase/supabase-js": "^2.110.6",
     "@xyflow/react": "^12.11.2",
     "axios": "^1.18.1",
