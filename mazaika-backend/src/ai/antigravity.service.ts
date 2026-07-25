@@ -96,7 +96,8 @@ USER REQUEST: "${promptText}"
 CRITICAL INSTRUCTIONS:
 1. You MUST expand and continue building the site, adding new pages, sections, or logic requested.
 2. The user has provided the existing codebase in <file> tags below.
-3. You must output the ENTIRE updated files using <file path="...">...</file>.
+3. MULTI-FILE ARCHITECTURE IS MANDATORY. You must output the ENTIRE updated files using <file path="...">...</file>.
+4. Keep CSS in style.css and JS in script.js. Do not merge them back into index.html!
 
 CURRENT FILES TO MODIFY:
 ${filesContext}
@@ -104,6 +105,7 @@ ${filesContext}
 STRICT OUTPUT RULES:
 1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
 2. Then, AFTER the JSON, output the full updated files wrapped in <file path="...">...</file>.
+3. If you do not use <file path="...">...</file> tags, the system will crash!
 
 JSON FORMAT:
 {
@@ -134,6 +136,7 @@ CRITICAL EDITING INSTRUCTIONS:
 2. IF the user attached an image — match its design, colors, layout or style as closely as possible.
 3. Keep all existing functionality — only change what was requested.
 4. SPA NAVIGATION: NEVER use href="/" or href="page.html" in <a> tags! Use a JS function to hide/show sections.
+5. MULTI-FILE ARCHITECTURE IS MANDATORY. You must separate HTML, CSS, and JS using <file path="...">...</file> blocks. Do not merge CSS/JS into index.html!
 
 CURRENT FILES TO MODIFY:
 ${filesContext}
@@ -142,6 +145,7 @@ STRICT OUTPUT RULES:
 1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
 2. Then, AFTER the JSON, output all updated files wrapped in <file path="...">...</file> blocks!
 3. Do NOT put the code inside the JSON object!
+4. If you do not use <file path="...">...</file> tags, the system will crash!
 
 JSON FORMAT:
 {
@@ -163,8 +167,10 @@ ${historyContext}
 ${imageInstruction}
 
 CRITICAL CREATION RULES:
-1. MULTI-FILE ARCHITECTURE: You must split your code into multiple files (e.g. index.html, style.css, script.js).
-2. Use the exact format:
+1. MULTI-FILE ARCHITECTURE IS MANDATORY: You MUST split your code into separate files. 
+2. NEVER use <style> tags in index.html! ALL CSS MUST go into <file path="style.css">.
+3. NEVER write inline JS logic in index.html! ALL JS MUST go into <file path="script.js">.
+4. Use the exact XML-like format to demarcate files:
 <file path="index.html">
 ...html code here...
 </file>
@@ -175,14 +181,15 @@ CRITICAL CREATION RULES:
 ...js code here...
 </file>
 
-3. STRICT SPA NAVIGATION: Your script.js MUST include a router that hides all sections and shows only the active one (e.g. display:none for inactive). DO NOT just anchor-scroll down a long page.
-4. PREMIUM DESIGN: Use Tailwind CSS + Glassmorphism (e.g., bg-white/10 backdrop-blur-xl border border-white/20) + smooth animations + gorgeous gradients + large spacing (p-12, gap-8). NEVER output plain/ugly layouts!
-5. IMAGES: Real Unsplash high-res photos.
+5. STRICT SPA NAVIGATION: Your script.js MUST include a router that hides all sections and shows only the active one (e.g. display:none for inactive). DO NOT just anchor-scroll down a long page.
+6. PREMIUM DESIGN: Use Tailwind CSS + Glassmorphism (e.g., bg-white/10 backdrop-blur-xl border border-white/20) + smooth animations + gorgeous gradients + large spacing (p-12, gap-8). NEVER output plain/ugly layouts!
+7. IMAGES: Real Unsplash high-res photos.
 
 STRICT OUTPUT RULES:
 1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
 2. Then, AFTER the JSON, output all the files wrapped in <file path="...">...</file> blocks.
 3. Do NOT put the HTML/CSS inside the JSON object!
+4. If you fail to separate files into index.html, style.css, and script.js, the system will crash!
 
 JSON OUTPUT:
 {
