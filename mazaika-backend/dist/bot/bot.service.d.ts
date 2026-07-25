@@ -16,10 +16,10 @@ export declare class BotService {
             updatedAt: Date;
             createdAt: Date;
             id: string;
+            name: string;
             botId: string;
             nodes: string;
             edges: string;
-            name: string;
             description: string | null;
             isMain: boolean;
         }[];
@@ -75,8 +75,8 @@ export declare class BotService {
         method: string;
         url: string;
         id: string;
-        botId: string;
         name: string;
+        botId: string;
     }[]>;
     createWebhook(botId: string, data: {
         name: string;
@@ -90,8 +90,8 @@ export declare class BotService {
         method: string;
         url: string;
         id: string;
-        botId: string;
         name: string;
+        botId: string;
     }>;
     deleteWebhook(id: string): Promise<{
         active: boolean;
@@ -100,7 +100,7 @@ export declare class BotService {
         method: string;
         url: string;
         id: string;
-        botId: string;
         name: string;
+        botId: string;
     }>;
 }

@@ -40,9 +40,9 @@ export declare class BotController {
         totalContacts: number;
         todayMessages: number;
         chartData: {
-            name: string;
-            users: number;
-            msgs: number;
+            name: any;
+            users: any;
+            msgs: any;
         }[];
     }>;
     setMenuButton(id: string, data: {

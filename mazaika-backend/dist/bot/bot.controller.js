@@ -75,20 +75,50 @@ let BotController = class BotController {
         return { successCount, failCount };
     }
     async getAnalytics(botId) {
-        const contactsSnap = await this.firebaseService.db.collection('bots').doc(botId).collection('contacts').get();
+        const db = this.firebaseService.db;
+        const contactsSnap = await db.collection('bots').doc(botId).collection('contacts').get();
         const totalContacts = contactsSnap.size;
+        const days = ['Yak', 'Dush', 'Sesh', 'Chor', 'Pay', 'Juma', 'Shan'];
+        const now = new Date();
+        const chartDataMap = new Map();
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(now);
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            const dayName = days[d.getDay()];
+            chartDataMap.set(dateStr, { name: dayName, users: 0, msgs: 0 });
+        }
+        let todayMessages = 0;
+        const todayStr = now.toISOString().split('T')[0];
+        for (const doc of contactsSnap.docs) {
+            const data = doc.data();
+            if (data.createdAt) {
+                const d = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+                const dateStr = d.toISOString().split('T')[0];
+                if (chartDataMap.has(dateStr)) {
+                    chartDataMap.get(dateStr).users += 1;
+                }
+            }
+            const messagesSnap = await db.collection('bots').doc(botId).collection('contacts').doc(doc.id).collection('messages').get();
+            for (const msgDoc of messagesSnap.docs) {
+                const msg = msgDoc.data();
+                if (msg.createdAt) {
+                    const d = msg.createdAt.toDate ? msg.createdAt.toDate() : new Date(msg.createdAt);
+                    const dateStr = d.toISOString().split('T')[0];
+                    if (dateStr === todayStr) {
+                        todayMessages += 1;
+                    }
+                    if (chartDataMap.has(dateStr)) {
+                        chartDataMap.get(dateStr).msgs += 1;
+                    }
+                }
+            }
+        }
+        const chartData = Array.from(chartDataMap.values()).map(({ name, users, msgs }) => ({ name, users, msgs }));
         return {
             totalContacts,
-            todayMessages: totalContacts * 2,
-            chartData: [
-                { name: 'Dush', users: 5, msgs: 12 },
-                { name: 'Sesh', users: 12, msgs: 25 },
-                { name: 'Chor', users: 18, msgs: 42 },
-                { name: 'Pay', users: 24, msgs: 38 },
-                { name: 'Juma', users: 35, msgs: 70 },
-                { name: 'Shan', users: 48, msgs: 110 },
-                { name: 'Yak', users: 54, msgs: 95 },
-            ]
+            todayMessages,
+            chartData
         };
     }
     async setMenuButton(id, data) {

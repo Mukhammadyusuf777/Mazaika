@@ -106,7 +106,7 @@ ${existingHtml}
 
 STRICT OUTPUT RULES:
 1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
-2. Then, AFTER the JSON, output the full updated HTML wrapped in a ```html code block!
+2. Then, AFTER the JSON, output the full updated HTML wrapped in a \`\`\`html code block!
 3. Do NOT put the HTML inside the JSON object!
 
 JSON FORMAT:
@@ -117,10 +117,10 @@ JSON FORMAT:
   "title": "Updated Site",
   "explanation": "Specific description of changes made..."
 }
-
-```html
+\`\`\`html
 <!DOCTYPE html><html>...FULL UPDATED HTML...</html>
-````;
+\`\`\`
+`;
 
       } else if (isSiteRequest && !isBotRequest) {
         // --- SITE CREATION MODE ---
@@ -140,7 +140,7 @@ CRITICAL CREATION RULES:
 
 STRICT OUTPUT RULES:
 1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
-2. Then, AFTER the JSON, output the full generated HTML wrapped in a ```html code block!
+2. Then, AFTER the JSON, output the full generated HTML wrapped in a \`\`\`html code block!
 3. Do NOT put the HTML inside the JSON object!
 
 JSON OUTPUT:
@@ -152,9 +152,10 @@ JSON OUTPUT:
   "explanation": "${isUzbek ? 'Mobil va PC uchun moslashuvchan premium sayt yaratildi!' : isRussian ? 'Адаптированный сайт успешно создан!' : 'Responsive website generated!'}"
 }
 
-```html
+\`\`\`html
 <!DOCTYPE html><html>...COMPLETE HTML...</html>
-````;
+\`\`\`
+`;
 
       } else {
         // --- BOT CREATION/EDIT MODE ---
