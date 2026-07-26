@@ -389,7 +389,7 @@ function ParticleCanvas() {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext('2d')
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
     if (!ctx) return
 
     let animId: number
@@ -549,6 +549,19 @@ export default function LandingPage() {
       el.style.boxShadow  = ''
     }
     if (glare) glare.style.opacity = '0'
+  }, [])
+
+  // Gyroscope for mobile 3D tilt
+  useEffect(() => {
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      const el = phoneRef.current
+      if (!el) return
+      const beta = Math.max(-20, Math.min(20, (e.beta || 0) - 45)) // front-back tilt
+      const gamma = Math.max(-20, Math.min(20, e.gamma || 0)) // left-right tilt
+      el.style.transform = `perspective(900px) rotateX(${-beta * 0.5}deg) rotateY(${gamma * 0.8}deg) scale(1.02)`
+    }
+    window.addEventListener('deviceorientation', handleOrientation as any)
+    return () => window.removeEventListener('deviceorientation', handleOrientation as any)
   }, [])
 
   // Magnetic button effect
@@ -780,7 +793,7 @@ export default function LandingPage() {
                     {/* SCENE 2: Delivery / confirmation */}
                     <div className="mockup-scene mockup-scene-2">
                       <div className="s2-status-bar">
-                        <span className="s2-dot"></span> To'lov tasdiqlandi
+                        <span className="s2-dot"></span> Yetkazilmoqda
                       </div>
                       <div className="hero-mockup-bubble bot s2-anim-1">
                         ✅ Buyurtmangiz qabul qilindi!<br/>
@@ -788,27 +801,32 @@ export default function LandingPage() {
                       </div>
                       <div className="s2-track">
                         <div className="s2-step done s2-anim-2">
-                          <div className="s2-step-icon">💳</div>
-                          <div className="s2-step-text">To'lov qabul qilindi</div>
+                          <div className="s2-step-icon">✅</div>
+                          <div className="s2-step-text">Buyurtma qabul qilindi</div>
                         </div>
                         <div className="s2-connector s2-anim-3"></div>
-                        <div className="s2-step active s2-anim-4">
-                          <div className="s2-step-icon">👨‍🍳</div>
-                          <div className="s2-step-text">Tayyorlanmoqda...</div>
+                        <div className="s2-step done s2-anim-4">
+                          <div className="s2-step-icon">🍕</div>
+                          <div className="s2-step-text">Tayyorlanmoqda</div>
                         </div>
-                        <div className="s2-connector"></div>
-                        <div className="s2-step s2-anim-5">
-                          <div className="s2-step-icon">🚴</div>
-                          <div className="s2-step-text">Yetkazib berish</div>
+                        <div className="s2-connector s2-anim-5"></div>
+                        <div className="s2-step active s2-anim-6">
+                          <div className="s2-step-icon">🛵</div>
+                          <div className="s2-step-text">Yo'lda</div>
+                        </div>
+                        <div className="s2-connector s2-anim-7"></div>
+                        <div className="s2-step s2-anim-8">
+                          <div className="s2-step-icon">🎉</div>
+                          <div className="s2-step-text">Yetkazildi</div>
                         </div>
                       </div>
-                      <div className="hero-mockup-bubble bot s2-anim-6">
+                      <div className="hero-mockup-bubble bot s2-anim-9">
                         📍 Kuryer yo'lda! ETA: <strong>15 daqiqa</strong>
                       </div>
-                      <div className="s2-map-preview s2-anim-7">
+                      <div className="s2-map-preview s2-anim-10">
                         <div className="s2-map-pin">📍</div>
                         <div className="s2-map-route"></div>
-                        <div className="s2-map-bike">🚴</div>
+                        <div className="s2-map-bike">🛵</div>
                       </div>
                     </div>
                   </div>

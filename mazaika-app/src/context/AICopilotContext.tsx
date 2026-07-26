@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
 import { queryAntigravityAgent } from '../api/aiAgentEngine'
 import type { AgentResponsePayload, PatchOperation } from '../api/aiAgentEngine'
 import { useAuthStore } from '../store/useAuthStore'
@@ -11,7 +11,7 @@ export interface ChatMessage {
   timestamp: Date
   projectData?: any
   patchOperations?: PatchOperation[]
-  imageUrl?: string // for vision messages
+  imageUrl?: string
 }
 
 interface AICopilotContextType {
@@ -43,6 +43,42 @@ function makeKey(userId: string | undefined, type: 'config' | 'messages', projec
   return `mazaika_ai_${userId || 'anon'}_${type}_${projectId}`
 }
 
+function safeRead<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return fallback
+    return JSON.parse(raw) as T
+  } catch {
+    return fallback
+  }
+}
+
+function safeWrite(key: string, value: any) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    try {
+      if (Array.isArray(value)) {
+        localStorage.setItem(key, JSON.stringify(value.slice(-15)))
+      }
+    } catch {
+      console.error('Unable to save to localStorage')
+    }
+  }
+}
+
+function makeWelcomeMessages(projectId: string): ChatMessage[] {
+  const isNew = projectId === 'default'
+  return [{
+    id: 'welcome_' + Date.now(),
+    sender: 'agent',
+    text: isNew
+      ? `Salom! Men **Mazaika AI** — sizning shaxsiy AI developeringizman! 🚀\n\nMen quyidagilarda yordam bera olaman:\n- 🤖 **Telegram bot** yaratish — to'liq ishlaydigan kod bilan\n- 🌐 **Sayt** yaratish — to'liq HTML/CSS/JS\n- ✨ **Mini App** yaratish — Telegram ichida ishlaydi\n- 📸 **Rasm yuboring** — men uni tahlil qilib sizga kerakli narsani yarataman!\n- 🏪 **To'liq ekosistem** — Bot + Mini App + Sayt bir vaqtda!\n\nG'oyangizni yozing yoki rasm yuboring!`
+      : `Bu loyiha uchun AI tayyor! ✨\n\nBotni yaxshilash, yangi bloklar qo'shish, sayt yoki Mini App yaratish uchun yozing.\n\n📸 Rasm yuborib ham ko'rsatishingiz mumkin!`,
+    timestamp: new Date()
+  }]
+}
+
 export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuthStore()
   const userId = user?.id
@@ -50,96 +86,86 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isWidgetOpen, setWidgetOpen] = useState(false)
   const [activeElementId, setActiveElementId] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [activeProjectId, setActiveProjectId] = useState<string>('default')
+
+  // Use ref to always have the latest projectId in async callbacks (prevents stale closure)
+  const activeProjectIdRef = useRef<string>('default')
+  const [activeProjectId, _setActiveProjectId] = useState<string>('default')
+  const setActiveProjectId = useCallback((id: string) => {
+    activeProjectIdRef.current = id
+    _setActiveProjectId(id)
+  }, [])
+
   const prevUserIdRef = useRef<string | undefined>(userId)
 
   const [activeConfig, setActiveConfig] = useState<any>(() => {
-    const saved = localStorage.getItem(makeKey(userId, 'config', 'default'))
-    return saved ? JSON.parse(saved) : null
+    return safeRead(makeKey(userId, 'config', 'default'), null)
   })
 
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    const saved = localStorage.getItem(makeKey(userId, 'messages', 'default'))
-    if (saved) {
-      const parsed = JSON.parse(saved)
-      return parsed
+    const saved = safeRead<any[]>(makeKey(userId, 'messages', 'default'), [])
+    if (saved.length > 0) {
+      return saved
         .filter((m: any) => !m.text?.includes('PREVIOUS RESPONSE WAS INVALID HTML'))
         .map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }))
     }
-    return [
-      {
-        id: 'welcome_1',
-        sender: 'agent',
-        text: `Salom! Men **Mazaika AI** — sizning shaxsiy AI developeringizman! 🚀\n\nMen quyidagilarda yordam bera olaman:\n- 🤖 **Telegram bot** yaratish yoki takomillashtirish\n- 🌐 **Sayt** yaratish — to'liq HTML/CSS/JS\n- ✨ Mavjud loyihani o'zgartirish yoki kengaytirish\n- 📸 **Rasm yuboring** — men uni tahlil qilib sizga kerakli narsani yarataman!\n\nG'oyangizni yozing yoki rasm yuboring!`,
-        timestamp: new Date()
-      }
-    ]
+    return makeWelcomeMessages('default')
   })
 
   // Re-initialize when user changes (login/logout)
   useEffect(() => {
     if (prevUserIdRef.current !== userId) {
       prevUserIdRef.current = userId
-      // Reload data for new user
-      const savedConfig = localStorage.getItem(makeKey(userId, 'config', 'default'))
-      const savedMessages = localStorage.getItem(makeKey(userId, 'messages', 'default'))
-      setActiveConfig(savedConfig ? JSON.parse(savedConfig) : null)
-      if (savedMessages) {
-        const parsed = JSON.parse(savedMessages)
-        setMessages(parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })))
+      const pid = activeProjectIdRef.current
+      const savedConfig = safeRead(makeKey(userId, 'config', pid), null)
+      const savedMessages = safeRead<any[]>(makeKey(userId, 'messages', pid), [])
+      setActiveConfig(savedConfig)
+      if (savedMessages.length > 0) {
+        setMessages(savedMessages.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })))
       } else {
-        setMessages([{
-          id: 'welcome_' + Date.now(),
-          sender: 'agent',
-          text: `Salom! Men **Mazaika AI** — sizning shaxsiy AI developeringizman! 🚀\n\nG'oyangizni yozing yoki rasm yuboring!`,
-          timestamp: new Date()
-        }])
+        setMessages(makeWelcomeMessages(pid))
       }
       setActiveProjectId('default')
     }
-  }, [userId])
+  }, [userId, setActiveProjectId])
 
-  const switchProject = (projectId: string, config: any) => {
+  const switchProject = useCallback((projectId: string, config: any) => {
     setActiveProjectId(projectId)
-    if (config !== null) {
-      setActiveConfig(config)
-    }
 
-    const savedConfig = localStorage.getItem(makeKey(userId, 'config', projectId))
+    const savedConfig = safeRead(makeKey(userId, 'config', projectId), null)
     if (savedConfig) {
-      try { setActiveConfig(JSON.parse(savedConfig)) } catch {}
-    } else if (config === null) {
+      setActiveConfig(savedConfig)
+    } else if (config !== null) {
+      setActiveConfig(config)
+    } else {
       setActiveConfig(null)
     }
 
-    const savedMessages = localStorage.getItem(makeKey(userId, 'messages', projectId))
-      if (savedMessages) {
-        const parsed = JSON.parse(savedMessages)
-        setMessages(parsed.filter((m: any) => !m.text?.includes('PREVIOUS RESPONSE WAS INVALID HTML')).map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })))
-      } else {
-      setMessages([
-        {
-          id: 'welcome_' + projectId,
-          sender: 'agent',
-          text: `Bu loyiha uchun AI tayyor! ✨\n\nBotni yaxshilash, yangi bloklar qo'shish yoki sayt yaratish uchun yozing.\n\n📸 Rasm yuborib ham ko'rsatishingiz mumkin!`,
-          timestamp: new Date()
-        }
-      ])
+    const savedMessages = safeRead<any[]>(makeKey(userId, 'messages', projectId), [])
+    if (savedMessages.length > 0) {
+      setMessages(
+        savedMessages
+          .filter((m: any) => !m.text?.includes('PREVIOUS RESPONSE WAS INVALID HTML'))
+          .map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }))
+      )
+    } else {
+      setMessages(makeWelcomeMessages(projectId))
     }
-  }
+  }, [userId, setActiveProjectId])
 
-  const clearChat = () => {
+  const clearChat = useCallback(() => {
+    const pid = activeProjectIdRef.current
     setActiveConfig(null)
-    const welcomeText = `Salom! Men **Mazaika AI** — sizning shaxsiy AI developeringizman! 🚀\n\nChat tozalandi. Yangi g'oyangizni yozing!`
-    setMessages([{ id: 'welcome_' + Date.now(), sender: 'agent', text: welcomeText, timestamp: new Date() }])
-    localStorage.removeItem(makeKey(userId, 'config', activeProjectId))
-    localStorage.removeItem(makeKey(userId, 'messages', activeProjectId))
-  }
+    const welcome = makeWelcomeMessages(pid)
+    setMessages(welcome)
+    localStorage.removeItem(makeKey(userId, 'config', pid))
+    safeWrite(makeKey(userId, 'messages', pid), welcome)
+  }, [userId])
 
   const toggleWidget = () => setWidgetOpen(prev => !prev)
 
-  const applyPatchOperations = (ops: PatchOperation[]) => {
+  const applyPatchOperations = useCallback((ops: PatchOperation[]) => {
     if (!ops || ops.length === 0) return
+    const pid = activeProjectIdRef.current
     setActiveConfig((prevConfig: any) => {
       if (!prevConfig) return prevConfig
       const updated = { ...prevConfig }
@@ -151,11 +177,7 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         import('fast-json-patch').then(jsonpatch => {
           const newDoc = jsonpatch.applyPatch(updated, normalizedOps).newDocument
           setActiveConfig(newDoc)
-          try {
-            localStorage.setItem(makeKey(userId, 'config', activeProjectId), JSON.stringify(newDoc))
-          } catch (e) {
-            console.warn('LocalStorage quota exceeded for config patch saving', e)
-          }
+          safeWrite(makeKey(userId, 'config', pid), newDoc)
         })
         return updated
       } catch (e) {
@@ -163,9 +185,9 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return updated
       }
     })
-  }
+  }, [userId])
 
-  const sendMessage = async (
+  const sendMessage = useCallback(async (
     text: string,
     overrideMode?: 'FULL_GENERATION' | 'PATCH',
     targetEntity?: 'bot_and_mini_app' | 'site_only',
@@ -173,6 +195,9 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     imageMimeType?: string
   ) => {
     if (!text.trim() || isGenerating) return null
+
+    // Capture projectId at call time — avoids stale closure bug
+    const currentProjectId = activeProjectIdRef.current
 
     const userMsg: ChatMessage = {
       id: 'msg_' + Date.now(),
@@ -182,20 +207,17 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       imageUrl: imageBase64 ? `data:${imageMimeType || 'image/jpeg'};base64,${imageBase64}` : undefined
     }
 
+    let currentMessages: ChatMessage[] = []
     setMessages(prev => {
+      currentMessages = prev
       const updated = [...prev, userMsg]
-      try {
-        localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated))
-      } catch (e) {
-        console.warn('LocalStorage quota exceeded, truncating messages')
-        localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated.slice(-10)))
-      }
+      safeWrite(makeKey(userId, 'messages', currentProjectId), updated)
       return updated
     })
     setIsGenerating(true)
 
     try {
-      const chatHistory = messages.slice(-10).map(m => ({
+      const chatHistory = currentMessages.slice(-10).map(m => ({
         role: m.sender,
         content: m.text
       }))
@@ -223,12 +245,7 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       setMessages(prev => {
         const updated = [...prev, agentMsg]
-        try {
-          localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated))
-        } catch (e) {
-          console.warn('LocalStorage quota exceeded, truncating messages')
-          localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated.slice(-10)))
-        }
+        safeWrite(makeKey(userId, 'messages', currentProjectId), updated)
         return updated
       })
 
@@ -236,12 +253,7 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         applyPatchOperations(response.patch_operations)
       } else if (response.execution_mode === 'FULL_GENERATION' && response.project_data) {
         setActiveConfig(response.project_data)
-        try {
-          localStorage.setItem(makeKey(userId, 'config', activeProjectId), JSON.stringify(response.project_data))
-        } catch (e) {
-          console.warn('LocalStorage quota exceeded for config saving', e)
-          alert("Loyiha hajmi juda kattalashib ketdi va vaqtinchalik xotiraga sig'mayapti. Iltimos loyihani saqlab qo'ying.")
-        }
+        safeWrite(makeKey(userId, 'config', currentProjectId), response.project_data)
       }
 
       return response
@@ -255,20 +267,14 @@ export const AICopilotProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
       setMessages(prev => {
         const updated = [...prev, errorMsg]
-        try {
-          localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated))
-        } catch (e) {
-          console.warn('LocalStorage quota exceeded, truncating messages')
-          // Truncate to last 10 messages if quota exceeded
-          localStorage.setItem(makeKey(userId, 'messages', activeProjectId), JSON.stringify(updated.slice(-10)))
-        }
+        safeWrite(makeKey(userId, 'messages', currentProjectId), updated)
         return updated
       })
       return null
     } finally {
       setIsGenerating(false)
     }
-  }
+  }, [isGenerating, userId, activeElementId, activeConfig, applyPatchOperations])
 
   return (
     <AICopilotContext.Provider value={{

@@ -623,11 +623,12 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; }
   mix-blend-mode: overlay;
 }
 /* Glowing background orb behind phone */
+/* Removed explicit background to let the phone float cleanly */
 .hero-mockup-wrap::before {
   content: '';
   position: absolute;
   width: 480px; height: 480px;
-  background: radial-gradient(circle, rgba(124,60,250,0.3) 0%, rgba(0,245,212,0.15) 40%, transparent 70%);
+  background: transparent;
   border-radius: 50%;
   filter: blur(40px);
   animation: pulse-glow 4s ease infinite;
@@ -1429,21 +1430,21 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; }
 /* Scene 1: visible 0→8s, fades out 8→9s, hidden 9→18s */
 @keyframes scene1-lifecycle {
   0%    { opacity:1;  pointer-events: auto;  }
-  75%   { opacity:1; }
-  83%   { opacity:0; pointer-events: none; }
+  45%   { opacity:1; }
+  50%   { opacity:0; pointer-events: none; }
   100%  { opacity:0; }
 }
 /* Scene 2: hidden 0→8s, fades in 8→9s, visible 9→18s, fades out 17→18s */
 @keyframes scene2-lifecycle {
   0%    { opacity:0; pointer-events: none; }
-  75%   { opacity:0; }
-  83%   { opacity:1; pointer-events: auto; }
+  45%   { opacity:0; }
+  50%   { opacity:1; pointer-events: auto; }
   95%   { opacity:1; }
   100%  { opacity:0; }
 }
 
-.mockup-scene-1 { animation: scene1-lifecycle 18s ease-in-out infinite; }
-.mockup-scene-2 { animation: scene2-lifecycle 18s ease-in-out infinite; }
+.mockup-scene-1 { animation: scene1-lifecycle 18s ease-in-out infinite; transition: opacity 0.5s ease; }
+.mockup-scene-2 { animation: scene2-lifecycle 18s ease-in-out infinite; transition: opacity 0.5s ease; }
 
 /* Scene 2 sub-elements */
 .s2-status-bar {
@@ -1525,9 +1526,12 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; }
 .s2-anim-2 { animation: bubble-in 0.4s 0.8s ease both, scene2-lifecycle 18s ease-in-out infinite; opacity:0; }
 .s2-anim-3 { animation: connector-grow 0.3s 1.1s ease both, scene2-lifecycle 18s ease-in-out infinite; transform:scaleY(0); }
 .s2-anim-4 { animation: bubble-in 0.4s 1.3s ease both, scene2-lifecycle 18s ease-in-out infinite; opacity:0; }
-.s2-anim-5 { animation: bubble-in 0.4s 1.8s ease both, scene2-lifecycle 18s ease-in-out infinite; opacity:0; }
-.s2-anim-6 { animation: bubble-in 0.4s 2.2s ease both, scene2-lifecycle 18s ease-in-out infinite; opacity:0; }
-.s2-anim-7 { animation: bubble-in 0.4s 2.6s ease both, scene2-lifecycle 18s ease-in-out infinite; opacity:0; }
+.s2-anim-5 { animation: connector-grow 0.3s 1.6s ease both, scene2-lifecycle 18s ease-in-out infinite; transform:scaleY(0); }
+.s2-anim-6 { animation: bubble-in 0.4s 1.8s ease both, scene2-lifecycle 18s ease-in-out infinite; opacity:0; }
+.s2-anim-7 { animation: connector-grow 0.3s 2.1s ease both, scene2-lifecycle 18s ease-in-out infinite; transform:scaleY(0); }
+.s2-anim-8 { animation: bubble-in 0.4s 2.3s ease both, scene2-lifecycle 18s ease-in-out infinite; opacity:0; }
+.s2-anim-9 { animation: bubble-in 0.4s 2.7s ease both, scene2-lifecycle 18s ease-in-out infinite; opacity:0; }
+.s2-anim-10 { animation: bubble-in 0.4s 3.1s ease both, scene2-lifecycle 18s ease-in-out infinite; opacity:0; }
 
 /* ================================================================
    PRICING ENHANCEMENTS
@@ -1553,9 +1557,15 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; }
 .particle-canvas {
   position: fixed;
   inset: 0;
-  z-index: 1;
+  z-index: 0;
   pointer-events: none;
   opacity: 0.35;
+}
+
+/* Ensure content has higher z-index */
+.l-hero, .l-marquee-section, .features-premium, .l-stats-showcase, .l-ai-section, .l-how-it-works, .l-testimonials, .pricing-premium, .l-cta-section, .footer-premium {
+  position: relative;
+  z-index: 10;
 }
 
 /* ================================================================
@@ -2021,4 +2031,64 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; }
   .stats-showcase-grid { grid-template-columns: 1fr 1fr; }
   .showcase-value { font-size: 32px; }
   .showcase-stat { padding: 24px 16px; }
+}
+
+/* Mobile: <768px */
+@media (max-width: 768px) {
+  /* Hero section */
+  .l-hero { padding: 100px 0 60px; }
+  .l-hero-inner { grid-template-columns: 1fr; text-align: center; }
+  .l-hero-title { font-size: 42px; letter-spacing: -0.03em; }
+  .l-hero-desc { font-size: 16px; margin: 0 auto 32px; max-width: 340px; }
+  .l-hero-cta { flex-direction: column; align-items: center; gap: 12px; }
+  .l-btn-primary, .l-btn-secondary { width: 100%; max-width: 300px; text-align: center; justify-content: center; }
+  
+  /* SHOW phone mockup on mobile but smaller */
+  .hero-mockup-wrap { 
+    display: flex !important; 
+    justify-content: center;
+    margin-top: 40px;
+  }
+  .hero-mockup { width: 250px !important; height: 500px !important; }
+  
+  /* Stats */
+  .l-stats-row { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  
+  /* Header */
+  .l-nav-desktop { display: none; }
+  .l-header { top: 8px; width: calc(100% - 16px); }
+  
+  /* Features grid */
+  .features-grid { grid-template-columns: 1fr; }
+  
+  /* Pricing */
+  .pricing-cards { grid-template-columns: 1fr; gap: 16px; }
+  .price-card.popular { transform: none; }
+  
+  /* Footer */
+  .footer-content { grid-template-columns: 1fr; gap: 24px; }
+  
+  /* Sections */
+  .features-premium, .l-ai-section, .l-testimonials, .pricing-premium { padding: 60px 0; }
+  .section-header h2 { font-size: 32px; }
+  .l-cta-section h2 { font-size: 36px; }
+  
+  /* Geo objects: hide heavy 3D on mobile for performance */
+  .geo-objects, .geo-cube, .geo-ring, .geo-pyramid { display: none !important; }
+  
+  /* How it works */
+  .how-steps { grid-template-columns: 1fr; }
+  .how-connector { display: none; }
+  
+  /* Stats showcase */
+  .stats-showcase-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Small mobile: <480px */
+@media (max-width: 480px) {
+  .l-hero-title { font-size: 34px; }
+  .l-container { padding: 0 16px; }
+  .stats-showcase-grid { grid-template-columns: 1fr 1fr; }
+  .showcase-value { font-size: 28px; }
+  .hero-mockup { width: 220px !important; height: 450px !important; }
 }

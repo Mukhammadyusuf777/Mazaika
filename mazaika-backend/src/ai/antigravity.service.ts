@@ -47,6 +47,15 @@ export class AntigravityService {
       const userLang = isUzbek ? 'UZBEK' : (isRussian ? 'RUSSIAN' : 'ENGLISH');
       const lowerPrompt = promptText.toLowerCase();
 
+      const ECOSYSTEM_KEYWORDS = [
+        'интернет магазин', 'internet do\'kon', 'online shop', 
+        'полную систему', 'to\'liq tizim', 'full system',
+        'экосистему', 'ekosistem', 'ecosystem',
+        'свяжи', 'ulangan', 'connect',
+        'всё вместе', 'hammasi birga', 'all together'
+      ];
+      const isEcosystemRequest = ECOSYSTEM_KEYWORDS.some(k => lowerPrompt.includes(k));
+
       const hasImage = Boolean(imageBase64 && imageBase64.length > 10);
 
       const SITE_KEYWORDS = ['сайт', 'sayt', 'магазин', 'magazin', 'landing', 'лендинг', 'shop', 'store', 'web', 'веб', 'интернет', 'internet'];
@@ -91,7 +100,53 @@ CRITICAL LANGUAGE RULE:
         ? Object.entries(currentConfig.files).map(([path, content]) => `<file path="${path}">\n${content}\n</file>`).join('\n')
         : `<file path="index.html">\n${existingHtml}\n</file>`;
 
-      if (isContinuationMode && !isBotRequest) {
+      if (isEcosystemRequest) {
+        systemInstruction = `You are a Master System Architect. The user wants a COMPLETE BUSINESS ECOSYSTEM.
+${historyContext}
+${imageInstruction}
+USER REQUEST: "${promptText}"
+
+${LANGUAGE_INSTRUCTION}
+
+Generate a JSON with this exact structure:
+{
+  "execution_mode": "FULL_GENERATION",
+  "target_entity": "ecosystem",
+  "ecosystem": {
+    "name": "[Business name]",
+    "description": "[What this ecosystem does]",
+    "components": [
+      {
+        "type": "bot",
+        "name": "[Bot name]",
+        "purpose": "[What this bot does]",
+        "bot_blocks": [...],
+        "bot_code": "[Complete Node.js bot code]"
+      },
+      {
+        "type": "mini_app",  
+        "name": "[App name]",
+        "purpose": "[What this app does]",
+        "site_blocks": [...],
+        "source_code": "[Complete HTML mini app]"
+      },
+      {
+        "type": "landing",
+        "name": "[Landing name]",
+        "purpose": "[Landing page purpose]",
+        "source_code": "[Complete HTML landing page]"
+      }
+    ],
+    "integrations": [
+      "Bot receives orders -> notifies admin via Telegram",
+      "Mini App handles payments -> bot confirms order",
+      "Landing page links to Mini App"
+    ]
+  },
+  "explanation": "[Detailed explanation in user's language of what was created]"
+}
+`;
+      } else if (isContinuationMode && !isBotRequest) {
         systemInstruction = `You are a Senior Web UI/UX Engineer.
 MODE: CONTINUATION (EXPANDING EXISTING SITE)
 ${historyContext}
@@ -191,6 +246,16 @@ CRITICAL CREATION RULES (PREMIUM DESIGN):
 4. REAL DATA: Populate the site with realistic dummy data (products, prices, reviews) in the USER'S LANGUAGE.
 5. SPA NAVIGATION: Create a JS function to switch between views (e.g. Home, Catalog, Cart) by toggling 'hidden' classes. DO NOT use href="page.html".
 
+For MINI APP generation, you MUST generate a 'source_code' field containing a complete, beautiful HTML file:
+- Include Telegram Mini App SDK: <script src="https://telegram.org/js/telegram-web-app.js"></script>
+- Use window.Telegram.WebApp for initialization
+- Create a visually stunning, mobile-first UI
+- Support dark/light theme via Telegram.WebApp.colorScheme
+- Include smooth animations and transitions  
+- For e-commerce mini apps: include cart, product catalog, checkout flow
+- Use modern CSS with glassmorphism effects
+- The HTML must be self-contained and fully functional
+
 STRICT OUTPUT RULES:
 1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
 2. Then, AFTER the JSON, output all the files wrapped in <file path="...">...</file> blocks.
@@ -263,6 +328,32 @@ IMPORTANT rules for the message node:
 - Buttons can be simple strings: {"buttons": ["Mahsulotlar", "Biz haqimizda", "Aloqa"]}
 - Or objects: {"buttons": [{"text": "Buyurtma", "nextNodeId": "node_3"}]}
 
+For BOT generation, you MUST also generate a 'bot_code' field in your JSON response that contains a complete, working Node.js Telegram bot script:
+- Use node-telegram-bot-api library
+- The code must handle the bot flows defined in bot_blocks
+- Include proper /start command handler
+- Include inline keyboard buttons and callback handlers
+- Include payment handling if the bot has payment flows
+- The code should be production-ready
+
+Example bot_code structure:
+\`\`\`javascript
+const TelegramBot = require('node-telegram-bot-api');
+const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
+
+// Start command
+bot.onText(/\\/start/, (msg) => {
+  bot.sendMessage(msg.chat.id, 'Welcome!', {
+    reply_markup: { inline_keyboard: [[{ text: 'Menu', callback_data: 'menu' }]] }
+  });
+});
+
+// Callback handler  
+bot.on('callback_query', (query) => {
+  // handle callbacks
+});
+\`\`\`
+
 STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then optionally output files:
 {
   "type": "bot_and_mini_app",
@@ -273,7 +364,8 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then o
   "project_data": {
     "appName": "Bot Name",
     "bot_blocks": [{"id":"node_1","type":"start","position":{"x":100,"y":150},"data":{"label":"Boshlash","emoji":"▶","color":"#10d974","text":"Salom!"}}],
-    "bot_edges": [{"id":"e1","source":"node_1","target":"node_2"}]
+    "bot_edges": [{"id":"e1","source":"node_1","target":"node_2"}],
+    "bot_code": "const TelegramBot = require('node-telegram-bot-api');\\n..."
   }
 }`;
       }

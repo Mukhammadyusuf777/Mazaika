@@ -94,6 +94,51 @@
   }
 }
 
+/* Mobile: show preview as bottom panel toggle */
+@media (max-width: 600px) {
+  .ai-workspace-topbar {
+    padding: 0 12px;
+    height: auto;
+    min-height: 56px;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .topbar-back-label { display: none; }
+  .send-label { display: none; }
+  .ai-workspace-body {
+    grid-template-columns: 1fr;
+  }
+  .ai-chat-panel {
+    height: calc(100vh - 56px);
+  }
+  .ai-template-cards {
+    grid-template-columns: 1fr 1fr;
+    padding: 10px;
+    gap: 6px;
+  }
+  .ai-template-card {
+    padding: 8px 10px;
+  }
+  .agent-messages-body {
+    padding: 12px;
+    gap: 10px;
+  }
+  .agent-message-item {
+    font-size: 13px;
+    padding: 10px 13px;
+  }
+  .agent-input-container {
+    padding: 10px;
+    gap: 8px;
+  }
+  .agent-input {
+    font-size: 13px;
+    padding: 0 12px;
+    height: 40px;
+  }
+}
+
+
 .agent-messages-body {
   padding: 24px;
   overflow-y: auto;
