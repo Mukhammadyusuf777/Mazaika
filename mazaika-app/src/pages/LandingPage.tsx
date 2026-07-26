@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Sparkles, Loader2, Bot, Zap } from 'lucide-react'
 import { useTranslation } from '../hooks/useTranslation'
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect, useState } from 'react'
 import './LandingPage.css'
 
 const TRANSLATIONS = {
@@ -249,7 +249,7 @@ const TRANSLATIONS = {
           "Интеграция Google Sheets",
           "Приоритетная поддержка 24/7",
           "Кастомные интеграции",
-          "Клонирование бота"
+          "Клонирование ботов"
         ],
         btn: "Выбрать →"
       }
@@ -260,34 +260,34 @@ const TRANSLATIONS = {
     navBlocks: 'Blocks',
     navPricing: 'Pricing',
     navLogin: 'Login',
-    navStart: 'Start →',
+    navStart: 'Get started →',
     heroBadge: '🇺🇿 Built for Uzbekistan',
-    heroTitleLine1: 'Build Telegram bots like',
-    heroTitleLine2: 'with Mazaika',
-    heroDesc: "Drag and drop blocks — your professional bot is ready. No coding, no hiring developers.",
+    heroTitleLine1: 'Build Telegram bots',
+    heroTitleLine2: 'like',
+    heroDesc: "Drag and drop blocks — your professional bot is ready. No coding required, no developer needed. A platform built for Uzbek business.",
     heroCtaFree: 'Start for free →',
-    heroCtaDemo: 'Watch Demo',
-    statBlocks: 'Block Types',
+    heroCtaDemo: 'Watch demo',
+    statBlocks: 'Block types',
     statLangs: 'Languages',
-    statCode: 'No Code required',
+    statCode: 'No code needed',
     featBadge: '✨ Features',
-    featTitleLine1: 'What makes us',
-    featTitleLine2: 'different',
-    featDesc: "Mazaika — built specifically for the local market, integrated with local payment systems",
+    featTitleLine1: 'Different from other',
+    featTitleLine2: 'platforms',
+    featDesc: "Mazaika — designed specifically for the Uzbek market, integrated with local payment systems",
     blockBadge: '🧩 50+ blocks',
-    blockTitleLine1: 'The right block',
-    blockTitleLine2: 'for every case',
-    blockDesc: "From messages to payments — everything is available as ready blocks",
+    blockTitleLine1: 'Right block for',
+    blockTitleLine2: 'every situation',
+    blockDesc: "From messages to payments — everything is in ready-made blocks",
     priceBadge: '💰 Pricing',
-    priceTitleLine1: 'Simple and',
+    priceTitleLine1: 'Simple &',
     priceTitleLine2: 'transparent',
     priceTitleLine3: 'pricing',
-    priceDesc: "No hidden fees. Upgrade your plan as your business grows.",
+    priceDesc: "No hidden fees. Switch plans as your business grows.",
     ctaTitleLine1: 'Build your bot',
     ctaTitleLine2: 'today',
     ctaTitleLine3: '',
-    ctaDesc: "Registration takes 30 seconds. No credit card required.",
-    ctaBtn: 'Start for free — $0 →',
+    ctaDesc: "Registration takes 30 seconds. No credit card needed.",
+    ctaBtn: 'Start for free — 0 UZS →',
     footerTerms: 'Terms',
     footerPrivacy: 'Privacy',
     footerHelp: 'Help',
@@ -295,28 +295,28 @@ const TRANSLATIONS = {
     features: [
       {
         icon: '🧩',
-        title: 'Visual builder',
-        desc: "Drag and connect blocks — create professional bots without coding. Mazaika is the most convenient way to build bots.",
+        title: 'Visual constructor',
+        desc: "Drag and connect blocks — build professional bots without code. Mazaika is the easiest way to build bots.",
       },
       {
         icon: '⚡',
-        title: 'Real-time sync',
-        desc: "As soon as you save the flow, the bot immediately works according to the new logic. No need to reload servers.",
+        title: 'Works in real-time',
+        desc: "Once you save the scheme, the bot immediately starts working with the new logic. No need to reload servers.",
       },
       {
         icon: '🤖',
         title: 'AI Assistant',
-        desc: "Our AI assistant helps you create bots and websites based on your requests or even image references.",
+        desc: "Our AI assistant helps you create bots and websites just from text requests.",
       },
       {
         icon: '📊',
         title: 'Powerful analytics',
-        desc: "See the path of every user. Find out which block they stop at and which buttons they press.",
+        desc: "Track the path of every user. Find out which block they stop at and which buttons they press.",
       },
       {
         icon: '💳',
-        title: "Uzbek Payments",
-        desc: "Integration with Payme, Click, Uzum payment systems. Interface in local languages.",
+        title: "Uzbekistan payments",
+        desc: "Integration with Payme, Click, Uzum. Interface in Uzbek — speak the language of business.",
       },
       {
         icon: '🔗',
@@ -337,7 +337,7 @@ const TRANSLATIONS = {
           "Basic blocks (message, buttons, reply)",
           "Telegram integration",
           "Drag & drop editor",
-          "Community access"
+          "Mazaika community"
         ],
         btn: "Start for free"
       },
@@ -346,7 +346,7 @@ const TRANSLATIONS = {
         price: "149,000 UZS",
         period: " / mo",
         popular: false,
-        desc: "For growing businesses",
+        desc: "For growing business",
         features: [
           "5 bots",
           "5,000 contacts",
@@ -382,10 +382,128 @@ const TRANSLATIONS = {
   }
 }
 
+// Canvas-based 3D particle field
+function ParticleCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    let animId: number
+    let mouseX = 0, mouseY = 0
+
+    const resize = () => {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+    }
+    resize()
+    window.addEventListener('resize', resize)
+    window.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY })
+
+    // Particles with depth
+    const particles: { x: number; y: number; z: number; vx: number; vy: number; color: string; size: number }[] = []
+    const colors = ['#7c3cfa', '#00f5d4', '#f72585', '#3b82f6', '#fbbf24', '#a855f7']
+    
+    for (let i = 0; i < 120; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        z: Math.random() * 3 + 0.5,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: Math.random() * 2 + 0.5
+      })
+    }
+
+    let t = 0
+    const draw = () => {
+      t += 0.005
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+      // Mouse parallax offset
+      const mx = (mouseX - canvas.width / 2) / canvas.width
+      const my = (mouseY - canvas.height / 2) / canvas.height
+
+      // Draw connections
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i]
+        const px = p.x + mx * p.z * 40
+        const py = p.y + my * p.z * 40
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const q = particles[j]
+          const qx = q.x + mx * q.z * 40
+          const qy = q.y + my * q.z * 40
+          const dist = Math.hypot(px - qx, py - qy)
+          if (dist < 130) {
+            ctx.beginPath()
+            ctx.strokeStyle = p.color + Math.floor((1 - dist / 130) * 30).toString(16).padStart(2, '0')
+            ctx.lineWidth = 0.5
+            ctx.moveTo(px, py)
+            ctx.lineTo(qx, qy)
+            ctx.stroke()
+          }
+        }
+
+        // Move
+        p.x += p.vx
+        p.y += p.vy
+        if (p.x < 0) p.x = canvas.width
+        if (p.x > canvas.width) p.x = 0
+        if (p.y < 0) p.y = canvas.height
+        if (p.y > canvas.height) p.y = 0
+
+        // Draw particle
+        const alpha = 0.4 + Math.sin(t * 2 + i) * 0.2
+        ctx.beginPath()
+        ctx.arc(px, py, p.size * p.z, 0, Math.PI * 2)
+        ctx.fillStyle = p.color + Math.floor(alpha * 255).toString(16).padStart(2, '0')
+        ctx.shadowBlur = 8
+        ctx.shadowColor = p.color
+        ctx.fill()
+        ctx.shadowBlur = 0
+      }
+
+      animId = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => {
+      cancelAnimationFrame(animId)
+      window.removeEventListener('resize', resize)
+    }
+  }, [])
+
+  return <canvas ref={canvasRef} className="particle-canvas" />
+}
+
+// Scroll reveal hook
+function useScrollReveal() {
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed')
+          }
+        })
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -60px 0px' }
+    )
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el))
+    return () => observer.disconnect()
+  }, [])
+}
+
 export default function LandingPage() {
   const navigate = useNavigate()
   const { lang, changeLanguage } = useTranslation()
   const t = TRANSLATIONS[lang as keyof typeof TRANSLATIONS] || TRANSLATIONS['UZ']
+
+  useScrollReveal()
 
   // ── 3D tilt phone ──────────────────────────────────────────
   const phoneRef = useRef<HTMLDivElement>(null)
@@ -401,22 +519,22 @@ export default function LandingPage() {
       const rect = el.getBoundingClientRect()
       const cx = rect.left + rect.width  / 2
       const cy = rect.top  + rect.height / 2
-      const dx = (e.clientX - cx) / (rect.width  / 2)   // -1 … 1
-      const dy = (e.clientY - cy) / (rect.height / 2)   // -1 … 1
-      const maxTilt = 18
+      const dx = (e.clientX - cx) / (rect.width  / 2)
+      const dy = (e.clientY - cy) / (rect.height / 2)
+      const maxTilt = 22
       const rotY =  dx * maxTilt
       const rotX = -dy * maxTilt
-      el.style.transform = `perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.04)`
+      el.style.transform = `perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.06)`
       el.style.boxShadow = [
-        `0 0 0 6px rgba(124,60,250,${0.12 + Math.abs(dx)*0.15})`,
-        `${-rotY*1.5}px ${rotX*1.5}px 60px rgba(0,0,0,0.8)`,
-        `0 0 ${60 + Math.abs(dx)*40}px rgba(124,60,250,${0.1 + Math.abs(dx)*0.2})`,
-        `0 0 ${40 + Math.abs(dy)*30}px rgba(0,245,212,${0.05 + Math.abs(dy)*0.12})`,
+        `0 0 0 6px rgba(124,60,250,${0.12 + Math.abs(dx)*0.2})`,
+        `${-rotY*2}px ${rotX*2}px 80px rgba(0,0,0,0.9)`,
+        `0 0 ${80 + Math.abs(dx)*60}px rgba(124,60,250,${0.15 + Math.abs(dx)*0.25})`,
+        `0 0 ${60 + Math.abs(dy)*40}px rgba(0,245,212,${0.08 + Math.abs(dy)*0.18})`,
       ].join(',')
       if (glare) {
         const glareX = ((e.clientX - rect.left) / rect.width  * 100).toFixed(1)
         const glareY = ((e.clientY - rect.top)  / rect.height * 100).toFixed(1)
-        glare.style.background = `radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255,255,255,0.18) 0%, transparent 60%)`
+        glare.style.background = `radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255,255,255,0.22) 0%, transparent 65%)`
         glare.style.opacity = '1'
       }
     })
@@ -433,10 +551,29 @@ export default function LandingPage() {
     if (glare) glare.style.opacity = '0'
   }, [])
 
+  // Magnetic button effect
+  const [magnetPos, setMagnetPos] = useState({ x: 0, y: 0 })
+  const magnetRef = useRef<HTMLButtonElement>(null)
+  const handleMagnetMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const btn = magnetRef.current
+    if (!btn) return
+    const rect = btn.getBoundingClientRect()
+    const cx = rect.left + rect.width / 2
+    const cy = rect.top + rect.height / 2
+    setMagnetPos({
+      x: (e.clientX - cx) * 0.3,
+      y: (e.clientY - cy) * 0.3,
+    })
+  }
+  const handleMagnetLeave = () => setMagnetPos({ x: 0, y: 0 })
+
   return (
     <div className="landing-page">
+      {/* ── 3D PARTICLE NETWORK CANVAS ─────────────────────────── */}
+      <ParticleCanvas />
+
       <div className="l-particles">
-        {[...Array(12)].map((_, i) => <div key={i} className="l-particle"></div>)}
+        {[...Array(16)].map((_, i) => <div key={i} className="l-particle"></div>)}
       </div>
       <div className="l-animated-orb l-orb-1"></div>
       <div className="l-animated-orb l-orb-2"></div>
@@ -445,28 +582,45 @@ export default function LandingPage() {
       <div className="l-animated-orb l-orb-5"></div>
       <div className="l-animated-orb l-orb-6"></div>
 
+      {/* ── 3D FLOATING GEOMETRIC OBJECTS ─────────────────────── */}
+      <div className="geo-objects" aria-hidden="true">
+        <div className="geo-cube geo-cube-1">
+          <div className="cube-face cube-front"></div>
+          <div className="cube-face cube-back"></div>
+          <div className="cube-face cube-left"></div>
+          <div className="cube-face cube-right"></div>
+          <div className="cube-face cube-top"></div>
+          <div className="cube-face cube-bottom"></div>
+        </div>
+        <div className="geo-cube geo-cube-2">
+          <div className="cube-face cube-front"></div>
+          <div className="cube-face cube-back"></div>
+          <div className="cube-face cube-left"></div>
+          <div className="cube-face cube-right"></div>
+          <div className="cube-face cube-top"></div>
+          <div className="cube-face cube-bottom"></div>
+        </div>
+        <div className="geo-ring geo-ring-1"></div>
+        <div className="geo-ring geo-ring-2"></div>
+        <div className="geo-pyramid geo-pyramid-1"></div>
+      </div>
+
       {/* ── BACKGROUND BUILDER ANIMATION ─────────────────────── */}
       <div className="l-bg-builder" aria-hidden="true">
-        {/* SVG flow graph — lines draw themselves */}
         <svg className="bg-flow-svg" viewBox="0 0 900 320" fill="none">
-          {/* Lines connecting nodes */}
           <line className="flow-line fl-1" x1="130" y1="160" x2="260" y2="100"/>
           <line className="flow-line fl-2" x1="260" y1="100" x2="420" y2="130"/>
           <line className="flow-line fl-3" x1="420" y1="130" x2="560" y2="80"/>
           <line className="flow-line fl-4" x1="560" y1="80"  x2="710" y2="120"/>
           <line className="flow-line fl-5" x1="710" y1="120" x2="830" y2="180"/>
-          {/* Branch */}
           <line className="flow-line fl-6" x1="420" y1="130" x2="480" y2="240"/>
           <line className="flow-line fl-7" x1="480" y1="240" x2="620" y2="260"/>
-          {/* Arrowheads */}
           <polygon className="flow-arrow fa-1" points="260,100 250,93 250,107"/>
           <polygon className="flow-arrow fa-2" points="420,130 410,123 410,137"/>
           <polygon className="flow-arrow fa-3" points="560,80  550,73  550,87"/>
           <polygon className="flow-arrow fa-4" points="710,120 700,113 700,127"/>
           <polygon className="flow-arrow fa-5" points="830,180 820,173 820,187"/>
         </svg>
-
-        {/* Flow nodes */}
         <div className="bg-node bn-1">🚀 Start</div>
         <div className="bg-node bn-2">💬 Greeting</div>
         <div className="bg-node bn-3">📋 Menu</div>
@@ -474,8 +628,6 @@ export default function LandingPage() {
         <div className="bg-node bn-5">💳 Payment</div>
         <div className="bg-node bn-6">✅ Done</div>
         <div className="bg-node bn-7">❌ Cancel</div>
-
-        {/* Floating code snippets */}
         <div className="bg-code bc-1">
           <span className="bcc-purple">const</span> bot = <span className="bcc-cyan">createBot</span>()
         </div>
@@ -531,14 +683,23 @@ export default function LandingPage() {
             </h1>
             <p className="l-hero-desc">{t.heroDesc}</p>
             <div className="l-hero-cta">
-              <button className="l-btn-primary" onClick={() => navigate('/register')}>{t.heroCtaFree}</button>
+              <button
+                ref={magnetRef}
+                className="l-btn-primary magnetic-btn"
+                onClick={() => navigate('/register')}
+                onMouseMove={handleMagnetMove}
+                onMouseLeave={handleMagnetLeave}
+                style={{ transform: `translate(${magnetPos.x}px, ${magnetPos.y}px)` }}
+              >
+                {t.heroCtaFree}
+              </button>
               <button className="l-btn-secondary" onClick={() => document.getElementById('ai-agent')?.scrollIntoView({ behavior: 'smooth' })}>
                 <Sparkles size={20} /> {t.heroCtaDemo}
               </button>
             </div>
             <div className="l-stats-row">
               <div className="l-stat-item">
-                <span className="l-stat-value">50+</span>
+                <span className="l-stat-value counter" data-target="50">50+</span>
                 <span className="l-stat-label">Bloklar</span>
               </div>
               <div className="l-stat-item">
@@ -556,7 +717,6 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="l-hero-mockup-side">
-            {/* Outer wrapper catches mouse, stays stable */}
             <div
               className="hero-mockup-wrap"
               onMouseMove={handleMouseMove}
@@ -576,10 +736,16 @@ export default function LandingPage() {
                 <circle cx="220" cy="220" r="210" stroke="url(#ring-grad)" strokeWidth="1.5" strokeDasharray="80 60" strokeLinecap="round"/>
               </svg>
 
+              {/* Second counter-spinning ring */}
+              <svg className="mockup-spin-ring-2" viewBox="0 0 440 440" fill="none">
+                <circle cx="220" cy="220" r="190" stroke="rgba(0,245,212,0.15)" strokeWidth="1" strokeDasharray="30 20"/>
+              </svg>
+
               {/* Floating node cards */}
               <div className="mock-node mock-node-1">🧩 Greeting node</div>
               <div className="mock-node mock-node-2">💳 Payment node</div>
               <div className="mock-node mock-node-3">✅ Built!</div>
+              <div className="mock-node mock-node-4">📊 Analytics</div>
 
               {/* Phone — ref receives 3D transform */}
               <div className="hero-mockup" ref={phoneRef}>
@@ -648,9 +814,16 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="scroll-indicator">
+          <div className="scroll-mouse">
+            <div className="scroll-wheel"></div>
+          </div>
+          <span>Scroll</span>
         </div>
       </section>
 
@@ -666,17 +839,37 @@ export default function LandingPage() {
       {/* FEATURES */}
       <section className="features-premium" id="features">
         <div className="container">
-          <div className="section-header">
+          <div className="section-header reveal">
             <div className="l-section-badge blue"><Zap size={13} /> {t.featBadge.replace('✨ ', '')}</div>
             <h2>{t.featTitleLine1} <span className="gradient-text-neon">{t.featTitleLine2}</span></h2>
             <p>{t.featDesc}</p>
           </div>
           <div className="features-grid">
             {t.features.map((f, idx) => (
-              <div key={idx} className="l-feature-card">
+              <div key={idx} className={`l-feature-card reveal`} style={{ transitionDelay: `${idx * 80}ms` }}>
+                <div className="feature-card-glow"></div>
                 <span className="l-feature-icon">{f.icon}</span>
                 <h3>{f.title}</h3>
                 <p>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* STATS COUNTER SECTION */}
+      <section className="l-stats-showcase">
+        <div className="container">
+          <div className="stats-showcase-grid reveal">
+            {[
+              { value: '500+', label: lang === 'UZ' ? 'Faol biznes' : lang === 'RU' ? 'Активных бизнесов' : 'Active businesses', color: '#7c3cfa' },
+              { value: '10K+', label: lang === 'UZ' ? 'Yaratilgan botlar' : lang === 'RU' ? 'Созданных ботов' : 'Bots created', color: '#00f5d4' },
+              { value: '1M+', label: lang === 'UZ' ? 'Yuborilgan xabarlar' : lang === 'RU' ? 'Отправленных сообщений' : 'Messages sent', color: '#f72585' },
+              { value: '99.9%', label: lang === 'UZ' ? 'Uptime kafolati' : lang === 'RU' ? 'Гарантия аптайма' : 'Uptime guarantee', color: '#fbbf24' },
+            ].map((s, i) => (
+              <div key={i} className="showcase-stat" style={{ '--s-color': s.color } as React.CSSProperties}>
+                <div className="showcase-value">{s.value}</div>
+                <div className="showcase-label">{s.label}</div>
               </div>
             ))}
           </div>
@@ -687,7 +880,7 @@ export default function LandingPage() {
       <section id="ai-agent" className="l-ai-section">
         <div className="l-container">
           <div className="l-ai-grid">
-            <div>
+            <div className="reveal">
               <div className="l-section-badge violet"><Sparkles size={13} /> AI Yordamchi</div>
               <h2>Mazaika <span className="gradient-text-neon">AI</span> Architect</h2>
               <p>{lang === 'UZ' ? 'Faqat so\'z bilan tushuntiring, AI yaratadi. Kod yozish shart emas.' : lang === 'RU' ? 'Просто объясните словами, AI создаст всё сам.' : 'Just explain in words, AI will create it.'}</p>
@@ -699,10 +892,11 @@ export default function LandingPage() {
               </ul>
             </div>
             
-            <div className="ai-mockup">
+            <div className="ai-mockup reveal" style={{ transitionDelay: '200ms' }}>
               <div className="ai-mockup-header">
                 <div className="ai-mockup-dots"><span></span><span></span><span></span></div>
                 <div className="ai-mockup-title">Mazaika AI Agent — Active</div>
+                <div className="ai-live-dot"></div>
               </div>
               <div className="ai-mockup-body">
                 <div className="chat-msg user">
@@ -726,8 +920,40 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
+                {/* AI progress bar */}
+                <div className="ai-progress-wrap">
+                  <div className="ai-progress-label">Generatsiya: 87%</div>
+                  <div className="ai-progress-bar">
+                    <div className="ai-progress-fill"></div>
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS — Timeline */}
+      <section className="l-how-it-works">
+        <div className="container">
+          <div className="section-header reveal">
+            <div className="l-section-badge cyan"><Zap size={13} /> {lang === 'UZ' ? 'Qanday ishlaydi' : lang === 'RU' ? 'Как это работает' : 'How it works'}</div>
+            <h2>{lang === 'UZ' ? 'Uch qadam — bot' : lang === 'RU' ? 'Три шага — и бот' : 'Three steps — bot'} <span className="gradient-text-neon">{lang === 'UZ' ? 'tayyor!' : lang === 'RU' ? 'готов!' : 'ready!'}</span></h2>
+          </div>
+          <div className="how-steps">
+            {[
+              { icon: '✍️', step: '01', title: lang === 'UZ' ? "So'z bilan tushuntiring" : lang === 'RU' ? 'Опишите словами' : 'Describe in words', desc: lang === 'UZ' ? "AI ga botingiz haqida yozing" : lang === 'RU' ? 'Напишите AI что должен делать бот' : 'Tell AI what your bot should do' },
+              { icon: '🤖', step: '02', title: lang === 'UZ' ? 'AI yaratadi' : lang === 'RU' ? 'AI создаёт' : 'AI builds', desc: lang === 'UZ' ? 'Mazaika AI barcha bloklarni avtomatik quradi' : lang === 'RU' ? 'Mazaika AI строит все блоки автоматически' : 'Mazaika AI builds all blocks automatically' },
+              { icon: '🚀', step: '03', title: lang === 'UZ' ? 'Ishga tushiring' : lang === 'RU' ? 'Запустите' : 'Launch it', desc: lang === 'UZ' ? 'Bir tugma bilan Telegram da joylashing' : lang === 'RU' ? 'Разместите в Telegram одной кнопкой' : 'Deploy to Telegram with one button' },
+            ].map((s, i) => (
+              <div key={i} className="how-step reveal" style={{ transitionDelay: `${i * 150}ms` }}>
+                <div className="how-step-number">{s.step}</div>
+                <div className="how-step-icon">{s.icon}</div>
+                <h3>{s.title}</h3>
+                <p>{s.desc}</p>
+                {i < 2 && <div className="how-connector"></div>}
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -735,13 +961,13 @@ export default function LandingPage() {
       {/* TESTIMONIALS */}
       <section className="l-testimonials">
         <div className="container">
-          <div className="section-header">
+          <div className="section-header reveal">
             <div className="l-section-badge cyan"><Sparkles size={13} /> Mijozlar</div>
             <h2>Haqiqiy <span className="gradient-text-neon">Natijalar</span></h2>
             <p>{lang === 'UZ' ? "O'zbekiston bo'ylab 500+ biznes Mazaika ishlatmoqda" : lang === 'RU' ? 'Более 500 бизнесов по всему Узбекистану' : '500+ businesses across Uzbekistan'}</p>
           </div>
           <div className="testimonials-grid">
-            <div className="testimonial-card">
+            <div className="testimonial-card reveal">
               <div className="t-stars">⭐⭐⭐⭐⭐</div>
               <div className="t-text">"Mazaika tufayli botimni 1 kunda yaratdim. Endi har kuni 50+ buyurtma kelmoqda! AI barcha bloklarni o'zi uladi."</div>
               <div className="t-header">
@@ -752,7 +978,7 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-            <div className="testimonial-card">
+            <div className="testimonial-card reveal" style={{ transitionDelay: '100ms' }}>
               <div className="t-stars">⭐⭐⭐⭐⭐</div>
               <div className="t-text">"Telegram orqali dars jadvalini ulashdim va to'lovni ham. Mazaika — bu kelajak!"</div>
               <div className="t-header">
@@ -763,7 +989,7 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-            <div className="testimonial-card">
+            <div className="testimonial-card reveal" style={{ transitionDelay: '200ms' }}>
               <div className="t-stars">⭐⭐⭐⭐⭐</div>
               <div className="t-text">"Mazaika AI 10 daqiqada bizning menuimizni yaratdi va Payme'ni uladi. Hayron qoldim!"</div>
               <div className="t-header">
@@ -781,7 +1007,7 @@ export default function LandingPage() {
       {/* PRICING */}
       <section className="pricing-premium" id="pricing">
         <div className="container">
-          <div className="section-header">
+          <div className="section-header reveal">
             <div className="l-section-badge blue">💰 {t.priceBadge.replace('💰 ', '')}</div>
             <h2>{t.priceTitleLine1} <span className="gradient-text-neon">{t.priceTitleLine2}</span> {t.priceTitleLine3}</h2>
             <p>{t.priceDesc}</p>
@@ -789,7 +1015,7 @@ export default function LandingPage() {
 
           <div className="pricing-cards">
             {t.plans.map((plan, i) => (
-              <div key={i} className={`price-card ${plan.popular ? 'popular' : ''}`}>
+              <div key={i} className={`price-card reveal ${plan.popular ? 'popular' : ''}`} style={{ transitionDelay: `${i * 100}ms` }}>
                 {plan.popular && <div className="popular-tag">Eng mashhur ⭐</div>}
                 <h3 className="plan-name">{plan.name}</h3>
                 {(plan as any).desc && <p className="plan-desc">{(plan as any).desc}</p>}
@@ -820,11 +1046,22 @@ export default function LandingPage() {
 
       {/* CTA */}
       <section className="l-cta-section">
-        <div className="l-cta-inner">
+        <div className="l-cta-inner reveal">
+          <div className="cta-3d-scene">
+            <div className="cta-cube">
+              <div className="cube-face cube-front"></div>
+              <div className="cube-face cube-back"></div>
+              <div className="cube-face cube-left"></div>
+              <div className="cube-face cube-right"></div>
+              <div className="cube-face cube-top"></div>
+              <div className="cube-face cube-bottom"></div>
+            </div>
+          </div>
           <h2><span className="l-gradient-text">{t.ctaTitleLine1}</span><br/><span className="l-gradient-text-2">{t.ctaTitleLine2}</span> {t.ctaTitleLine3}</h2>
           <p>{t.ctaDesc}</p>
           <button className="btn-3d" onClick={() => navigate('/register')}>
-            {t.ctaBtn}
+            <span className="btn-3d-text">{t.ctaBtn}</span>
+            <div className="btn-3d-shine"></div>
           </button>
         </div>
       </section>

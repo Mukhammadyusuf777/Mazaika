@@ -187,9 +187,9 @@ export default function DashboardPage() {
             <Zap size={18} />
             <span>Shablonlar</span>
           </button>
-          <button className={`dash-nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
+          <button className="dash-nav-item" onClick={() => navigate('/dashboard/profile')}>
             <Settings size={18} />
-            <span>{t('sidebar_settings')}</span>
+            <span>Profil Sozlamalari</span>
           </button>
         </nav>
 
@@ -211,7 +211,7 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        <div className="dash-user">
+        <div className="dash-user" onClick={() => navigate('/dashboard/profile')} style={{ cursor: 'pointer' }}>
           <div className="dash-avatar">{user?.name?.substring(0, 1).toUpperCase() || 'M'}</div>
           <div className="dash-user-info">
             <div className="dash-user-name">{user?.name || 'Foydalanuvchi'}</div>
@@ -559,37 +559,6 @@ export default function DashboardPage() {
                   <div className="template-desc">{t.desc}</div>
                 </div>
               ))}
-            </div>
-          </>
-        )}
-
-        {/* SETTINGS TAB */}
-        {activeTab === 'settings' && (
-          <>
-            <div className="dash-topbar">
-              <div>
-                <h1 className="dash-title">Hisob sozlamalari</h1>
-                <p className="dash-subtitle">Profil ma'lumotlarini boshqarish va xavfsizlik sozlamalari</p>
-              </div>
-            </div>
-
-            <div style={{ background: 'var(--bg-card)', padding: '32px', borderRadius: '16px', border: '1px solid var(--border-primary)', marginTop: '24px', maxWidth: '600px' }}>
-              <form onSubmit={handleSaveSettings}>
-                <div className="input-group" style={{ marginBottom: '16px' }}>
-                  <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Mail size={16}/> Email manzil</label>
-                  <input type="email" className="input" value={profileEmail} onChange={e => setProfileEmail(e.target.value)} required />
-                </div>
-                <div className="input-group" style={{ marginBottom: '24px' }}>
-                  <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Globe size={16}/> Foydalanuvchi ismi</label>
-                  <input type="text" className="input" value={profileName} onChange={e => setProfileName(e.target.value)} required />
-                </div>
-
-                <div style={{ display: 'flex', gap: '16px', borderTop: '1px solid var(--border-primary)', paddingTop: '24px' }}>
-                  <button type="submit" className="btn btn-primary" style={{ padding: '8px 24px' }}>
-                    {settingsSaved ? 'Saqlandi! ✓' : 'Saqlash'}
-                  </button>
-                </div>
-              </form>
             </div>
           </>
         )}

@@ -17,6 +17,12 @@ export default function BotSettingsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [projectType, setProjectType] = useState<'bot' | 'site'>('bot')
+  
+  // Site settings
+  const [customDomain, setCustomDomain] = useState('')
+  const [seoTitle, setSeoTitle] = useState('')
+  const [seoDesc, setSeoDesc] = useState('')
 
   // Menu Button Web App State
   const [menuButtonEnabled, setMenuButtonEnabled] = useState(false)
@@ -46,6 +52,11 @@ export default function BotSettingsPage() {
         const botToken = data.token || ''
         const idPart = botToken.split(':')[0] || '12345678'
         setUsername(`@Mazaika_${idPart}_bot`)
+        
+        setProjectType(data.projectType || 'bot')
+        setCustomDomain(data.customDomain || '')
+        setSeoTitle(data.seoTitle || '')
+        setSeoDesc(data.seoDesc || '')
 
 
       }
@@ -71,7 +82,10 @@ export default function BotSettingsPage() {
         token,
         menuButtonEnabled,
         menuButtonText,
-        menuButtonUrl
+        menuButtonUrl,
+        customDomain,
+        seoTitle,
+        seoDesc
       })
 
       // Sync menu button state with Telegram API via NestJS backend
@@ -168,44 +182,46 @@ export default function BotSettingsPage() {
   return (
     <div className="settings-container">
       <div style={{ marginBottom: 'var(--space-6)' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 700 }}>{t('settings_title')}</h2>
-        <p style={{ color: 'var(--text-muted)' }}>Asosiy ma'lumotlar va API ulanishlar</p>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 700 }}>{projectType === 'site' ? 'Sayt Sozlamalari' : t('settings_title')}</h2>
+        <p style={{ color: 'var(--text-muted)' }}>Asosiy ma'lumotlar va {projectType === 'site' ? 'domen ulanishlar' : 'API ulanishlar'}</p>
       </div>
 
       <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-        {/* API TOKEN SECTION */}
-        <div style={{ background: 'var(--bg-card)', padding: 'var(--space-6)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)' }}>
-          <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>Telegram API Token</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)' }}>
-            Botfather orqali olingan tokenni shu yerga kiriting. Tokenni hech kimga bermang!
-          </p>
-          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-            <input
-              type="text"
-              className="input flex-1"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              placeholder="1234567890:AAH_XxYyZz..."
-              required
-            />
-            <button
-              type="button"
-              className={`btn ${copied ? 'btn-success' : 'btn-ghost'} btn-icon`}
-              onClick={handleCopyToken}
-              title="Tokenni nusxalash"
-            >
-              <Copy size={18} />
-            </button>
-            <button
-              type="button"
-              className="btn btn-ghost btn-icon"
-              onClick={fetchBotDetails}
-              title="Qayta yuklash"
-            >
-              <RefreshCw size={18} />
-            </button>
+        {/* API TOKEN SECTION (BOT ONLY) */}
+        {projectType === 'bot' && (
+          <div style={{ background: 'var(--bg-card)', padding: 'var(--space-6)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)' }}>
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>Telegram API Token</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)' }}>
+              Botfather orqali olingan tokenni shu yerga kiriting. Tokenni hech kimga bermang!
+            </p>
+            <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+              <input
+                type="text"
+                className="input flex-1"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder="1234567890:AAH_XxYyZz..."
+                required
+              />
+              <button
+                type="button"
+                className={`btn ${copied ? 'btn-success' : 'btn-ghost'} btn-icon`}
+                onClick={handleCopyToken}
+                title="Tokenni nusxalash"
+              >
+                <Copy size={18} />
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost btn-icon"
+                onClick={fetchBotDetails}
+                title="Qayta yuklash"
+              >
+                <RefreshCw size={18} />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* BASIC INFORMATION SECTION */}
         <div style={{ background: 'var(--bg-card)', padding: 'var(--space-6)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)' }}>
@@ -213,21 +229,23 @@ export default function BotSettingsPage() {
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Bot nomi</label>
+              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{projectType === 'site' ? 'Sayt nomi' : 'Bot nomi'}</label>
               <input
                 type="text"
                 className="input"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Mening Yangi Boti"
+                placeholder={projectType === 'site' ? "Mening Saytim" : "Mening Yangi Boti"}
                 required
               />
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Bot Username (Telegram tomonidan berilgan)</label>
-              <input type="text" className="input" value={username} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />
-            </div>
+            {projectType === 'bot' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Bot Username (Telegram tomonidan berilgan)</label>
+                <input type="text" className="input" value={username} disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />
+              </div>
+            )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>{t('settings_language')}</label>
@@ -240,7 +258,51 @@ export default function BotSettingsPage() {
           </div>
         </div>
 
+        {/* SITE SETTINGS SECTION (SITE ONLY) */}
+        {projectType === 'site' && (
+          <div style={{ background: 'var(--bg-card)', padding: 'var(--space-6)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)' }}>
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: 'var(--space-4)' }}>Domen va SEO Sozlamalari</h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>Shaxsiy Domen (Masalan: mysite.com)</label>
+                <input
+                  type="text"
+                  className="input"
+                  value={customDomain}
+                  onChange={(e) => setCustomDomain(e.target.value)}
+                  placeholder="mysite.com"
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>SEO Sarlavha (Meta Title)</label>
+                <input
+                  type="text"
+                  className="input"
+                  value={seoTitle}
+                  onChange={(e) => setSeoTitle(e.target.value)}
+                  placeholder="Mening Ajoyib Saytim"
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>SEO Tavsif (Meta Description)</label>
+                <textarea
+                  className="input"
+                  value={seoDesc}
+                  onChange={(e) => setSeoDesc(e.target.value)}
+                  placeholder="Sayt haqida qisqacha ma'lumot qidiruv tizimlari uchun..."
+                  rows={3}
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* TELEGRAM MENU BUTTON (WEB APP) SECTION */}
+        {projectType === 'bot' && (
         <div style={{ background: 'var(--bg-card)', padding: 'var(--space-6)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)' }}>
           <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, marginBottom: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Globe size={18} style={{ color: 'var(--accent-blue)' }} /> Chat Menu Tugmasi (Web App)
@@ -379,7 +441,8 @@ export default function BotSettingsPage() {
               )}
             </div>
           </div>
-        </div>
+          </div>
+        )}
 
         {/* DANGER ZONE */}
 
@@ -402,7 +465,7 @@ export default function BotSettingsPage() {
         </div>
 
         {/* SAVE BUTTON */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--space-2)' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-4)', marginTop: 'var(--space-2)' }}>
           <button type="submit" className={`btn ${isSaved ? 'btn-success' : 'btn-primary'}`} style={{ padding: '0 32px' }} disabled={isLoading}>
             <Save size={18} /> {isSaved ? t('settings_saved') : t('settings_save')}
           </button>

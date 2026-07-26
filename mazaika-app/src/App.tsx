@@ -9,6 +9,7 @@ import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
+import ProfilePage from './pages/dashboard/ProfilePage'
 import EditorPage from './pages/editor/EditorPage'
 import ChatsPage from './pages/bot/ChatsPage'
 import BroadcastsPage from './pages/bot/BroadcastsPage'
@@ -52,6 +53,7 @@ function App() {
             {/* App (authenticated) */}
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/dashboard/profile" element={<ProfilePage />} />
               <Route path="/dashboard/ai-workspace" element={<AiWorkspacePage />} />
               <Route path="/bot/:botId" element={<AppLayout />}>
                 <Route index element={<Navigate to="editor" replace />} />

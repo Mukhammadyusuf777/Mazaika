@@ -174,6 +174,14 @@ export default function AppLayout() {
             >
               <Sparkles size={14} /> AI Workspace
             </button>
+            <button 
+              className="btn btn-ghost btn-sm btn-icon"
+              onClick={() => navigate('/dashboard/profile')}
+              title="Profil"
+              style={{ borderRadius: '50%', background: 'var(--bg-glass-light)', color: 'var(--text-main)', border: '1px solid var(--border-primary)' }}
+            >
+              <Users size={16} />
+            </button>
             {projectType === 'bot' && (
               <>
                 <button 

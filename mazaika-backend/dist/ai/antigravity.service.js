@@ -41,8 +41,8 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
             const userLang = isUzbek ? 'UZBEK' : (isRussian ? 'RUSSIAN' : 'ENGLISH');
             const lowerPrompt = promptText.toLowerCase();
             const hasImage = Boolean(imageBase64 && imageBase64.length > 10);
-            const SITE_KEYWORDS = ['сайт', 'sayt', 'магазин', 'magazin', 'landing', 'лендинг', 'shop', 'store', 'web', 'веб'];
-            const EDIT_KEYWORDS = ['измени', 'поменяй', 'добавь', 'убери', 'цвет', 'фон', 'текст', 'o\'zgartir', 'qo\'sh', 'olib tashla', 'rang', 'fon'];
+            const SITE_KEYWORDS = ['сайт', 'sayt', 'магазин', 'magazin', 'landing', 'лендинг', 'shop', 'store', 'web', 'веб', 'интернет', 'internet'];
+            const EDIT_KEYWORDS = ['измени', 'поменяй', 'добавь', 'убери', 'цвет', 'фон', 'текст', 'o\'zgartir', 'qo\'sh', 'olib tashla', 'rang', 'fon', 'улучши', 'сделай'];
             const BOT_KEYWORDS = ['bot', 'бот', 'нода', 'сценарий', 'flow', 'scenario', 'blok', 'блок', 'tugma', 'кнопка'];
             const isExplicitSite = SITE_KEYWORDS.some(k => lowerPrompt.includes(k));
             const isEditKeyword = EDIT_KEYWORDS.some(k => lowerPrompt.includes(k));
@@ -62,6 +62,11 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                 : '';
             const CONTINUE_KEYWORDS = ['продолжи', 'продолжить', 'дальше', 'допиши', 'продолжение', 'dovom', 'continue', 'more', 'добавь страницу'];
             const isContinuationMode = CONTINUE_KEYWORDS.some(k => lowerPrompt.includes(k)) && hasExistingHtml;
+            const LANGUAGE_INSTRUCTION = `
+CRITICAL LANGUAGE RULE: 
+- Identify the language of the USER REQUEST (Uzbek, Russian, or English).
+- ALL your text responses, JSON "explanation", and the GENERATED CONTENT (website text, bot messages) MUST be strictly in that exact language.
+- DO NOT MIX LANGUAGES. If the user writes in Russian ("сделай интернет магазин"), respond fully in Russian. If they write in Uzbek ("sayt yarat"), respond fully in Uzbek.`;
             let systemInstruction = '';
             const filesContext = Object.keys(currentConfig?.files || {}).length > 0
                 ? Object.entries(currentConfig.files).map(([path, content]) => `<file path="${path}">\n${content}\n</file>`).join('\n')
@@ -73,6 +78,8 @@ ${historyContext}
 ${imageInstruction}
 
 USER REQUEST: "${promptText}"
+
+${LANGUAGE_INSTRUCTION}
 
 CRITICAL INSTRUCTIONS:
 1. You MUST expand and continue building the site, adding new pages, sections, or logic requested.
@@ -94,7 +101,7 @@ JSON FORMAT:
   "execution_mode": "FULL_GENERATION",
   "target_entity": "site_only",
   "title": "Expanded Site",
-  "explanation": "${isUzbek ? "Sayt muvaffaqiyatli kengaytirildi va yangi sahifalar qo'shildi!" : isRussian ? "Сайт успешно дополнен и расширен новыми страницами!" : "Website expanded with new pages!"}"
+  "explanation": "Your explanation in the user's language"
 }
 <file path="index.html">
 ...
@@ -112,12 +119,15 @@ ${imageInstruction}
 
 USER REQUEST: "${promptText}"
 
+${LANGUAGE_INSTRUCTION}
+
 CRITICAL EDITING INSTRUCTIONS:
 1. You MUST modify the code below according to the user request.
 2. IF the user attached an image — match its design, colors, layout or style as closely as possible.
 3. Keep all existing functionality — only change what was requested.
 4. SPA NAVIGATION: NEVER use href="/" or href="page.html" in <a> tags! Use a JS function to hide/show sections.
 5. MULTI-FILE ARCHITECTURE (OPTIONAL BUT ENCOURAGED): You have the freedom to split HTML, CSS, and JS using <file path="...">...</file> blocks if it simplifies the project.
+6. AESTHETICS: Ensure the design is premium. Use nice colors, padding, rounding, and shadows.
 
 CURRENT FILES TO MODIFY:
 ${filesContext}
@@ -134,7 +144,7 @@ JSON FORMAT:
   "execution_mode": "FULL_GENERATION",
   "target_entity": "site_only",
   "title": "Updated Site",
-  "explanation": "Specific description of changes made..."
+  "explanation": "Your explanation in the user's language"
 }
 <file path="index.html">
 ...
@@ -147,35 +157,33 @@ Generate a high-end FULLY RESPONSIVE multi-page SPA.
 ${historyContext}
 ${imageInstruction}
 
-CRITICAL CREATION RULES:
-1. MULTI-FILE ARCHITECTURE: If the project is simple (landing page, portfolio), keep it in one index.html. If complex (dashboard, shop, multi-page app), split into files (e.g., index.html, style.css, script.js).
-2. If you use separate files, use the exact XML-like format to demarcate files:
-<file path="index.html">
-...html code here...
-</file>
-<file path="style.css">
-...css code here...
-</file>
-<file path="script.js">
-...js code here...
-</file>
+${LANGUAGE_INSTRUCTION}
 
-3. STRICT SPA NAVIGATION: Use a JS function like showPage(pageId) that hides all sections and shows only the active one (e.g., display:none for inactive). NEVER use href="page.html".
-4. PREMIUM DESIGN (STUNNING): Use dark theme by default, glassmorphism cards (bg-white/10 backdrop-blur-xl), gorgeous gradient hero sections, and real Unsplash images. Create STUNNING, PREMIUM websites. DO NOT output plain or basic layouts!
-5. REAL DATA: Use real content (names, descriptions, prices). NEVER use Lorem Ipsum.
+CRITICAL CREATION RULES (PREMIUM DESIGN):
+1. STUNNING AESTHETICS: You MUST use modern UI trends. 
+   - Dark theme or very clean light theme.
+   - Use Glassmorphism (bg-opacity, backdrop-blur).
+   - Add animations (hover effects, transitions, keyframe pulses).
+   - Use beautiful gradients (e.g. from-indigo-500 via-purple-500 to-pink-500).
+   - DO NOT output plain, boring, or "hello world" layouts. The site must look like a $10,000 professional web app.
+2. TAILWINDCSS: Use TailwindCSS via CDN (<script src="https://cdn.tailwindcss.com"></script>).
+3. ICONS & IMAGES: Use FontAwesome via CDN for icons. Use real Unsplash images (e.g., https://source.unsplash.com/random/800x600/?fashion,shoes) instead of blank placeholders.
+4. REAL DATA: Populate the site with realistic dummy data (products, prices, reviews) in the USER'S LANGUAGE.
+5. SPA NAVIGATION: Create a JS function to switch between views (e.g. Home, Catalog, Cart) by toggling 'hidden' classes. DO NOT use href="page.html".
 
 STRICT OUTPUT RULES:
 1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
 2. Then, AFTER the JSON, output all the files wrapped in <file path="...">...</file> blocks.
 3. Do NOT put the HTML/CSS inside the JSON object!
+4. MULTI-FILE ARCHITECTURE: If the project is complex, output <file path="index.html">, <file path="style.css">, <file path="script.js">.
 
 JSON OUTPUT:
 {
   "type": "site",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "site_only",
-  "title": "Site Title",
-  "explanation": "${isUzbek ? "Premium ko'p faylli loyiha yaratildi!" : isRussian ? "Премиум проект с файловой системой успешно создан!" : "Premium multi-file project generated!"}"
+  "title": "Premium Site",
+  "explanation": "Your explanation in the user's language"
 }
 
 <file path="index.html">
@@ -183,25 +191,22 @@ JSON OUTPUT:
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
-...
+<body class="bg-gray-900 text-white min-h-screen font-sans">
+... (Premium HTML structure) ...
 <script src="script.js"></script>
 </body>
 </html>
 </file>
 <file path="style.css">
-.glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-.page { display: none; }
-.page.active { display: block; animation: fadeIn 0.5s; }
+/* Add custom animations and utilities here */
 </file>
 <file path="script.js">
-function showPage(id) { 
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
+/* Add interaction logic here */
 </file>
 `;
             }
@@ -210,12 +215,15 @@ function showPage(id) {
 ${historyContext}
 ${imageInstruction}
 
+USER REQUEST: "${promptText}"
+
+${LANGUAGE_INSTRUCTION}
+
 If user attached an image of a bot flow/diagram — analyze it and create matching nodes.
 
 CRITICAL CREATION RULES:
-1. If the user writes in Russian or Uzbek, you MUST use Russian or Uzbek text respectively in bot messages.
-2. ALWAYS lay out nodes with proper x/y coordinates. Place nodes in a grid/branching layout, NOT a single vertical column. Use x values: 100, 400, 700, 1000 for different branches. Use y values that increase by 200 per row. For buttons creating branches, place child nodes with different x positions.
-3. Include 5-10 meaningful nodes for ANY bot request. Build a complete flow.
+1. ALWAYS lay out nodes with proper x/y coordinates. Place nodes in a grid/branching layout, NOT a single vertical column. Use x values: 100, 400, 700, 1000 for different branches. Use y values that increase by 200 per row. For buttons creating branches, place child nodes with different x positions.
+2. Include 5-10 meaningful nodes for ANY bot request. Build a complete flow.
 
 NODE TYPES (ONLY use these exact type strings):
 - start: {"id":"node_1", "type":"start", "position":{"x":100,"y":150}, "data":{"label":"Boshlash", "emoji":"▶", "color":"#10d974", "text":"Assalomu alaykum! Botga xush kelibsiz."}}
