@@ -80,23 +80,52 @@ const TRANSLATIONS = {
         price: "Bepul",
         period: "",
         popular: false,
-        features: ["1 ta bot", "500 ta kontakt", "Asosiy bloklar", "Telegram integratsiya"],
+        desc: "Sinab ko'rish uchun ideal",
+        features: [
+          "1 ta bot",
+          "500 ta kontakt",
+          "Asosiy bloklar (xabar, tugma, javob)",
+          "Telegram integratsiya",
+          "Drag & drop editor",
+          "Mazaika hamjamiyati"
+        ],
         btn: "Bepul boshlash"
       },
       {
-        name: "Biznes",
+        name: "Pro",
         price: "149 000 so'm",
         period: " / oy",
-        popular: true,
-        features: ["10 ta bot", "10 000 ta kontakt", "Barcha bloklar", "To'lov tizimlari", "API integratsiya", "Analitika"],
+        popular: false,
+        desc: "O'sayotgan biznes uchun",
+        features: [
+          "5 ta bot",
+          "5 000 ta kontakt",
+          "Barcha 50+ bloklar",
+          "Payme & Click to'lovlari",
+          "API & Webhook integratsiya",
+          "Analitika dashboard",
+          "Mini App (HTML sahifa)",
+          "Email qo'llab-quvvatlash"
+        ],
         btn: "Tanlash →"
       },
       {
-        name: "Pro",
-        price: "399 000 so'm",
+        name: "Biznes",
+        price: "249 000 so'm",
         period: " / oy",
-        popular: false,
-        features: ["Cheksiz bot", "Cheksiz kontakt", "Ustuvor qo'llab-quvvatlash", "White-label", "Maxsus integratsiyalar"],
+        popular: true,
+        desc: "Jiddiy biznes uchun to'liq paket",
+        features: [
+          "20 ta bot",
+          "50 000 ta kontakt",
+          "Barcha Pro imkoniyatlar",
+          "Mazaika AI Architect",
+          "White-label brending",
+          "Google Sheets integratsiya",
+          "Ustuvor 24/7 qo'llab-quvvatlash",
+          "Maxsus integratsiyalar",
+          "Bot klonlash"
+        ],
         btn: "Tanlash →"
       }
     ]
@@ -176,23 +205,52 @@ const TRANSLATIONS = {
         price: "Бесплатно",
         period: "",
         popular: false,
-        features: ["1 бот", "500 контактов", "Базовые блоки", "Интеграция Telegram"],
+        desc: "Идеально для старта",
+        features: [
+          "1 бот",
+          "500 контактов",
+          "Основные блоки (сообщение, кнопки, ответ)",
+          "Интеграция Telegram",
+          "Редактор Drag & drop",
+          "Доступ к сообществу"
+        ],
         btn: "Начать бесплатно"
       },
       {
-        name: "Бизнес",
+        name: "Про",
         price: "149 000 сум",
         period: " / мес",
-        popular: true,
-        features: ["10 ботов", "10 000 контактов", "Все блоки", "Платежные системы", "Интеграция API", "Аналитика"],
+        popular: false,
+        desc: "Для растущего бизнеса",
+        features: [
+          "5 ботов",
+          "5 000 контактов",
+          "Все 50+ блоков",
+          "Платёжные системы Payme & Click",
+          "API & Webhook интеграции",
+          "Аналитика дашборд",
+          "Mini App (HTML страница)",
+          "Email поддержка"
+        ],
         btn: "Выбрать →"
       },
       {
-        name: "Про",
-        price: "399 000 сум",
+        name: "Бизнес",
+        price: "249 000 сум",
         period: " / мес",
-        popular: false,
-        features: ["Безлимитные боты", "Безлимитные контакты", "Приоритетная поддержка", "White-label", "Пользовательские интеграции"],
+        popular: true,
+        desc: "Полный пакет для серьёзного бизнеса",
+        features: [
+          "20 ботов",
+          "50 000 контактов",
+          "Все возможности Про",
+          "Mazaika AI Architect",
+          "White-label брендинг",
+          "Интеграция Google Sheets",
+          "Приоритетная поддержка 24/7",
+          "Кастомные интеграции",
+          "Клонирование бота"
+        ],
         btn: "Выбрать →"
       }
     ]
@@ -272,23 +330,52 @@ const TRANSLATIONS = {
         price: "Free",
         period: "",
         popular: false,
-        features: ["1 bot", "500 contacts", "Basic blocks", "Telegram integration"],
+        desc: "Perfect for testing",
+        features: [
+          "1 bot",
+          "500 contacts",
+          "Basic blocks (message, buttons, reply)",
+          "Telegram integration",
+          "Drag & drop editor",
+          "Community access"
+        ],
         btn: "Start for free"
       },
       {
-        name: "Business",
+        name: "Pro",
         price: "149,000 UZS",
         period: " / mo",
-        popular: true,
-        features: ["10 bots", "10,000 contacts", "All blocks", "Payment systems", "API integration", "Analytics"],
+        popular: false,
+        desc: "For growing businesses",
+        features: [
+          "5 bots",
+          "5,000 contacts",
+          "All 50+ blocks",
+          "Payme & Click payments",
+          "API & Webhook integrations",
+          "Analytics dashboard",
+          "Mini App (HTML page)",
+          "Email support"
+        ],
         btn: "Select →"
       },
       {
-        name: "Pro",
-        price: "399,000 UZS",
+        name: "Business",
+        price: "249,000 UZS",
         period: " / mo",
-        popular: false,
-        features: ["Unlimited bots", "Unlimited contacts", "Priority support", "White-label", "Custom integrations"],
+        popular: true,
+        desc: "Full package for serious business",
+        features: [
+          "20 bots",
+          "50,000 contacts",
+          "All Pro features",
+          "Mazaika AI Architect",
+          "White-label branding",
+          "Google Sheets integration",
+          "Priority 24/7 support",
+          "Custom integrations",
+          "Bot cloning"
+        ],
         btn: "Select →"
       }
     ]
@@ -357,6 +444,51 @@ export default function LandingPage() {
       <div className="l-animated-orb l-orb-4"></div>
       <div className="l-animated-orb l-orb-5"></div>
       <div className="l-animated-orb l-orb-6"></div>
+
+      {/* ── BACKGROUND BUILDER ANIMATION ─────────────────────── */}
+      <div className="l-bg-builder" aria-hidden="true">
+        {/* SVG flow graph — lines draw themselves */}
+        <svg className="bg-flow-svg" viewBox="0 0 900 320" fill="none">
+          {/* Lines connecting nodes */}
+          <line className="flow-line fl-1" x1="130" y1="160" x2="260" y2="100"/>
+          <line className="flow-line fl-2" x1="260" y1="100" x2="420" y2="130"/>
+          <line className="flow-line fl-3" x1="420" y1="130" x2="560" y2="80"/>
+          <line className="flow-line fl-4" x1="560" y1="80"  x2="710" y2="120"/>
+          <line className="flow-line fl-5" x1="710" y1="120" x2="830" y2="180"/>
+          {/* Branch */}
+          <line className="flow-line fl-6" x1="420" y1="130" x2="480" y2="240"/>
+          <line className="flow-line fl-7" x1="480" y1="240" x2="620" y2="260"/>
+          {/* Arrowheads */}
+          <polygon className="flow-arrow fa-1" points="260,100 250,93 250,107"/>
+          <polygon className="flow-arrow fa-2" points="420,130 410,123 410,137"/>
+          <polygon className="flow-arrow fa-3" points="560,80  550,73  550,87"/>
+          <polygon className="flow-arrow fa-4" points="710,120 700,113 700,127"/>
+          <polygon className="flow-arrow fa-5" points="830,180 820,173 820,187"/>
+        </svg>
+
+        {/* Flow nodes */}
+        <div className="bg-node bn-1">🚀 Start</div>
+        <div className="bg-node bn-2">💬 Greeting</div>
+        <div className="bg-node bn-3">📋 Menu</div>
+        <div className="bg-node bn-4">🛒 Order</div>
+        <div className="bg-node bn-5">💳 Payment</div>
+        <div className="bg-node bn-6">✅ Done</div>
+        <div className="bg-node bn-7">❌ Cancel</div>
+
+        {/* Floating code snippets */}
+        <div className="bg-code bc-1">
+          <span className="bcc-purple">const</span> bot = <span className="bcc-cyan">createBot</span>()
+        </div>
+        <div className="bg-code bc-2">
+          flow.<span className="bcc-blue">addNode</span>(<span className="bcc-green">'greeting'</span>)
+        </div>
+        <div className="bg-code bc-3">
+          payment.<span className="bcc-blue">connect</span>(<span className="bcc-green">'payme'</span>)
+        </div>
+        <div className="bg-code bc-4">
+          <span className="bcc-purple">await</span> bot.<span className="bcc-cyan">deploy</span>() <span className="bcc-green">✓</span>
+        </div>
+      </div>
 
       {/* HEADER */}
       <header className="l-header">
@@ -464,16 +596,54 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <div className="hero-mockup-chat">
-                    <div className="hero-mockup-bubble bot anim-1">Assalomu alaykum! Bizning do'konga xush kelibsiz 👋</div>
-                    <div className="hero-mockup-bubble user anim-2">Menyu ko'rish</div>
-                    <div className="hero-mockup-bubble bot anim-3">Katalogimiz:<br/>☕ Qahva<br/>🍰 Shirinliklar<br/>🍔 Fast food</div>
-                    <div className="hero-mockup-bubble user anim-4">Qahva</div>
-                    <div className="hero-mockup-bubble bot anim-5">
-                      💳 To'lov:
-                      <button className="mockup-pay-btn">Payme orqali to'lash</button>
+                    {/* SCENE 1: Order flow */}
+                    <div className="mockup-scene mockup-scene-1">
+                      <div className="hero-mockup-bubble bot anim-1">Assalomu alaykum! Bizning do'konga xush kelibsiz 👋</div>
+                      <div className="hero-mockup-bubble user anim-2">Menyu ko'rish</div>
+                      <div className="hero-mockup-bubble bot anim-3">Katalogimiz:<br/>☕ Qahva — 15,000 so'm<br/>🍰 Tort — 25,000 so'm<br/>🍔 Burger — 35,000 so'm</div>
+                      <div className="hero-mockup-bubble user anim-4">Qahva</div>
+                      <div className="hero-mockup-bubble bot anim-5">
+                        💳 To'lov: 15,000 so'm
+                        <button className="mockup-pay-btn">Payme orqali to'lash</button>
+                      </div>
+                      <div className="hero-mockup-typing anim-6">
+                        <span></span><span></span><span></span>
+                      </div>
                     </div>
-                    <div className="hero-mockup-typing anim-6">
-                      <span></span><span></span><span></span>
+
+                    {/* SCENE 2: Delivery / confirmation */}
+                    <div className="mockup-scene mockup-scene-2">
+                      <div className="s2-status-bar">
+                        <span className="s2-dot"></span> To'lov tasdiqlandi
+                      </div>
+                      <div className="hero-mockup-bubble bot s2-anim-1">
+                        ✅ Buyurtmangiz qabul qilindi!<br/>
+                        <span style={{color:'#00f5d4', fontWeight:700}}>Buyurtma #2847</span>
+                      </div>
+                      <div className="s2-track">
+                        <div className="s2-step done s2-anim-2">
+                          <div className="s2-step-icon">💳</div>
+                          <div className="s2-step-text">To'lov qabul qilindi</div>
+                        </div>
+                        <div className="s2-connector s2-anim-3"></div>
+                        <div className="s2-step active s2-anim-4">
+                          <div className="s2-step-icon">👨‍🍳</div>
+                          <div className="s2-step-text">Tayyorlanmoqda...</div>
+                        </div>
+                        <div className="s2-connector"></div>
+                        <div className="s2-step s2-anim-5">
+                          <div className="s2-step-icon">🚴</div>
+                          <div className="s2-step-text">Yetkazib berish</div>
+                        </div>
+                      </div>
+                      <div className="hero-mockup-bubble bot s2-anim-6">
+                        📍 Kuryer yo'lda! ETA: <strong>15 daqiqa</strong>
+                      </div>
+                      <div className="s2-map-preview s2-anim-7">
+                        <div className="s2-map-pin">📍</div>
+                        <div className="s2-map-route"></div>
+                        <div className="s2-map-bike">🚴</div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -620,12 +790,14 @@ export default function LandingPage() {
           <div className="pricing-cards">
             {t.plans.map((plan, i) => (
               <div key={i} className={`price-card ${plan.popular ? 'popular' : ''}`}>
-                {plan.popular && <div className="popular-tag">Eng mashhur</div>}
+                {plan.popular && <div className="popular-tag">Eng mashhur ⭐</div>}
                 <h3 className="plan-name">{plan.name}</h3>
+                {(plan as any).desc && <p className="plan-desc">{(plan as any).desc}</p>}
                 <div className="plan-price">
                   <span className="amount">{plan.price}</span>
                   <span className="period">{plan.period}</span>
                 </div>
+                <div className="plan-divider"></div>
                 <ul className="plan-features">
                   {plan.features.map((feat, fi) => (
                     <li key={fi}>
