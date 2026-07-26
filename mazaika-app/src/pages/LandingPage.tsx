@@ -775,30 +775,77 @@ export default function LandingPage() {
                     </div>
                   </div>
                   <div className="hero-mockup-chat">
-                    {/* SCENE 1: Order flow */}
+                    {/* SCENE 1: Order flow — Real Telegram UI */}
                     <div className="mockup-scene mockup-scene-1">
-                      <div className="hero-mockup-bubble bot anim-1">Assalomu alaykum! Bizning do'konga xush kelibsiz 👋</div>
-                      <div className="hero-mockup-bubble user anim-2">Menyu ko'rish</div>
-                      <div className="hero-mockup-bubble bot anim-3">Katalogimiz:<br/>☕ Qahva — 15,000 so'm<br/>🍰 Tort — 25,000 so'm<br/>🍔 Burger — 35,000 so'm</div>
-                      <div className="hero-mockup-bubble user anim-4">Qahva</div>
-                      <div className="hero-mockup-bubble bot anim-5">
-                        💳 To'lov: 15,000 so'm
-                        <button className="mockup-pay-btn">Payme orqali to'lash</button>
+
+                      {/* Bot message 1 */}
+                      <div className="tg-msg-row bot-row anim-1">
+                        <div className="tg-avatar">🛒</div>
+                        <div className="tg-bubble bot">
+                          Assalomu alaykum! Bizning do'konga xush kelibsiz 👋
+                          <div className="tg-meta"><span>09:41</span></div>
+                        </div>
                       </div>
-                      <div className="hero-mockup-typing anim-6">
-                        <span></span><span></span><span></span>
+
+                      {/* User message 1 */}
+                      <div className="tg-msg-row user-row anim-2">
+                        <div className="tg-bubble user">
+                          Menyu ko'rish
+                          <div className="tg-meta"><span>09:41</span><span className="tg-tick">✓✓</span></div>
+                        </div>
+                      </div>
+
+                      {/* Bot message 2 */}
+                      <div className="tg-msg-row bot-row anim-3">
+                        <div className="tg-avatar">🛒</div>
+                        <div className="tg-bubble bot">
+                          Katalogimiz:<br/>☕ Qahva — 15,000 so'm<br/>🍰 Tort — 25,000 so'm<br/>🍔 Burger — 35,000 so'm
+                          <div className="tg-meta"><span>09:41</span></div>
+                        </div>
+                      </div>
+
+                      {/* User message 2 */}
+                      <div className="tg-msg-row user-row anim-4">
+                        <div className="tg-bubble user">
+                          Qahva
+                          <div className="tg-meta"><span>09:42</span><span className="tg-tick">✓✓</span></div>
+                        </div>
+                      </div>
+
+                      {/* Bot payment message */}
+                      <div className="tg-msg-row bot-row anim-5">
+                        <div className="tg-avatar">🛒</div>
+                        <div className="tg-bubble bot">
+                          💳 To'lov: <strong>15,000 so'm</strong>
+                          <button className="mockup-pay-btn">Payme orqali to'lash</button>
+                          <div className="tg-meta"><span>09:42</span></div>
+                        </div>
+                      </div>
+
+                      {/* Typing indicator */}
+                      <div className="tg-msg-row bot-row">
+                        <div className="tg-avatar" style={{opacity: 0.6}}>🛒</div>
+                        <div className="hero-mockup-typing">
+                          <span></span><span></span><span></span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* SCENE 2: Delivery / confirmation */}
+                    {/* SCENE 2: Delivery */}
                     <div className="mockup-scene mockup-scene-2">
                       <div className="s2-status-bar">
                         <span className="s2-dot"></span> Yetkazilmoqda
                       </div>
-                      <div className="hero-mockup-bubble bot s2-anim-1">
-                        ✅ Buyurtmangiz qabul qilindi!<br/>
-                        <span style={{color:'#00f5d4', fontWeight:700}}>Buyurtma #2847</span>
+
+                      <div className="tg-msg-row bot-row s2-anim-1">
+                        <div className="tg-avatar">🛒</div>
+                        <div className="tg-bubble bot">
+                          ✅ Buyurtmangiz qabul qilindi!<br/>
+                          <span style={{color:'#4fc3f7', fontWeight:700}}>Buyurtma #2847</span>
+                          <div className="tg-meta"><span>09:43</span></div>
+                        </div>
                       </div>
+
                       <div className="s2-track">
                         <div className="s2-step done s2-anim-2">
                           <div className="s2-step-icon">✅</div>
@@ -820,9 +867,15 @@ export default function LandingPage() {
                           <div className="s2-step-text">Yetkazildi</div>
                         </div>
                       </div>
-                      <div className="hero-mockup-bubble bot s2-anim-9">
-                        📍 Kuryer yo'lda! ETA: <strong>15 daqiqa</strong>
+
+                      <div className="tg-msg-row bot-row s2-anim-9">
+                        <div className="tg-avatar">🛒</div>
+                        <div className="tg-bubble bot">
+                          📍 Kuryer yo'lda! ETA: <strong>15 daqiqa</strong>
+                          <div className="tg-meta"><span>09:44</span></div>
+                        </div>
                       </div>
+
                       <div className="s2-map-preview s2-anim-10">
                         <div className="s2-map-pin">📍</div>
                         <div className="s2-map-route"></div>
