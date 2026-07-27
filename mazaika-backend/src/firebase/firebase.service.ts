@@ -39,9 +39,11 @@ export class FirebaseService {
           this.logger.warn(
             `No Firebase credentials found! Detected: FIREBASE_PROJECT_ID=${!!process.env.FIREBASE_PROJECT_ID}, FIREBASE_PRIVATE_KEY=${!!process.env.FIREBASE_PRIVATE_KEY}, FIREBASE_CLIENT_EMAIL=${!!process.env.FIREBASE_CLIENT_EMAIL}. Using default initializeApp for mazaika-uz project`
           );
-          initializeApp({
-            projectId: 'mazaika-uz',
-          });
+          try {
+            initializeApp({ projectId: 'mazaika-uz' });
+          } catch (e: any) {
+            this.logger.error(`Failed to initialize default Firebase: ${e.message}`);
+          }
         }
       }
       this.dbInstance = getFirestore();
