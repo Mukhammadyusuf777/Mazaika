@@ -54,14 +54,10 @@ export class AntigravityService {
         ''
       ).trim();
 
-      if (!googleKey) {
-        throw new Error('No API key provided.');
-      }
-
       // Step 1: Routing Agent
       let target = targetEntity;
       if (!target) {
-        const routeRes = await this.callGemini(googleKey, ROUTING_AGENT_PROMPT, promptText, '', '', 0, true);
+        const routeRes = await this.callAI(ROUTING_AGENT_PROMPT, promptText, '', '', 0, true, googleKey);
         if (routeRes && routeRes.target) {
           target = routeRes.target === 'bot_only' ? 'bot_and_mini_app' : routeRes.target; 
         } else {
@@ -85,11 +81,11 @@ export class AntigravityService {
       const userRequest = `USER REQUEST: "${promptText}"\n${historyContext}`;
 
       if (target === 'site_only') {
-        siteData = await this.callGemini(googleKey, WEBAPP_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false);
+        siteData = await this.callAI(WEBAPP_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false, googleKey);
       } else if (target === 'bot_and_mini_app') {
         const tasks = [
-          this.callGemini(googleKey, BOT_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false),
-          this.callGemini(googleKey, WEBAPP_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false)
+          this.callAI(BOT_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false, googleKey),
+          this.callAI(WEBAPP_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false, googleKey)
         ];
         
         const [botRes, siteRes] = await Promise.all(tasks);
@@ -130,6 +126,78 @@ export class AntigravityService {
         html: rawInput?.currentHtml || ''
       };
     }
+  }
+
+  private async callAI(
+    systemInstruction: string,
+    userPrompt: string,
+    imageBase64: string,
+    imageMimeType: string,
+    attempt: number,
+    jsonMode: boolean,
+    googleKey: string
+  ): Promise<any> {
+    if (googleKey) {
+      return this.callGemini(googleKey, systemInstruction, userPrompt, imageBase64, imageMimeType, attempt, jsonMode);
+    }
+    const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || '';
+    const cfApiToken = process.env.CLOUDFLARE_API_TOKEN || '';
+    if (!cfAccountId || !cfApiToken) {
+       throw new Error('No API key provided for either Gemini or Cloudflare.');
+    }
+    return this.callCloudflareAI(cfAccountId, cfApiToken, systemInstruction, userPrompt);
+  }
+
+  private async callCloudflareAI(
+    accountId: string,
+    apiToken: string,
+    systemInstruction: string,
+    userPrompt: string
+  ): Promise<any> {
+    const models = [
+      '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+      '@cf/meta/llama-3.1-70b-instruct',
+      '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
+      '@cf/qwen/qwen1.5-14b-chat'
+    ];
+
+    for (const model of models) {
+      try {
+        const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            messages: [
+              { role: 'system', content: systemInstruction },
+              { role: 'user', content: userPrompt }
+            ],
+            max_tokens: 8192
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const text = data.result?.choices?.[0]?.message?.content || data.result?.response;
+          if (text) {
+            const parsed = this.extractJsonObjectWithSelfHeal(text);
+            if (parsed) {
+              this.logger.log(`✅ Cloudflare Workers AI (${model}) succeeded!`);
+              return parsed;
+            }
+          }
+        } else {
+          const errText = await res.text().catch(() => '');
+          this.logger.warn(`Cloudflare AI ${model} HTTP ${res.status}: ${errText.substring(0, 150)}`);
+        }
+      } catch (e: any) {
+        this.logger.warn(`Cloudflare AI ${model} error: ${e.message}`);
+      }
+    }
+    return null;
   }
 
   private async callGemini(
