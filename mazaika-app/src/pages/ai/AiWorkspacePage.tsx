@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Sparkles, Send, Bot, Save, Globe, Menu, X, MessageSquare, Trash2, Paperclip, Image as ImageIcon, Zap, Code2 } from 'lucide-react'
+import { ArrowLeft, Sparkles, Send, Bot, Save, Globe, Menu, X, MessageSquare, Trash2, Paperclip, Zap, Code2 } from 'lucide-react'
 import { useAICopilot } from '../../context/AICopilotContext'
 import { useAuthStore } from '../../store/useAuthStore'
 import { createBot, saveSiteConfig, getBotsByUser } from '../../api/firestore'
@@ -149,7 +149,7 @@ const renderCanvasBlock = (b: any, bIdx: number, activeConfig: any, onEditClick?
 export default function AiWorkspacePage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { messages, isGenerating, sendMessage, activeConfig, clearChat, activeProjectId, switchProject } = useAICopilot()
+  const { messages, isGenerating, sendMessage, activeConfig, setActiveConfig, clearChat, activeProjectId, switchProject } = useAICopilot()
 
   const [aiTargetEntity, setAiTargetEntity] = useState<'bot_and_mini_app' | 'site_only'>('bot_and_mini_app')
   const [promptInput, setPromptInput] = useState('')

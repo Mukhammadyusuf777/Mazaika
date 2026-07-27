@@ -491,6 +491,9 @@ export async function updateBot(
     menuButtonEnabled: boolean;
     menuButtonText: string;
     menuButtonUrl: string;
+    customDomain: string;
+    seoTitle: string;
+    seoDesc: string;
   }>
 ) {
   await updateDoc(doc(db, 'bots', botId), { ...data, updatedAt: serverTimestamp() })

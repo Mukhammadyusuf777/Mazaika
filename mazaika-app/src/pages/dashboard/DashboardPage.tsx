@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Bot, Settings, BarChart2, Zap, MessageSquare, TrendingUp, Users, Activity, Globe, Mail, Trash2, Sparkles, AppWindow } from 'lucide-react'
+import { Plus, Bot, Settings, BarChart2, Zap, MessageSquare, TrendingUp, Users, Activity, Globe, Trash2, Sparkles, AppWindow } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -44,10 +44,7 @@ export default function DashboardPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<string>('')
   const [creationType, setCreationType] = useState<'bot_only' | 'bot_and_webapp'>('bot_and_webapp')
 
-  // Settings tab state
-  const [profileName, setProfileName] = useState(user?.name || '')
-  const [profileEmail, setProfileEmail] = useState(user?.email || '')
-  const [settingsSaved, setSettingsSaved] = useState(false)
+  // Settings tab state removed as it's now in ProfilePage
 
   const fetchBots = async (userId?: string) => {
     const uid = userId || user?.id
@@ -126,27 +123,6 @@ export default function DashboardPage() {
     setNewBotToken('')
     setCreationType('bot_and_webapp')
     setShowCreateModal(true)
-  }
-
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      const { auth, updateProfile, updateEmail } = await import('../../api/firebase')
-      const user = auth.currentUser
-      if (user) {
-        if (profileName && profileName !== user.displayName) {
-          await updateProfile(user, { displayName: profileName })
-        }
-        if (profileEmail && profileEmail !== user.email) {
-          await updateEmail(user, profileEmail)
-        }
-      }
-      setSettingsSaved(true)
-      setTimeout(() => setSettingsSaved(false), 2000)
-    } catch (e: any) {
-      console.error('Settings save error:', e)
-      alert('Sozlamalarni saqlashda xatolik: ' + (e.message || 'Noma\'lum xatolik'))
-    }
   }
 
   const botProjects = bots.filter(b => b.projectType !== 'site')
