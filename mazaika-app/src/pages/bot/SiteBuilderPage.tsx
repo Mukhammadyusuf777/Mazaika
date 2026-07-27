@@ -161,8 +161,10 @@ export default function SiteBuilderPage() {
         if (data) {
           setConfig(data as SiteConfig)
           setSiteTitle(data.appName || '')
+          switchProject(botId, data)
         } else {
           setConfig(DEFAULT_CONFIG)
+          switchProject(botId, DEFAULT_CONFIG)
         }
       } catch (e) {
         console.error(e)

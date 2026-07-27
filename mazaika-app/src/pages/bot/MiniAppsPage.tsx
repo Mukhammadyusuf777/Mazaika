@@ -2,14 +2,21 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Copy, Eye, Save, Check, RefreshCw, Sparkles } from 'lucide-react'
 import { getBotById, updateBot, getSiteConfig, saveSiteConfig } from '../../api/firestore'
+import { useAICopilot } from '../../context/AICopilotContext'
 
 export default function MiniAppsPage() {
   const { botId } = useParams<{ botId: string }>()
   const navigate = useNavigate()
+  const { switchProject } = useAICopilot()
   const [loading, setLoading] = useState(true)
   const [savingBot, setSavingBot] = useState(false)
   const [savingDesign, setSavingDesign] = useState(false)
   const [copied, setCopied] = useState(false)
+
+  // Sync AI project ID
+  useEffect(() => {
+    if (botId) switchProject(botId, null)
+  }, [botId, switchProject])
 
   // Bot & App Title State
   const [appName, setAppName] = useState('Mini App')
