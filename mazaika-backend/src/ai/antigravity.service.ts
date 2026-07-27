@@ -128,13 +128,13 @@ Generate a JSON with this exact structure:
         "name": "[App name]",
         "purpose": "[What this app does]",
         "site_blocks": [...],
-        "source_code": "[Complete HTML mini app]"
+        "source_file": "miniapp.html"
       },
       {
         "type": "landing",
         "name": "[Landing name]",
         "purpose": "[Landing page purpose]",
-        "source_code": "[Complete HTML landing page]"
+        "source_file": "landing.html"
       }
     ],
     "integrations": [
@@ -145,6 +145,16 @@ Generate a JSON with this exact structure:
   },
   "explanation": "[Detailed explanation in user's language of what was created]"
 }
+
+CRITICAL: AFTER the JSON, you MUST output the actual code for the websites using <file> tags!
+<file path="miniapp.html">
+<!DOCTYPE html>
+... (High quality premium tailwind code) ...
+</file>
+<file path="landing.html">
+<!DOCTYPE html>
+... (High quality premium tailwind code) ...
+</file>
 `;
       } else if (isContinuationMode && !isBotRequest) {
         systemInstruction = `You are a Senior Web UI/UX Engineer.
@@ -241,10 +251,12 @@ CRITICAL CREATION RULES (PREMIUM DESIGN):
    - Add animations (hover effects, transitions, keyframe pulses).
    - Use beautiful gradients (e.g. from-indigo-500 via-purple-500 to-pink-500).
    - DO NOT output plain, boring, or "hello world" layouts. The site must look like a $10,000 professional web app.
-2. TAILWINDCSS: Use TailwindCSS via CDN (<script src="https://cdn.tailwindcss.com"></script>).
-3. ICONS & IMAGES: Use FontAwesome via CDN for icons. Use real Unsplash images (e.g., https://source.unsplash.com/random/800x600/?fashion,shoes) instead of blank placeholders.
+   - WRITE AT LEAST 250 LINES OF HTML/CSS/JS. DO NOT GIVE SIMPLE MOCKUPS. YOU MUST DELIVER A FULLY CODED, PRODUCTION-READY INTERFACE.
+2. TAILWINDCSS: Use TailwindCSS via CDN (<script src="https://cdn.tailwindcss.com"></script>). Add custom tailwind config in a script tag if necessary to define primary/secondary colors.
+3. ICONS & IMAGES: Use FontAwesome via CDN for icons (<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">). Use real Unsplash images (e.g., https://source.unsplash.com/random/800x600/?fashion,shoes) instead of blank placeholders.
 4. REAL DATA: Populate the site with realistic dummy data (products, prices, reviews) in the USER'S LANGUAGE.
 5. SPA NAVIGATION: Create a JS function to switch between views (e.g. Home, Catalog, Cart) by toggling 'hidden' classes. DO NOT use href="page.html".
+6. DO NOT BE LAZY. Write out all the code for headers, hero sections, feature grids, pricing tables, testimonials, and footers.
 
 For MINI APP generation, you MUST generate a 'source_code' field containing a complete, beautiful HTML file:
 - Include Telegram Mini App SDK: <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -702,42 +714,83 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then o
   private extractJsonObject(text: string): any {
     if (!text) return null;
 
-    let jsonPart = text;
+    let jsonText = text;
+    let files: Record<string, string> = {};
+
+    // 1. Extract <file path="...">...</file> blocks if they exist
+    const fileRegex = /<file\s+path=["']([^"']+)["']>([\s\S]*?)<\/file>/gi;
+    let match;
+    let hasFiles = false;
+    while ((match = fileRegex.exec(text)) !== null) {
+      files[match[1]] = match[2].trim();
+      hasFiles = true;
+    }
+
+    // 2. Remove the file blocks from the text to isolate the JSON metadata
+    if (hasFiles) {
+      jsonText = text.replace(/<file\s+path=["']([^"']+)["']>([\s\S]*?)<\/file>/gi, '').trim();
+    }
+
+    // 3. Clean up markdown wrappers
+    jsonText = jsonText.replace(/```json/gi, '').replace(/```/gi, '').trim();
+    
+    // Attempt to parse JSON
+    let parsedJson: any = null;
+    
+    // Find the first '{' and the last '}' in the remaining text
+    const firstBrace = jsonText.indexOf('{');
+    const lastBrace = jsonText.lastIndexOf('}');
+    
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      const jsonCandidate = jsonText.substring(firstBrace, lastBrace + 1);
+      try {
+        // Fix trailing commas often made by LLMs
+        const cleaned = jsonCandidate.replace(/,\s*([\]}])/g, '$1');
+        parsedJson = JSON.parse(cleaned);
+      } catch (e) {
+        this.logger.warn('JSON Parse failed on first attempt: ' + e);
+      }
+    }
+
     let htmlPart = '';
 
-    // Find where HTML code block or tag starts
-    const htmlStartMatch = text.match(/```html|<!DOCTYPE html>|<html/i);
-    if (htmlStartMatch && htmlStartMatch.index !== undefined) {
-      const idx = htmlStartMatch.index;
-      jsonPart = text.substring(0, idx);
-      htmlPart = text.substring(idx);
-    }
-
-    // Clean HTML part
-    htmlPart = htmlPart
-      .replace(/^```html\s*/i, '')
-      .replace(/```\s*$/i, '')
-      .trim();
-
-    // Clean JSON part
-    jsonPart = jsonPart.replace(/```json/gi, '').replace(/```/gi, '').trim();
-    jsonPart = jsonPart.replace(/,\s*([\]}])/g, '$1');
-
-    let parsedJson: any = null;
-    const jsonMatch = jsonPart.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      try {
-        parsedJson = JSON.parse(jsonMatch[0]);
-      } catch (e) {}
-    }
-
+    // If it STILL failed, maybe it's just raw HTML returned by mistake?
     if (!parsedJson) {
       parsedJson = {
         type: 'site',
         execution_mode: 'FULL_GENERATION',
         target_entity: 'site_only',
-        explanation: 'Адаптированный сайт успешно создан!'
+        explanation: 'Sayt muvaffaqiyatli yaratildi!'
       };
+      
+      if (!hasFiles) {
+        // If no JSON and no files, treat the entire output as HTML (legacy fallback)
+        htmlPart = text.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim();
+        parsedJson.html = htmlPart;
+        parsedJson.source_code = htmlPart;
+      }
+    } else {
+      // If parsedJson was successful and has html inside it, we use it for truncation detection
+      htmlPart = parsedJson.html || parsedJson.source_code || parsedJson.website_html || '';
+    }
+
+    // Merge extracted files into parsedJson
+    if (hasFiles) {
+      parsedJson.files = files;
+      if (files['index.html']) {
+        parsedJson.html = files['index.html'];
+        parsedJson.source_code = files['index.html'];
+        htmlPart = files['index.html'];
+      }
+      
+      // Inject files into ecosystem components if applicable
+      if (parsedJson.ecosystem && Array.isArray(parsedJson.ecosystem.components)) {
+        parsedJson.ecosystem.components.forEach((comp: any) => {
+          if (comp.source_file && files[comp.source_file]) {
+            comp.source_code = files[comp.source_file];
+          }
+        });
+      }
     }
 
     // Truncation detection & Auto-Closer for safe rendering
@@ -762,21 +815,15 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then o
           ? '⚡ Я создал основную структуру и первые страницы! Нажмите кнопку "Продолжить генерацию", чтобы я достроил остальные разделы!'
           : '⚡ Saytning asosiy qismi yaratildi! Qolgan sahifa va bo\'limlarni qo\'shish uchun "Davom ettirish" tugmasini bosing!';
       }
+      
+      if (hasFiles && files['index.html']) {
+        parsedJson.files['index.html'] = htmlPart;
+      }
       parsedJson.html = htmlPart;
+      parsedJson.source_code = htmlPart;
     }
 
-    // Parse VFS files: <file path="name.ext">...</file>
-    const files: Record<string, string> = {};
-    const fileRegex = /<file\s+path=["']([^"']+)["']>([\s\S]*?)<\/file>/gi;
-    let match;
-    while ((match = fileRegex.exec(text)) !== null) {
-      const path = match[1];
-      const content = match[2].trim();
-      files[path] = content;
-    }
-
-    if (Object.keys(files).length > 0) {
-      parsedJson.files = files;
+    if (hasFiles && Object.keys(files).length > 0) {
       
       let combinedHtml = files['index.html'] || files['index.tsx'] || '';
       if (combinedHtml) {
@@ -795,6 +842,7 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then o
         }
         
         parsedJson.html = combinedHtml; // Overwrite the monolith htmlPart
+        parsedJson.source_code = combinedHtml;
       }
     }
 

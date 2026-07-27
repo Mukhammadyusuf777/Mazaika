@@ -107,13 +107,13 @@ Generate a JSON with this exact structure:
         "name": "[App name]",
         "purpose": "[What this app does]",
         "site_blocks": [...],
-        "source_code": "[Complete HTML mini app]"
+        "source_file": "miniapp.html"
       },
       {
         "type": "landing",
         "name": "[Landing name]",
         "purpose": "[Landing page purpose]",
-        "source_code": "[Complete HTML landing page]"
+        "source_file": "landing.html"
       }
     ],
     "integrations": [
@@ -124,6 +124,16 @@ Generate a JSON with this exact structure:
   },
   "explanation": "[Detailed explanation in user's language of what was created]"
 }
+
+CRITICAL: AFTER the JSON, you MUST output the actual code for the websites using <file> tags!
+<file path="miniapp.html">
+<!DOCTYPE html>
+... (High quality premium tailwind code) ...
+</file>
+<file path="landing.html">
+<!DOCTYPE html>
+... (High quality premium tailwind code) ...
+</file>
 `;
             }
             else if (isContinuationMode && !isBotRequest) {
@@ -221,10 +231,12 @@ CRITICAL CREATION RULES (PREMIUM DESIGN):
    - Add animations (hover effects, transitions, keyframe pulses).
    - Use beautiful gradients (e.g. from-indigo-500 via-purple-500 to-pink-500).
    - DO NOT output plain, boring, or "hello world" layouts. The site must look like a $10,000 professional web app.
-2. TAILWINDCSS: Use TailwindCSS via CDN (<script src="https://cdn.tailwindcss.com"></script>).
-3. ICONS & IMAGES: Use FontAwesome via CDN for icons. Use real Unsplash images (e.g., https://source.unsplash.com/random/800x600/?fashion,shoes) instead of blank placeholders.
+   - WRITE AT LEAST 250 LINES OF HTML/CSS/JS. DO NOT GIVE SIMPLE MOCKUPS. YOU MUST DELIVER A FULLY CODED, PRODUCTION-READY INTERFACE.
+2. TAILWINDCSS: Use TailwindCSS via CDN (<script src="https://cdn.tailwindcss.com"></script>). Add custom tailwind config in a script tag if necessary to define primary/secondary colors.
+3. ICONS & IMAGES: Use FontAwesome via CDN for icons (<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">). Use real Unsplash images (e.g., https://source.unsplash.com/random/800x600/?fashion,shoes) instead of blank placeholders.
 4. REAL DATA: Populate the site with realistic dummy data (products, prices, reviews) in the USER'S LANGUAGE.
 5. SPA NAVIGATION: Create a JS function to switch between views (e.g. Home, Catalog, Cart) by toggling 'hidden' classes. DO NOT use href="page.html".
+6. DO NOT BE LAZY. Write out all the code for headers, hero sections, feature grids, pricing tables, testimonials, and footers.
 
 For MINI APP generation, you MUST generate a 'source_code' field containing a complete, beautiful HTML file:
 - Include Telegram Mini App SDK: <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -286,9 +298,12 @@ ${LANGUAGE_INSTRUCTION}
 
 If user attached an image of a bot flow/diagram — analyze it and create matching nodes.
 
-CRITICAL CREATION RULES:
-1. ALWAYS lay out nodes with proper x/y coordinates. Place nodes in a grid/branching layout, NOT a single vertical column. Use x values: 100, 400, 700, 1000 for different branches. Use y values that increase by 200 per row. For buttons creating branches, place child nodes with different x positions.
-2. Include 5-10 meaningful nodes for ANY bot request. Build a complete flow.
+CRITICAL CREATION RULES (ELITE $10,000 ARCHITECTURE):
+1. MASSIVE SCALE: You MUST generate a massive, fully-featured bot architecture with AT LEAST 20-25 nodes! Do not create simple bots. Include deeply nested flows (auth, catalog, cart, checkout, profile, support, FAQ, admin panel, etc).
+2. REALISTIC IMAGES: ALWAYS use real image URLs from Unsplash for products/headers. E.g., https://source.unsplash.com/800x600/?pizza
+3. COMPLEX LOGIC: Use 'javascript' nodes (or 'custom_code' if mapped) to calculate real things (like BMI, total price, discounts) and save to variables.
+4. CUSTOM HTML (MINI APP): For any web/app views inside the bot, generate a stunning 'custom_html' node with fully styled TailwindCSS or Glassmorphism UI.
+5. ALWAYS lay out nodes with proper x/y coordinates. Use x values: 100, 400, 700, 1000 for different branches. Use y values that increase by 200 per row. For buttons creating branches, place child nodes with different x positions.
 
 NODE TYPES (ONLY use these exact type strings):
 - start: {"id":"node_1", "type":"start", "position":{"x":100,"y":150}, "data":{"label":"Boshlash", "emoji":"▶", "color":"#10d974", "text":"Assalomu alaykum! Botga xush kelibsiz."}}
@@ -300,8 +315,10 @@ NODE TYPES (ONLY use these exact type strings):
 - timer: {"id":"node_7", "type":"timer", "position":{"x":100,"y":950}, "data":{"label":"Kechiktirish", "emoji":"⏱", "color":"#6366f1", "delayAmount":3, "delayUnit":"seconds"}}
 - payme: {"id":"node_8", "type":"payme", "position":{"x":400,"y":950}, "data":{"label":"To'lov (Payme)", "emoji":"💳", "color":"#10d974", "price":99000, "description":"Tovar uchun to'lov"}}
 - variable: {"id":"node_9", "type":"variable", "position":{"x":100,"y":1150}, "data":{"label":"O'zgaruvchi", "emoji":"📝", "color":"#a855f7", "variableName":"order_id", "variableValue":"{{timestamp}}"}}
-- photo: {"id":"node_10", "type":"photo", "position":{"x":400,"y":1150}, "data":{"label":"Rasm", "emoji":"📷", "color":"#0ea5e9", "fileId":"", "caption":"Mahsulot rasmi"}}
+- photo: {"id":"node_10", "type":"photo", "position":{"x":400,"y":1150}, "data":{"label":"Rasm", "emoji":"📷", "color":"#0ea5e9", "fileId":"https://source.unsplash.com/800x600/?nature", "caption":"Mahsulot rasmi"}}
 - aiReply: {"id":"node_11", "type":"aiReply", "position":{"x":100,"y":1350}, "data":{"label":"AI Javob", "emoji":"🧠", "color":"#a855f7", "model":"gemini-flash", "prompt":"Foydalanuvchining savoliga professional javob bering"}}
+- custom_code: {"id":"node_12", "type":"custom_code", "position":{"x":400,"y":1350}, "data":{"label":"Murakkab Logika", "emoji":"⚙️", "color":"#ef4444", "code":"// Write complex JS logic here (BMI calc, filtering, etc)"}}
+- custom_html: {"id":"node_13", "type":"custom_html", "position":{"x":700,"y":1350}, "data":{"label":"Mini App View", "emoji":"📱", "color":"#fbbf24", "html":"<div class='bg-gray-900 text-white p-4 rounded-xl'>...</div>"}}
 
 IMPORTANT rules for the message node:
 - To add buttons to a message, put them in the buttons array of the MESSAGE node (NOT a separate button_group node)
@@ -615,35 +632,63 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then o
     extractJsonObject(text) {
         if (!text)
             return null;
-        let jsonPart = text;
-        let htmlPart = '';
-        const htmlStartMatch = text.match(/```html|<!DOCTYPE html>|<html/i);
-        if (htmlStartMatch && htmlStartMatch.index !== undefined) {
-            const idx = htmlStartMatch.index;
-            jsonPart = text.substring(0, idx);
-            htmlPart = text.substring(idx);
+        let jsonText = text;
+        let files = {};
+        const fileRegex = /<file\s+path=["']([^"']+)["']>([\s\S]*?)<\/file>/gi;
+        let match;
+        let hasFiles = false;
+        while ((match = fileRegex.exec(text)) !== null) {
+            files[match[1]] = match[2].trim();
+            hasFiles = true;
         }
-        htmlPart = htmlPart
-            .replace(/^```html\s*/i, '')
-            .replace(/```\s*$/i, '')
-            .trim();
-        jsonPart = jsonPart.replace(/```json/gi, '').replace(/```/gi, '').trim();
-        jsonPart = jsonPart.replace(/,\s*([\]}])/g, '$1');
+        if (hasFiles) {
+            jsonText = text.replace(/<file\s+path=["']([^"']+)["']>([\s\S]*?)<\/file>/gi, '').trim();
+        }
+        jsonText = jsonText.replace(/```json/gi, '').replace(/```/gi, '').trim();
         let parsedJson = null;
-        const jsonMatch = jsonPart.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
+        const firstBrace = jsonText.indexOf('{');
+        const lastBrace = jsonText.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+            const jsonCandidate = jsonText.substring(firstBrace, lastBrace + 1);
             try {
-                parsedJson = JSON.parse(jsonMatch[0]);
+                const cleaned = jsonCandidate.replace(/,\s*([\]}])/g, '$1');
+                parsedJson = JSON.parse(cleaned);
             }
-            catch (e) { }
+            catch (e) {
+                this.logger.warn('JSON Parse failed on first attempt: ' + e);
+            }
         }
+        let htmlPart = '';
         if (!parsedJson) {
             parsedJson = {
                 type: 'site',
                 execution_mode: 'FULL_GENERATION',
                 target_entity: 'site_only',
-                explanation: 'Адаптированный сайт успешно создан!'
+                explanation: 'Sayt muvaffaqiyatli yaratildi!'
             };
+            if (!hasFiles) {
+                htmlPart = text.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim();
+                parsedJson.html = htmlPart;
+                parsedJson.source_code = htmlPart;
+            }
+        }
+        else {
+            htmlPart = parsedJson.html || parsedJson.source_code || parsedJson.website_html || '';
+        }
+        if (hasFiles) {
+            parsedJson.files = files;
+            if (files['index.html']) {
+                parsedJson.html = files['index.html'];
+                parsedJson.source_code = files['index.html'];
+                htmlPart = files['index.html'];
+            }
+            if (parsedJson.ecosystem && Array.isArray(parsedJson.ecosystem.components)) {
+                parsedJson.ecosystem.components.forEach((comp) => {
+                    if (comp.source_file && files[comp.source_file]) {
+                        comp.source_code = files[comp.source_file];
+                    }
+                });
+            }
         }
         if (htmlPart && htmlPart.toLowerCase().includes('<html')) {
             const lowerHtml = htmlPart.toLowerCase();
@@ -664,18 +709,13 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then o
                     ? '⚡ Я создал основную структуру и первые страницы! Нажмите кнопку "Продолжить генерацию", чтобы я достроил остальные разделы!'
                     : '⚡ Saytning asosiy qismi yaratildi! Qolgan sahifa va bo\'limlarni qo\'shish uchun "Davom ettirish" tugmasini bosing!';
             }
+            if (hasFiles && files['index.html']) {
+                parsedJson.files['index.html'] = htmlPart;
+            }
             parsedJson.html = htmlPart;
+            parsedJson.source_code = htmlPart;
         }
-        const files = {};
-        const fileRegex = /<file\s+path=["']([^"']+)["']>([\s\S]*?)<\/file>/gi;
-        let match;
-        while ((match = fileRegex.exec(text)) !== null) {
-            const path = match[1];
-            const content = match[2].trim();
-            files[path] = content;
-        }
-        if (Object.keys(files).length > 0) {
-            parsedJson.files = files;
+        if (hasFiles && Object.keys(files).length > 0) {
             let combinedHtml = files['index.html'] || files['index.tsx'] || '';
             if (combinedHtml) {
                 combinedHtml = combinedHtml.replace(/^```[a-z]*\s*/im, '').replace(/```\s*$/m, '');
@@ -690,6 +730,7 @@ STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then o
                     combinedHtml = combinedHtml.replace('</body>', `<script>\n${cleanJs}\n</script>\n</body>`);
                 }
                 parsedJson.html = combinedHtml;
+                parsedJson.source_code = combinedHtml;
             }
         }
         return parsedJson;
