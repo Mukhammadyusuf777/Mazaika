@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import './styles/global.css'
 import { useAuthStore } from './store/useAuthStore'
-import { AICopilotProvider } from './context/AICopilotContext'
+import FloatingAICopilot from './components/ai/FloatingAICopilot'
 import { ErrorBoundary } from './components/layout/ErrorBoundary'
 
 // Pages
@@ -37,10 +37,10 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <AICopilotProvider>
-          <Routes>
-            {/* Public */}
-            <Route path="/" element={<LandingPage />} />
+        <FloatingAICopilot projectType="bot" />
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             
@@ -71,7 +71,6 @@ function App() {
 
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
-        </AICopilotProvider>
       </BrowserRouter>
     </ErrorBoundary>
   )

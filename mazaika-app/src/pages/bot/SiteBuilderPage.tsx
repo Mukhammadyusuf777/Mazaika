@@ -9,7 +9,7 @@ import {
 import Editor from '@monaco-editor/react'
 
 import { getSiteConfig, saveSiteConfig, updateBot } from '../../api/firestore'
-import { useAICopilot } from '../../context/AICopilotContext'
+import { useChatStore } from '../../store/useChatStore'
 import { useAuthStore } from '../../store/useAuthStore'
 
 export interface Block {
@@ -81,7 +81,7 @@ export default function SiteBuilderPage() {
   const { botId } = useParams<{ botId: string }>()
   const { user } = useAuthStore()
   const [config, setConfig] = useState<SiteConfig>(DEFAULT_CONFIG)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'mobile'>('desktop')
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -128,7 +128,14 @@ export default function SiteBuilderPage() {
     window.open(blobUrl, '_blank')
   }
 
-  const { activeConfig, messages, sendMessage, isGenerating, clearChat, switchProject, activeProjectId } = useAICopilot()
+  const { activeConfig, chats, sendMessage, isLoading, clearMessages, projectId, setProjectId, setActiveConfig } = useChatStore()
+  const messages = chats[projectId] || []
+  const isGenerating = isLoading
+  const activeProjectId = projectId
+  const switchProject = (id: string, config: any) => {
+    setProjectId(id)
+    if (config !== null) setActiveConfig(config)
+  }
   const [promptInput, setPromptInput] = useState('')
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -137,8 +144,8 @@ export default function SiteBuilderPage() {
 
   // Sync botId with AI context
   useEffect(() => {
-    if (botId) switchProject(botId, null)
-  }, [botId])
+    if (botId) setProjectId(botId)
+  }, [botId, setProjectId])
 
   // Automatically switch to 'code' tab when AI starts generating
   useEffect(() => {
@@ -154,7 +161,7 @@ export default function SiteBuilderPage() {
   useEffect(() => {
     const fetchConfig = async () => {
       if (!botId) return
-      setIsLoading(true)
+      setIsSaving(true)
       setConfig(DEFAULT_CONFIG) // Clear immediately
       try {
         const data = await getSiteConfig(botId)
@@ -169,7 +176,7 @@ export default function SiteBuilderPage() {
       } catch (e) {
         console.error(e)
       } finally {
-        setIsLoading(false)
+        setIsSaving(false)
       }
     }
     fetchConfig()
@@ -257,7 +264,7 @@ export default function SiteBuilderPage() {
 
   const handleSave = async () => {
     if (!botId) return
-    setIsLoading(true)
+    setIsSaving(true)
     try {
       await saveSiteConfig(botId, config)
       if (config.appName) {
@@ -268,9 +275,10 @@ export default function SiteBuilderPage() {
     } catch (e) {
       alert('Saqlashda xatolik yuz berdi!')
     } finally {
-      setIsLoading(false)
+      setIsSaving(false)
     }
   }
+
 
   const copyMsg = (id: string, text: string) => {
     navigator.clipboard.writeText(text)
@@ -342,7 +350,7 @@ export default function SiteBuilderPage() {
             <button onClick={retryLast} title="Qayta yuborish" disabled={isGenerating || messages.length < 2} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 6, borderRadius: 7, display: 'flex', alignItems: 'center', opacity: (isGenerating || messages.length < 2) ? 0.3 : 1 }}>
               <RefreshCw size={13} />
             </button>
-            <button onClick={() => { if (window.confirm('Chatni tozalash?')) clearChat() }} title="Tozalash" style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 6, borderRadius: 7, display: 'flex', alignItems: 'center' }}>
+            <button onClick={() => { if (window.confirm('Chatni tozalash?')) clearMessages() }} title="Tozalash" style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 6, borderRadius: 7, display: 'flex', alignItems: 'center' }}>
               <Zap size={13} />
             </button>
           </div>
@@ -568,8 +576,8 @@ export default function SiteBuilderPage() {
             <button onClick={() => setIsSettingsOpen(true)} style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.05)', fontSize: 13, color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>
               <Sliders size={14} /> Sozlamalar
             </button>
-            <button onClick={handleSave} disabled={isLoading} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, background: '#1e90ff', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}>
-              <Save size={14} /> {isLoading ? 'Saqlanmoqda...' : 'Saqlash'}
+            <button onClick={handleSave} disabled={isSaving} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, background: '#1e90ff', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}>
+              <Save size={14} /> {isSaving ? 'Saqlanmoqda...' : 'Saqlash'}
             </button>
             <button onClick={handleOpenInNewTab} style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.05)', fontSize: 13, color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>
               <Eye size={14} /> Ochish

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Sparkles, X, Send, Bot, Maximize2, RefreshCw, Zap, CheckCircle2 } from 'lucide-react'
-import { useAICopilot } from '../../context/AICopilotContext'
+import { useChatStore } from '../../store/useChatStore'
 import './FloatingAgentWidget.css'
 
 export default function FloatingAgentWidget() {
@@ -13,33 +13,28 @@ export default function FloatingAgentWidget() {
     const botIdx = parts.indexOf('bot')
     return botIdx !== -1 && parts.length > botIdx + 1 ? parts[botIdx + 1] : null
   }
-  const {
-    isWidgetOpen,
-    toggleWidget,
-    activeElementId,
-    messages,
-    isGenerating,
-    sendMessage
-  } = useAICopilot()
+  const { isOpen, toggleOpen, chats, projectId, isLoading, sendMessage } = useChatStore()
+  const messages = chats[projectId] || []
+  const isGenerating = isLoading
+  const isWidgetOpen = isOpen
+  const toggleWidget = toggleOpen
 
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
-
+  
   useEffect(() => {
     if (isWidgetOpen) {
-      scrollToBottom()
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
     }
   }, [messages, isWidgetOpen])
 
   const handleSend = async () => {
     if (!input.trim() || isGenerating) return
-    const currentText = input
+    const text = input
     setInput('')
-    await sendMessage(currentText)
+    await sendMessage(text)
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -113,7 +108,7 @@ export default function FloatingAgentWidget() {
           <div className="agent-context-banner">
             <Zap size={12} style={{ color: '#1e90ff' }} />
             <span><b>Joylashuv:</b> {getContextName()}</span>
-            {activeElementId && <span style={{ color: '#00f5c4', marginLeft: 'auto' }}>[Element #{activeElementId}]</span>}
+            
           </div>
 
           {/* Chat Messages Body */}

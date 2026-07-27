@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Sparkles, Send, Bot, Save, Globe, Menu, X, MessageSquare, Trash2, Paperclip, Zap, Code2 } from 'lucide-react'
-import { useAICopilot } from '../../context/AICopilotContext'
+import { useChatStore } from '../../store/useChatStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { createBot, saveSiteConfig, getBotsByUser } from '../../api/firestore'
 import './AiWorkspacePage.css'
@@ -149,7 +149,14 @@ const renderCanvasBlock = (b: any, bIdx: number, activeConfig: any, onEditClick?
 export default function AiWorkspacePage() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { messages, isGenerating, sendMessage, activeConfig, setActiveConfig, clearChat, activeProjectId, switchProject } = useAICopilot()
+  const { chats, isLoading, sendMessage, activeConfig, setActiveConfig, clearMessages, projectId, setProjectId } = useChatStore()
+  const messages = chats[projectId] || []
+  const isGenerating = isLoading
+  const activeProjectId = projectId
+  const switchProject = (id: string, config: any) => {
+    setProjectId(id)
+    if (config !== null) setActiveConfig(config)
+  }
 
   const [aiTargetEntity, setAiTargetEntity] = useState<'bot_and_mini_app' | 'site_only'>('bot_and_mini_app')
   const [promptInput, setPromptInput] = useState('')
@@ -459,7 +466,7 @@ export default function AiWorkspacePage() {
 
           <button
             className="btn btn-ghost btn-sm"
-            onClick={clearChat}
+            onClick={clearMessages}
             style={{ gap: 4, color: '#ef4444', fontSize: 12, padding: '6px 10px' }}
           >
             <Trash2 size={14} /> Tozalash

@@ -14,7 +14,7 @@ import { useEditorStore, type FlowNode } from '../../store/useEditorStore'
 import { Plus, Save } from 'lucide-react'
 import { apiClient } from '../../api/apiClient'
 import { useParams } from 'react-router-dom'
-import { useAICopilot } from '../../context/AICopilotContext'
+import { useChatStore } from '../../store/useChatStore'
 import { saveSiteConfig, getSiteConfig } from '../../api/firestore'
 
 const edgeTypes = {
@@ -39,7 +39,11 @@ export default function EditorPage() {
   const [saved, setSaved] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
 
-  const { activeConfig, switchProject } = useAICopilot()
+  const { activeConfig, setProjectId, setActiveConfig } = useChatStore()
+  const switchProject = (id: string, config: any) => {
+    setProjectId(id)
+    if (config !== null) setActiveConfig(config)
+  }
 
   // Sync AI-generated bot_blocks into the ReactFlow editor and custom Mini App code
   useEffect(() => {

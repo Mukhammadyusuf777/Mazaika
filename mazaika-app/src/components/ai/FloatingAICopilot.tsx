@@ -4,7 +4,7 @@ import {
   Trash2, RefreshCw, Copy, Check, ChevronRight, Zap, Globe,
   MessageSquare, Code2, Palette, Layout, Plus, ImagePlus
 } from 'lucide-react'
-import { useAICopilot } from '../../context/AICopilotContext'
+import { useChatStore } from '../../store/useChatStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import './FloatingAICopilot.css'
 
@@ -73,7 +73,12 @@ const SITE_QUICK_PROMPTS = [
 ]
 
 export default function FloatingAICopilot({ projectType = 'bot' }: { projectType?: 'bot' | 'site' }) {
-  const { isWidgetOpen, setWidgetOpen, messages, isGenerating, sendMessage, clearChat, activeConfig } = useAICopilot()
+  const { isOpen, setIsOpen, chats, projectId, isLoading, sendMessage, clearMessages, activeConfig } = useChatStore()
+  const messages = chats[projectId] || []
+  const isGenerating = isLoading
+  const isWidgetOpen = isOpen
+  const setWidgetOpen = setIsOpen
+  
   const { user } = useAuthStore()
   const [promptInput, setPromptInput] = useState('')
   const [isMinimized, setIsMinimized] = useState(false)
@@ -197,7 +202,7 @@ export default function FloatingAICopilot({ projectType = 'bot' }: { projectType
           <button onClick={handleRetry} title="Qayta yuborish" disabled={isGenerating || messages.length < 2} className="fai-icon-btn">
             <RefreshCw size={13} />
           </button>
-          <button onClick={() => { if (window.confirm('Chatni tozalashni tasdiqlaysizmi?')) clearChat() }} title="Chatni tozalash" className="fai-icon-btn">
+          <button onClick={() => { if (window.confirm('Chatni tozalashni tasdiqlaysizmi?')) clearMessages() }} title="Chatni tozalash" className="fai-icon-btn">
             <Trash2 size={13} />
           </button>
           <button onClick={() => setIsMinimized(!isMinimized)} title={isMinimized ? 'Ochish' : 'Yig\'ish'} className="fai-icon-btn">
