@@ -33,6 +33,11 @@ IMPORTANT rules for the message node:
 - Buttons can be simple strings: {"buttons": ["Mahsulotlar", "Biz haqimizda", "Aloqa"]}
 - Or objects: {"buttons": [{"text": "Buyurtma", "url": "https://mazaika.pages.dev"}]}
 
+STAGED GENERATION (TOKEN LIMIT MANAGEMENT):
+If the bot architecture is too massive to finish in one response:
+1. Generate the core flow first (e.g. Menu, Auth, Catalog) and make sure it is a perfectly valid JSON array of nodes and edges.
+2. Tell the user in the JSON "explanation" field that this is Stage 1, and ask them to click "Continue generation" to finish the remaining nested flows.
+
 STRICT RULE: Return ONLY a valid JSON object without markdown fences.
 {
   "bot_blocks": [...],
@@ -61,6 +66,13 @@ CRITICAL CREATION RULES (PREMIUM DESIGN):
 For MINI APP generation:
 - Include Telegram Mini App SDK: <script src="https://telegram.org/js/telegram-web-app.js"></script>
 - Use window.Telegram.WebApp for initialization
+
+STAGED GENERATION (TOKEN LIMIT MANAGEMENT):
+If the requested project is too massive to write perfectly in a single response without hitting the token limit:
+1. Divide the task into stages.
+2. In this first response, write a COMPLETE, FUNCTIONAL foundation (Core UI, Main Page, Base Layout).
+3. Do NOT output half-finished or broken HTML/JSON files. Finish the tags properly.
+4. In the JSON "explanation" field, tell the user what was built and ask them to write "continue" or click "Continue generation" to finish the remaining pages/features.
 
 STRICT OUTPUT RULES:
 1. Return ONLY valid JSON for metadata WITHOUT markdown fences.
