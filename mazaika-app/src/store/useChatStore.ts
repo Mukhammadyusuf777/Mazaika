@@ -162,6 +162,16 @@ export const useChatStore = create<ChatState>()(
               patchOperations: res.execution_mode === 'PATCH' ? res.patch_operations : undefined
             }
             addMessage(agentMsg)
+            
+            // ✅ AUTO-SYNC: Update activeConfig on FULL_GENERATION
+            if (res.execution_mode === 'FULL_GENERATION' && res.project_data) {
+              const { activeConfig, setActiveConfig } = get()
+              setActiveConfig({
+                ...activeConfig,
+                ...res.project_data,
+                has_more: res.project_data.has_more
+              })
+            }
           }
           return res
         } catch (e) {

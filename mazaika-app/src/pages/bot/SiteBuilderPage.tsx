@@ -200,7 +200,8 @@ export default function SiteBuilderPage() {
       appName: activeConfig.appName || config.appName,
       blocks: activeConfig.blocks || config.blocks,
       source_code: newHtml,
-      files: activeConfig.files || config.files
+      files: activeConfig.files || config.files,
+      has_more: activeConfig.has_more || false
     };
     
     setConfig(nextConfig)

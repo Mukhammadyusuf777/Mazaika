@@ -562,6 +562,22 @@ export default function AiWorkspacePage() {
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Continuation Button */}
+          {Boolean(activeConfig?.has_more) && !isGenerating && (
+            <button
+              onClick={() => handleSendPrompt('Continue generation')}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                width: 'calc(100% - 32px)', padding: '12px', borderRadius: 12, margin: '16px auto 0',
+                background: 'linear-gradient(135deg, #10d974, #1e90ff)', color: '#fff',
+                border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                boxShadow: '0 4px 16px rgba(16,217,116,0.3)', transition: 'all 0.2s', animation: 'pulse 2s infinite'
+              }}
+            >
+              <Zap size={16} /> ⚡ Continue generation
+            </button>
+          )}
+
           {/* Image Preview Bar */}
           {imagePreview && (
             <div style={{

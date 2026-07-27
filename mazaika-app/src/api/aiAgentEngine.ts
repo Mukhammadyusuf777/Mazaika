@@ -125,7 +125,8 @@ export async function queryAntigravityAgent(
           // ✅ FIX: bot_edges was missing — now preserved
           bot_blocks: projectData.bot_blocks || [],
           bot_edges: projectData.bot_edges || [],
-          site_blocks: projectData.site_blocks || []
+          site_blocks: projectData.site_blocks || [],
+          has_more: data.has_more || false
         }
       }
     } else {
