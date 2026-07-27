@@ -120,6 +120,28 @@ const renderCanvasBlock = (b: any, bIdx: number, activeConfig: any, onEditClick?
           <pre style={{ margin: 0, fontSize: 10, color: '#d4d4d4', overflow: 'auto', maxHeight: 80 }}>{b.code?.slice(0, 200)}{b.code?.length > 200 ? '...' : ''}</pre>
         </div>
       )}
+
+      {b.type === 'custom_html' && (
+        <div style={{ padding: '8px 12px', background: 'rgba(251,191,36,0.08)', borderRadius: 10, borderLeft: '3px solid #fbbf24', marginTop: 8 }}>
+          <div style={{ fontSize: 10, color: '#fbbf24', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>📱 Mini App / Web View</div>
+          <div
+            style={{ 
+              borderRadius: 8, 
+              overflow: 'hidden', 
+              background: '#fff', 
+              border: '1px solid rgba(255,255,255,0.1)',
+              position: 'relative'
+            }}
+          >
+            <iframe
+              srcDoc={b.html || b.code || '<div>Bo\'sh HTML</div>'}
+              style={{ width: '100%', height: 200, border: 'none' }}
+              sandbox="allow-scripts allow-same-origin"
+              title="Mini App View"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -142,7 +164,7 @@ export default function AiWorkspacePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Show bot code panel
-  const [showBotCode, setShowBotCode] = useState(false)
+  const [showCodeEditor, setShowCodeEditor] = useState(false)
 
   const handleEditBlockClick = (b: any) => {
     setPromptInput(`Ushbu blokni o'zgartiring (ID: ${b.id}, Tip: ${b.type}): `)
@@ -425,13 +447,13 @@ export default function AiWorkspacePage() {
             </button>
           </div>
 
-          {activeConfig?.bot_code && (
+          {(activeConfig?.bot_code || activeConfig?.source_code) && (
             <button
               className="btn btn-ghost btn-sm"
-              onClick={() => setShowBotCode(prev => !prev)}
+              onClick={() => setShowCodeEditor(prev => !prev)}
               style={{ gap: 4, fontSize: 11, color: '#a855f7' }}
             >
-              <Code2 size={14} /> Bot Kodi
+              <Code2 size={14} /> Kod muharriri
             </button>
           )}
 
@@ -476,38 +498,58 @@ export default function AiWorkspacePage() {
           </div>
 
           {/* Chat Messages */}
-          <div className="agent-messages-body" style={{ flex: 1 }}>
-            {messages.map((msg) => (
-              <div key={msg.id} className={`agent-message-item ${msg.sender}`} style={{ maxWidth: '92%' }}>
-                {/* Image preview in message */}
-                {msg.imageUrl && (
-                  <img
-                    src={msg.imageUrl}
-                    alt="uploaded"
-                    style={{ width: '100%', maxWidth: 200, borderRadius: 8, marginBottom: 8, display: 'block' }}
-                  />
-                )}
-                {msg.text}
-                {msg.projectData && (
-                  <div style={{ marginTop: 8, padding: 10, background: 'rgba(30,144,255,0.1)', borderRadius: 10, border: '1px solid rgba(30,144,255,0.3)', fontSize: 12 }}>
-                    <span style={{ fontWeight: 700, color: '#1e90ff' }}>🚀 Generatsiya yakunlandi:</span> {msg.projectData.appName || msg.projectData.ecosystem?.name}
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
-                      {msg.projectData.target_entity === 'ecosystem' ? (
-                        <>• Ekosistem: {msg.projectData.ecosystem?.components?.length || 0} komponent</>
-                      ) : (
-                        <>• Bloklar: {msg.projectData.blocks?.length || msg.projectData.bot_blocks?.length || 0}</>
-                      )}
+          <div className="agent-messages-body" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, padding: '16px 20px', overflowY: 'auto' }}>
+            {messages.map((msg) => {
+              const isUser = msg.sender === 'user'
+              const timeString = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00'
+              
+              return (
+                <div key={msg.id} className={`tg-msg-row ${isUser ? 'user-row' : 'bot-row'}`}>
+                  {!isUser && <div className="tg-avatar">🛒</div>}
+                  <div className={`tg-bubble ${isUser ? 'user' : 'bot'}`}>
+                    
+                    {/* Image preview in message */}
+                    {msg.imageUrl && (
+                      <img
+                        src={msg.imageUrl}
+                        alt="uploaded"
+                        style={{ width: '100%', maxWidth: 200, borderRadius: 8, marginBottom: 8, display: 'block' }}
+                      />
+                    )}
+                    
+                    {/* Message text */}
+                    {msg.text}
+                    
+                    {/* Project Data block */}
+                    {msg.projectData && (
+                      <div style={{ marginTop: 8, padding: 10, background: 'rgba(255,255,255,0.05)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', fontSize: 12 }}>
+                        <span style={{ fontWeight: 700, color: '#00f5d4' }}>🚀 Generatsiya yakunlandi:</span> {msg.projectData.appName || msg.projectData.ecosystem?.name}
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>
+                          {msg.projectData.target_entity === 'ecosystem' ? (
+                            <>• Ekosistem: {msg.projectData.ecosystem?.components?.length || 0} komponent</>
+                          ) : (
+                            <>• Bloklar: {msg.projectData.blocks?.length || msg.projectData.bot_blocks?.length || 0}</>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Telegram Timestamp & Read Receipt */}
+                    <div className="tg-meta">
+                      <span>{timeString}</span>
+                      {isUser && <span className="tg-tick" style={{ color: '#4fc3f7' }}>✓✓</span>}
                     </div>
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              )
+            })}
+            
             {isGenerating && (
-              <div className="agent-message-item agent" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div className="thinking-dots">
+              <div className="tg-msg-row bot-row">
+                <div className="tg-avatar" style={{opacity: 0.6}}>🛒</div>
+                <div className="hero-mockup-typing" style={{ background: '#182533', padding: '10px 14px', borderRadius: '4px 12px 12px 12px' }}>
                   <span></span><span></span><span></span>
                 </div>
-                <span style={{ fontSize: 13 }}>Mazaika AI o'ylamoqda...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -593,33 +635,57 @@ export default function AiWorkspacePage() {
           {activeConfig ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, height: '100%', width: '100%' }}>
 
-              {/* Bot Code Panel (shown when toggled) */}
-              {showBotCode && activeConfig.bot_code && (
+              {/* Universal Code Editor Panel (shown when toggled) */}
+              {showCodeEditor && (activeConfig.bot_code || activeConfig.source_code) && (
                 <div style={{
                   width: '100%',
                   background: '#0d1117',
                   border: '1px solid rgba(168,85,247,0.3)',
                   borderRadius: 12,
                   padding: 16,
-                  maxHeight: '40%',
-                  overflow: 'hidden',
+                  height: '50%',
                   display: 'flex',
-                  flexDirection: 'column'
+                  flexDirection: 'column',
+                  gap: 12,
+                  zIndex: 10
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#a855f7', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <Code2 size={14} /> Bot Kodi (Node.js)
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#a855f7', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Code2 size={16} /> Kod Muharriri
                     </span>
                     <button
-                      onClick={() => navigator.clipboard.writeText(activeConfig.bot_code)}
-                      style={{ background: 'rgba(168,85,247,0.15)', border: 'none', color: '#a855f7', borderRadius: 6, padding: '4px 10px', fontSize: 11, cursor: 'pointer' }}
+                      onClick={() => setShowCodeEditor(false)}
+                      style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
                     >
-                      Nusxalash
+                      Yopish
                     </button>
                   </div>
-                  <pre style={{ margin: 0, fontSize: 11, color: '#e2e8f0', overflowY: 'auto', flex: 1, lineHeight: 1.5 }}>
-                    {activeConfig.bot_code}
-                  </pre>
+                  
+                  <div style={{ display: 'flex', gap: 16, flex: 1, overflow: 'hidden' }}>
+                    {activeConfig.bot_code && (
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <span style={{ fontSize: 11, color: '#94a3b8' }}>🤖 Bot Node.js Kodi</span>
+                        <textarea 
+                          value={activeConfig.bot_code}
+                          onChange={(e) => setActiveConfig((prev: any) => ({ ...prev, bot_code: e.target.value }))}
+                          style={{ flex: 1, background: '#050505', color: '#10d974', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: 12, fontFamily: 'monospace', fontSize: 11, resize: 'none', outline: 'none' }}
+                          spellCheck={false}
+                        />
+                      </div>
+                    )}
+                    
+                    {activeConfig.source_code && (
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <span style={{ fontSize: 11, color: '#94a3b8' }}>🌐 Veb/Mini App (HTML/CSS/JS)</span>
+                        <textarea 
+                          value={activeConfig.source_code}
+                          onChange={(e) => setActiveConfig((prev: any) => ({ ...prev, source_code: e.target.value }))}
+                          style={{ flex: 1, background: '#050505', color: '#38bdf8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: 12, fontFamily: 'monospace', fontSize: 11, resize: 'none', outline: 'none' }}
+                          spellCheck={false}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 

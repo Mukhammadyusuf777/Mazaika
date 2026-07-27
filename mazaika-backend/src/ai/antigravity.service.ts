@@ -306,9 +306,12 @@ ${LANGUAGE_INSTRUCTION}
 
 If user attached an image of a bot flow/diagram — analyze it and create matching nodes.
 
-CRITICAL CREATION RULES:
-1. ALWAYS lay out nodes with proper x/y coordinates. Place nodes in a grid/branching layout, NOT a single vertical column. Use x values: 100, 400, 700, 1000 for different branches. Use y values that increase by 200 per row. For buttons creating branches, place child nodes with different x positions.
-2. Include 5-10 meaningful nodes for ANY bot request. Build a complete flow.
+CRITICAL CREATION RULES (ELITE $10,000 ARCHITECTURE):
+1. MASSIVE SCALE: You MUST generate a massive, fully-featured bot architecture with AT LEAST 20-25 nodes! Do not create simple bots. Include deeply nested flows (auth, catalog, cart, checkout, profile, support, FAQ, admin panel, etc).
+2. REALISTIC IMAGES: ALWAYS use real image URLs from Unsplash for products/headers. E.g., https://source.unsplash.com/800x600/?pizza
+3. COMPLEX LOGIC: Use 'javascript' nodes (or 'custom_code' if mapped) to calculate real things (like BMI, total price, discounts) and save to variables.
+4. CUSTOM HTML (MINI APP): For any web/app views inside the bot, generate a stunning 'custom_html' node with fully styled TailwindCSS or Glassmorphism UI.
+5. ALWAYS lay out nodes with proper x/y coordinates. Use x values: 100, 400, 700, 1000 for different branches. Use y values that increase by 200 per row. For buttons creating branches, place child nodes with different x positions.
 
 NODE TYPES (ONLY use these exact type strings):
 - start: {"id":"node_1", "type":"start", "position":{"x":100,"y":150}, "data":{"label":"Boshlash", "emoji":"▶", "color":"#10d974", "text":"Assalomu alaykum! Botga xush kelibsiz."}}
@@ -320,8 +323,10 @@ NODE TYPES (ONLY use these exact type strings):
 - timer: {"id":"node_7", "type":"timer", "position":{"x":100,"y":950}, "data":{"label":"Kechiktirish", "emoji":"⏱", "color":"#6366f1", "delayAmount":3, "delayUnit":"seconds"}}
 - payme: {"id":"node_8", "type":"payme", "position":{"x":400,"y":950}, "data":{"label":"To'lov (Payme)", "emoji":"💳", "color":"#10d974", "price":99000, "description":"Tovar uchun to'lov"}}
 - variable: {"id":"node_9", "type":"variable", "position":{"x":100,"y":1150}, "data":{"label":"O'zgaruvchi", "emoji":"📝", "color":"#a855f7", "variableName":"order_id", "variableValue":"{{timestamp}}"}}
-- photo: {"id":"node_10", "type":"photo", "position":{"x":400,"y":1150}, "data":{"label":"Rasm", "emoji":"📷", "color":"#0ea5e9", "fileId":"", "caption":"Mahsulot rasmi"}}
+- photo: {"id":"node_10", "type":"photo", "position":{"x":400,"y":1150}, "data":{"label":"Rasm", "emoji":"📷", "color":"#0ea5e9", "fileId":"https://source.unsplash.com/800x600/?nature", "caption":"Mahsulot rasmi"}}
 - aiReply: {"id":"node_11", "type":"aiReply", "position":{"x":100,"y":1350}, "data":{"label":"AI Javob", "emoji":"🧠", "color":"#a855f7", "model":"gemini-flash", "prompt":"Foydalanuvchining savoliga professional javob bering"}}
+- custom_code: {"id":"node_12", "type":"custom_code", "position":{"x":400,"y":1350}, "data":{"label":"Murakkab Logika", "emoji":"⚙️", "color":"#ef4444", "code":"// Write complex JS logic here (BMI calc, filtering, etc)"}}
+- custom_html: {"id":"node_13", "type":"custom_html", "position":{"x":700,"y":1350}, "data":{"label":"Mini App View", "emoji":"📱", "color":"#fbbf24", "html":"<div class='bg-gray-900 text-white p-4 rounded-xl'>...</div>"}}
 
 IMPORTANT rules for the message node:
 - To add buttons to a message, put them in the buttons array of the MESSAGE node (NOT a separate button_group node)
