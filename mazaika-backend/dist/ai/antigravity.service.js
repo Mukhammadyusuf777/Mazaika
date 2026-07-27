@@ -183,15 +183,82 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                 parsedJson = JSON.parse(cleaned);
             }
             catch (e) {
-                this.logger.warn('JSON Parse failed');
+                this.logger.warn('JSON Parse failed on first attempt: ' + e);
             }
         }
-        if (!parsedJson)
-            parsedJson = {};
+        let htmlPart = '';
+        if (!parsedJson) {
+            parsedJson = {
+                type: 'site',
+                execution_mode: 'FULL_GENERATION',
+                target_entity: 'site_only',
+                explanation: 'Sayt muvaffaqiyatli yaratildi!'
+            };
+            if (!hasFiles) {
+                htmlPart = text.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim();
+                parsedJson.html = htmlPart;
+                parsedJson.source_code = htmlPart;
+            }
+        }
+        else {
+            htmlPart = parsedJson.html || parsedJson.source_code || parsedJson.website_html || '';
+        }
         if (hasFiles) {
             parsedJson.files = files;
             if (files['index.html']) {
                 parsedJson.html = files['index.html'];
+                parsedJson.source_code = files['index.html'];
+                htmlPart = files['index.html'];
+            }
+            if (parsedJson.ecosystem && Array.isArray(parsedJson.ecosystem.components)) {
+                parsedJson.ecosystem.components.forEach((comp) => {
+                    if (comp.source_file && files[comp.source_file]) {
+                        comp.source_code = files[comp.source_file];
+                    }
+                });
+            }
+        }
+        if (htmlPart && htmlPart.toLowerCase().includes('<html')) {
+            const lowerHtml = htmlPart.toLowerCase();
+            if (!lowerHtml.includes('</html>')) {
+                parsedJson.has_more = true;
+                this.logger.warn('⚠️ HTML was truncated by token limit. Auto-closing tags & setting has_more=true');
+                if (lowerHtml.lastIndexOf('<style') > lowerHtml.lastIndexOf('</style>')) {
+                    htmlPart += '\n</style>';
+                }
+                if (lowerHtml.lastIndexOf('<script') > lowerHtml.lastIndexOf('</script>')) {
+                    htmlPart += '\n</script>';
+                }
+                if (!lowerHtml.includes('</body>')) {
+                    htmlPart += '\n</body>';
+                }
+                htmlPart += '\n</html>';
+                parsedJson.explanation = isRawRussian(text)
+                    ? '⚡ Я создал основную структуру и первые страницы! Нажмите кнопку "Продолжить генерацию", чтобы я достроил остальные разделы!'
+                    : '⚡ Saytning asosiy qismi yaratildi! Qolgan sahifa va bo\'limlarni qo\'shish uchun "Davom ettirish" tugmasini bosing!';
+            }
+            if (hasFiles && files['index.html']) {
+                parsedJson.files['index.html'] = htmlPart;
+            }
+            parsedJson.html = htmlPart;
+            parsedJson.source_code = htmlPart;
+        }
+        if (hasFiles && Object.keys(files).length > 0) {
+            let combinedHtml = files['index.html'] || files['index.tsx'] || '';
+            if (combinedHtml) {
+                combinedHtml = combinedHtml.replace(/^```[a-z]*\s*/im, '').replace(/```\s*$/m, '');
+                const cssContent = files['style.css'] || files['index.css'] || files['styles.css'];
+                const jsContent = files['script.js'] || files['main.js'] || files['app.js'];
+                if (cssContent && combinedHtml.includes('</head>')) {
+                    const cleanCss = cssContent.replace(/^```[a-z]*\s*/im, '').replace(/```\s*$/m, '');
+                    combinedHtml = combinedHtml.replace('</head>', `<style>\n${cleanCss}\n</style>\n</head>`);
+                }
+                if (jsContent && combinedHtml.includes('</body>')) {
+                    const cleanJs = jsContent.replace(/^```[a-z]*\s*/im, '').replace(/```\s*$/m, '');
+                    combinedHtml = combinedHtml.replace('</body>', `<script>\n${cleanJs}\n</script>\n</body>`);
+                }
+                parsedJson.html = combinedHtml;
+                parsedJson.source_code = combinedHtml;
             }
         }
         return parsedJson;
@@ -201,4 +268,8 @@ exports.AntigravityService = AntigravityService;
 exports.AntigravityService = AntigravityService = AntigravityService_1 = __decorate([
     (0, common_1.Injectable)()
 ], AntigravityService);
+function isRawRussian(rawInput) {
+    const text = typeof rawInput === 'string' ? rawInput : (rawInput?.prompt || '');
+    return /[а-яА-ЯёЁ]/.test(text);
+}
 //# sourceMappingURL=antigravity.service.js.map

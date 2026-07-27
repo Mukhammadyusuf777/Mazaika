@@ -203,6 +203,7 @@ export class AntigravityService {
     let jsonText = text;
     let files: Record<string, string> = {};
 
+    // 1. Extract <file path="...">...</file> blocks if they exist
     const fileRegex = /<file\s+path=["']([^"']+)["']>([\s\S]*?)<\/file>/gi;
     let match;
     let hasFiles = false;
@@ -211,35 +212,129 @@ export class AntigravityService {
       hasFiles = true;
     }
 
+    // 2. Remove the file blocks from the text to isolate the JSON metadata
     if (hasFiles) {
       jsonText = text.replace(/<file\s+path=["']([^"']+)["']>([\s\S]*?)<\/file>/gi, '').trim();
     }
 
+    // 3. Clean up markdown wrappers
     jsonText = jsonText.replace(/\`\`\`json/gi, '').replace(/\`\`\`/gi, '').trim();
     
+    // Attempt to parse JSON
     let parsedJson: any = null;
+    
+    // Find the first '{' and the last '}' in the remaining text
     const firstBrace = jsonText.indexOf('{');
     const lastBrace = jsonText.lastIndexOf('}');
     
     if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
       const jsonCandidate = jsonText.substring(firstBrace, lastBrace + 1);
       try {
+        // Fix trailing commas often made by LLMs
         const cleaned = jsonCandidate.replace(/,\s*([\]}])/g, '$1');
         parsedJson = JSON.parse(cleaned);
       } catch (e) {
-        this.logger.warn('JSON Parse failed');
+        this.logger.warn('JSON Parse failed on first attempt: ' + e);
       }
     }
 
-    if (!parsedJson) parsedJson = {};
+    let htmlPart = '';
 
+    // If it STILL failed, maybe it's just raw HTML returned by mistake?
+    if (!parsedJson) {
+      parsedJson = {
+        type: 'site',
+        execution_mode: 'FULL_GENERATION',
+        target_entity: 'site_only',
+        explanation: 'Sayt muvaffaqiyatli yaratildi!'
+      };
+      
+      if (!hasFiles) {
+        // If no JSON and no files, treat the entire output as HTML (legacy fallback)
+        htmlPart = text.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim();
+        parsedJson.html = htmlPart;
+        parsedJson.source_code = htmlPart;
+      }
+    } else {
+      // If parsedJson was successful and has html inside it, we use it for truncation detection
+      htmlPart = parsedJson.html || parsedJson.source_code || parsedJson.website_html || '';
+    }
+
+    // Merge extracted files into parsedJson
     if (hasFiles) {
       parsedJson.files = files;
       if (files['index.html']) {
         parsedJson.html = files['index.html'];
+        parsedJson.source_code = files['index.html'];
+        htmlPart = files['index.html'];
+      }
+      
+      // Inject files into ecosystem components if applicable
+      if (parsedJson.ecosystem && Array.isArray(parsedJson.ecosystem.components)) {
+        parsedJson.ecosystem.components.forEach((comp: any) => {
+          if (comp.source_file && files[comp.source_file]) {
+            comp.source_code = files[comp.source_file];
+          }
+        });
+      }
+    }
+
+    // Truncation detection & Auto-Closer for safe rendering
+    if (htmlPart && htmlPart.toLowerCase().includes('<html')) {
+      const lowerHtml = htmlPart.toLowerCase();
+      if (!lowerHtml.includes('</html>')) {
+        parsedJson.has_more = true;
+        this.logger.warn('⚠️ HTML was truncated by token limit. Auto-closing tags & setting has_more=true');
+        
+        if (lowerHtml.lastIndexOf('<style') > lowerHtml.lastIndexOf('</style>')) {
+          htmlPart += '\n</style>';
+        }
+        if (lowerHtml.lastIndexOf('<script') > lowerHtml.lastIndexOf('</script>')) {
+          htmlPart += '\n</script>';
+        }
+        if (!lowerHtml.includes('</body>')) {
+          htmlPart += '\n</body>';
+        }
+        htmlPart += '\n</html>';
+        parsedJson.explanation = isRawRussian(text)
+          ? '⚡ Я создал основную структуру и первые страницы! Нажмите кнопку "Продолжить генерацию", чтобы я достроил остальные разделы!'
+          : '⚡ Saytning asosiy qismi yaratildi! Qolgan sahifa va bo\'limlarni qo\'shish uchun "Davom ettirish" tugmasini bosing!';
+      }
+      
+      if (hasFiles && files['index.html']) {
+        parsedJson.files['index.html'] = htmlPart;
+      }
+      parsedJson.html = htmlPart;
+      parsedJson.source_code = htmlPart;
+    }
+
+    if (hasFiles && Object.keys(files).length > 0) {
+      let combinedHtml = files['index.html'] || files['index.tsx'] || '';
+      if (combinedHtml) {
+        combinedHtml = combinedHtml.replace(/^```[a-z]*\s*/im, '').replace(/```\s*$/m, '');
+        const cssContent = files['style.css'] || files['index.css'] || files['styles.css'];
+        const jsContent = files['script.js'] || files['main.js'] || files['app.js'];
+        
+        if (cssContent && combinedHtml.includes('</head>')) {
+           const cleanCss = cssContent.replace(/^```[a-z]*\s*/im, '').replace(/```\s*$/m, '');
+           combinedHtml = combinedHtml.replace('</head>', `<style>\n${cleanCss}\n</style>\n</head>`);
+        }
+        
+        if (jsContent && combinedHtml.includes('</body>')) {
+           const cleanJs = jsContent.replace(/^```[a-z]*\s*/im, '').replace(/```\s*$/m, '');
+           combinedHtml = combinedHtml.replace('</body>', `<script>\n${cleanJs}\n</script>\n</body>`);
+        }
+        
+        parsedJson.html = combinedHtml; // Overwrite the monolith htmlPart
+        parsedJson.source_code = combinedHtml;
       }
     }
 
     return parsedJson;
   }
+}
+
+function isRawRussian(rawInput: any): boolean {
+  const text = typeof rawInput === 'string' ? rawInput : (rawInput?.prompt || '');
+  return /[а-яА-ЯёЁ]/.test(text);
 }
