@@ -299,10 +299,10 @@ ${LANGUAGE_INSTRUCTION}
 If user attached an image of a bot flow/diagram — analyze it and create matching nodes.
 
 CRITICAL CREATION RULES (ELITE $10,000 ARCHITECTURE):
-1. MASSIVE SCALE: You MUST generate a massive, fully-featured bot architecture with AT LEAST 20-25 nodes! Do not create simple bots. Include deeply nested flows (auth, catalog, cart, checkout, profile, support, FAQ, admin panel, etc).
+1. MASSIVE SCALE: You MUST generate a massive, fully-featured bot architecture with AT LEAST 15-20 nodes! Do not create simple bots. Include deeply nested flows (auth, catalog, cart, checkout, profile, support, FAQ, admin panel, etc).
 2. REALISTIC IMAGES: ALWAYS use real image URLs from Unsplash for products/headers. E.g., https://source.unsplash.com/800x600/?pizza
 3. COMPLEX LOGIC: Use 'javascript' nodes (or 'custom_code' if mapped) to calculate real things (like BMI, total price, discounts) and save to variables.
-4. CUSTOM HTML (MINI APP): For any web/app views inside the bot, generate a stunning 'custom_html' node with fully styled TailwindCSS or Glassmorphism UI.
+4. CUSTOM HTML (MINI APP): The user is creating a Bot + Mini App ecosystem! You MUST generate a stunning, premium Mini App UI. Do not just use 'custom_html' node. You MUST output the actual complete HTML code at the bottom of your response using <file path="index.html">...</file>.
 5. ALWAYS lay out nodes with proper x/y coordinates. Use x values: 100, 400, 700, 1000 for different branches. Use y values that increase by 200 per row. For buttons creating branches, place child nodes with different x positions.
 
 NODE TYPES (ONLY use these exact type strings):
@@ -317,54 +317,48 @@ NODE TYPES (ONLY use these exact type strings):
 - variable: {"id":"node_9", "type":"variable", "position":{"x":100,"y":1150}, "data":{"label":"O'zgaruvchi", "emoji":"📝", "color":"#a855f7", "variableName":"order_id", "variableValue":"{{timestamp}}"}}
 - photo: {"id":"node_10", "type":"photo", "position":{"x":400,"y":1150}, "data":{"label":"Rasm", "emoji":"📷", "color":"#0ea5e9", "fileId":"https://source.unsplash.com/800x600/?nature", "caption":"Mahsulot rasmi"}}
 - aiReply: {"id":"node_11", "type":"aiReply", "position":{"x":100,"y":1350}, "data":{"label":"AI Javob", "emoji":"🧠", "color":"#a855f7", "model":"gemini-flash", "prompt":"Foydalanuvchining savoliga professional javob bering"}}
-- custom_code: {"id":"node_12", "type":"custom_code", "position":{"x":400,"y":1350}, "data":{"label":"Murakkab Logika", "emoji":"⚙️", "color":"#ef4444", "code":"// Write complex JS logic here (BMI calc, filtering, etc)"}}
-- custom_html: {"id":"node_13", "type":"custom_html", "position":{"x":700,"y":1350}, "data":{"label":"Mini App View", "emoji":"📱", "color":"#fbbf24", "html":"<div class='bg-gray-900 text-white p-4 rounded-xl'>...</div>"}}
 
 IMPORTANT rules for the message node:
 - To add buttons to a message, put them in the buttons array of the MESSAGE node (NOT a separate button_group node)
 - Buttons can be simple strings: {"buttons": ["Mahsulotlar", "Biz haqimizda", "Aloqa"]}
-- Or objects: {"buttons": [{"text": "Buyurtma", "nextNodeId": "node_3"}]}
+- Or objects: {"buttons": [{"text": "Buyurtma", "url": "https://mazaika.pages.dev"}]}
 
-For BOT generation, you MUST also generate a 'bot_code' field in your JSON response that contains a complete, working Node.js Telegram bot script:
-- Use node-telegram-bot-api library
-- The code must handle the bot flows defined in bot_blocks
-- Include proper /start command handler
-- Include inline keyboard buttons and callback handlers
-- Include payment handling if the bot has payment flows
-- The code should be production-ready
+For BOT generation, you MUST also generate a 'bot_code' field in your JSON response that contains a complete, working Node.js Telegram bot script.
 
-Example bot_code structure:
-\`\`\`javascript
-const TelegramBot = require('node-telegram-bot-api');
-const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
-
-// Start command
-bot.onText(/\\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, 'Welcome!', {
-    reply_markup: { inline_keyboard: [[{ text: 'Menu', callback_data: 'menu' }]] }
-  });
-});
-
-// Callback handler  
-bot.on('callback_query', (query) => {
-  // handle callbacks
-});
-\`\`\`
-
-STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then optionally output files:
+STRICT RULE: Return ONLY a valid JSON object without markdown fences, and then IMMEDIATELY AFTER THE JSON, YOU MUST OUTPUT THE MINI APP CODE IN A FILE TAG!
 {
   "type": "bot_and_mini_app",
   "execution_mode": "FULL_GENERATION",
   "target_entity": "bot_and_mini_app",
-  "title": "Telegram Bot",
-  "explanation": "Telegram botingiz yaratildi! Bot ushbu imkoniyatlarga ega: xabarlar, savollar, shartli mantiq, HTTP API so'rovlar, to'lov tizimlari (Payme, Click), rasmlar va AI javoblar.",
+  "title": "Telegram Bot & App",
+  "explanation": "Telegram bot va Web App yaratildi!",
   "project_data": {
     "appName": "Bot Name",
-    "bot_blocks": [{"id":"node_1","type":"start","position":{"x":100,"y":150},"data":{"label":"Boshlash","emoji":"▶","color":"#10d974","text":"Salom!"}}],
-    "bot_edges": [{"id":"e1","source":"node_1","target":"node_2"}],
-    "bot_code": "const TelegramBot = require('node-telegram-bot-api');\\n..."
+    "bot_blocks": [...],
+    "bot_edges": [...],
+    "bot_code": "..."
   }
-}`;
+}
+
+<file path="index.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <!-- WRITE AT LEAST 250 LINES OF BEAUTIFUL PREMIUM UI CODE HERE FOR THE MINI APP -->
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+  </script>
+</body>
+</html>
+</file>
+`;
             }
             const cfAccountId = (rawInput?.cfAccountId ||
                 process.env.CLOUDFLARE_ACCOUNT_ID ||

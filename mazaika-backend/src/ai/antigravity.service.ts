@@ -307,7 +307,18 @@ JSON OUTPUT:
 </file>
 `;
 
-      } elseCRITICAL CREATION RULES (ELITE $10,000 ARCHITECTURE):
+      } else {
+        systemInstruction = `You are a Telegram Bot Architect.
+${historyContext}
+${imageInstruction}
+
+USER REQUEST: "${promptText}"
+
+${LANGUAGE_INSTRUCTION}
+
+If user attached an image of a bot flow/diagram — analyze it and create matching nodes.
+
+CRITICAL CREATION RULES (ELITE $10,000 ARCHITECTURE):
 1. MASSIVE SCALE: You MUST generate a massive, fully-featured bot architecture with AT LEAST 15-20 nodes! Do not create simple bots. Include deeply nested flows (auth, catalog, cart, checkout, profile, support, FAQ, admin panel, etc).
 2. REALISTIC IMAGES: ALWAYS use real image URLs from Unsplash for products/headers. E.g., https://source.unsplash.com/800x600/?pizza
 3. COMPLEX LOGIC: Use 'javascript' nodes (or 'custom_code' if mapped) to calculate real things (like BMI, total price, discounts) and save to variables.
