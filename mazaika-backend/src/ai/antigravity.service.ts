@@ -155,6 +155,8 @@ export class AntigravityService {
     userPrompt: string
   ): Promise<any> {
     const models = [
+      'google/gemini-3.1-pro',
+      'anthropic/claude-fable-5',
       '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
       '@cf/meta/llama-3.1-70b-instruct',
       '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
