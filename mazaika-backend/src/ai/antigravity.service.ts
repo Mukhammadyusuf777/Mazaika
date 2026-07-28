@@ -348,10 +348,12 @@ export class AntigravityService {
     }
 
     // Truncation detection & Auto-Closer for safe rendering
+    let hasMore = false;
+    
     if (htmlPart && htmlPart.toLowerCase().includes('<html')) {
       const lowerHtml = htmlPart.toLowerCase();
       if (!lowerHtml.includes('</html>')) {
-        parsedJson.has_more = true;
+        hasMore = true;
         this.logger.warn('⚠️ HTML was truncated by token limit. Auto-closing tags & setting has_more=true');
         
         if (lowerHtml.lastIndexOf('<style') > lowerHtml.lastIndexOf('</style>')) {
@@ -374,6 +376,19 @@ export class AntigravityService {
       }
       parsedJson.html = htmlPart;
       parsedJson.source_code = htmlPart;
+    } else if (text) {
+      // Cloudflare AI fallback: if Llama just talks and says 'continue'
+      const lowerText = text.toLowerCase();
+      if (lowerText.includes('continue') || lowerText.includes('продолжить') || lowerText.includes('davom ettirish')) {
+        hasMore = true;
+      }
+    }
+    
+    if (hasMore) {
+      parsedJson.has_more = true;
+      // Force FULL_GENERATION so frontend saves it in activeConfig
+      parsedJson.execution_mode = 'FULL_GENERATION';
+      parsedJson.target_entity = 'site_only';
     }
 
     if (hasFiles && Object.keys(files).length > 0) {

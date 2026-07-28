@@ -272,10 +272,11 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                 });
             }
         }
+        let hasMore = false;
         if (htmlPart && htmlPart.toLowerCase().includes('<html')) {
             const lowerHtml = htmlPart.toLowerCase();
             if (!lowerHtml.includes('</html>')) {
-                parsedJson.has_more = true;
+                hasMore = true;
                 this.logger.warn('⚠️ HTML was truncated by token limit. Auto-closing tags & setting has_more=true');
                 if (lowerHtml.lastIndexOf('<style') > lowerHtml.lastIndexOf('</style>')) {
                     htmlPart += '\n</style>';
@@ -296,6 +297,17 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
             }
             parsedJson.html = htmlPart;
             parsedJson.source_code = htmlPart;
+        }
+        else if (text) {
+            const lowerText = text.toLowerCase();
+            if (lowerText.includes('continue') || lowerText.includes('продолжить') || lowerText.includes('davom ettirish')) {
+                hasMore = true;
+            }
+        }
+        if (hasMore) {
+            parsedJson.has_more = true;
+            parsedJson.execution_mode = 'FULL_GENERATION';
+            parsedJson.target_entity = 'site_only';
         }
         if (hasFiles && Object.keys(files).length > 0) {
             let combinedHtml = files['index.html'] || files['index.tsx'] || '';
