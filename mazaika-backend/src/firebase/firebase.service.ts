@@ -67,13 +67,13 @@ export class FirebaseService {
     }
   }
 
-  async getBotConfig(botId: string): Promise<any> {
+  async getBot(botId: string): Promise<any> {
     if (!this.dbInstance) return null;
     try {
       const doc = await this.dbInstance.collection('bots').doc(botId).get();
-      return doc.exists ? doc.data() : null;
+      return doc.exists ? { id: doc.id, ...doc.data() } : null;
     } catch (e: any) {
-      this.logger.error(`Error in getBotConfig: ${e.message}`);
+      this.logger.error(`Error in getBot: ${e.message}`);
       return null;
     }
   }
