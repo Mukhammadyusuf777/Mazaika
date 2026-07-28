@@ -37,19 +37,17 @@ export class FirebaseService {
         } else {
           // 3) Bypassed/Development fallback using default settings (useful if running in public tests)
           this.logger.warn(
-            `No Firebase credentials found! Detected: FIREBASE_PROJECT_ID=${!!process.env.FIREBASE_PROJECT_ID}, FIREBASE_PRIVATE_KEY=${!!process.env.FIREBASE_PRIVATE_KEY}, FIREBASE_CLIENT_EMAIL=${!!process.env.FIREBASE_CLIENT_EMAIL}. Using default initializeApp for mazaika-uz project`
+            `No Firebase credentials found! Detected: FIREBASE_PROJECT_ID=${!!process.env.FIREBASE_PROJECT_ID}, FIREBASE_PRIVATE_KEY=${!!process.env.FIREBASE_PRIVATE_KEY}, FIREBASE_CLIENT_EMAIL=${!!process.env.FIREBASE_CLIENT_EMAIL}. Firebase is DISABLED locally.`
           );
-          try {
-            initializeApp({ projectId: 'mazaika-uz' });
-          } catch (e: any) {
-            this.logger.error(`Failed to initialize default Firebase: ${e.message}`);
-          }
+          // Do not initialize app or firestore to prevent fatal NO_ADC_FOUND crash
+          this.dbInstance = null as any;
         }
+      } else {
+        this.dbInstance = getFirestore();
       }
-      this.dbInstance = getFirestore();
     } catch (e: any) {
       this.logger.error(`Firebase initialization failed: ${e.message}`);
-      this.dbInstance = getFirestore();
+      this.dbInstance = null as any;
     }
   }
 

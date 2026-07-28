@@ -77,17 +77,17 @@ let FirebaseService = FirebaseService_1 = class FirebaseService {
                     });
                 }
                 else {
-                    this.logger.warn(`No Firebase credentials found! Detected: FIREBASE_PROJECT_ID=${!!process.env.FIREBASE_PROJECT_ID}, FIREBASE_PRIVATE_KEY=${!!process.env.FIREBASE_PRIVATE_KEY}, FIREBASE_CLIENT_EMAIL=${!!process.env.FIREBASE_CLIENT_EMAIL}. Using default initializeApp for mazaika-uz project`);
-                    (0, app_1.initializeApp)({
-                        projectId: 'mazaika-uz',
-                    });
+                    this.logger.warn(`No Firebase credentials found! Detected: FIREBASE_PROJECT_ID=${!!process.env.FIREBASE_PROJECT_ID}, FIREBASE_PRIVATE_KEY=${!!process.env.FIREBASE_PRIVATE_KEY}, FIREBASE_CLIENT_EMAIL=${!!process.env.FIREBASE_CLIENT_EMAIL}. Firebase is DISABLED locally.`);
+                    this.dbInstance = null;
                 }
             }
-            this.dbInstance = (0, firestore_1.getFirestore)();
+            else {
+                this.dbInstance = (0, firestore_1.getFirestore)();
+            }
         }
         catch (e) {
             this.logger.error(`Firebase initialization failed: ${e.message}`);
-            this.dbInstance = (0, firestore_1.getFirestore)();
+            this.dbInstance = null;
         }
     }
     get db() {
