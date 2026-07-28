@@ -319,13 +319,38 @@ export class AntigravityService {
       
       if (!hasFiles) {
         // If no JSON and no files, treat the entire output as HTML (legacy fallback)
-        htmlPart = text.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim();
+        let rawHtml = text.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim();
+        
+        // Self-heal: extract just the HTML part if it's mixed with conversational text
+        const fallbackMatch = rawHtml.match(/(?:<!DOCTYPE html>\s*)?<html[\s\S]*/i);
+        if (fallbackMatch) {
+          htmlPart = fallbackMatch[0];
+          parsedJson.explanation = isRawRussian(text) ? rawHtml.replace(fallbackMatch[0], '').trim() || 'Код готов!' : rawHtml.replace(fallbackMatch[0], '').trim() || 'Kod tayyor!';
+        } else {
+          htmlPart = rawHtml;
+        }
+        
         parsedJson.html = htmlPart;
         parsedJson.source_code = htmlPart;
       }
     } else {
       // If parsedJson was successful and has html inside it, we use it for truncation detection
       htmlPart = parsedJson.html || parsedJson.source_code || parsedJson.website_html || '';
+      
+      // Self-heal: Llama 3.3 sometimes puts the entire HTML inside the 'explanation' field
+      if (!htmlPart && typeof parsedJson.explanation === 'string' && parsedJson.explanation.includes('<html')) {
+        const fallbackMatch = parsedJson.explanation.match(/(?:<!DOCTYPE html>\s*)?<html[\s\S]*/i);
+        if (fallbackMatch) {
+          htmlPart = fallbackMatch[0];
+          parsedJson.source_code = htmlPart;
+          parsedJson.html = htmlPart;
+          // Clean up the explanation
+          parsedJson.explanation = parsedJson.explanation.replace(fallbackMatch[0], '').trim();
+          if (!parsedJson.explanation) {
+            parsedJson.explanation = isRawRussian(text) ? 'Готово! Код сгенерирован.' : 'Tayyor! Kod yaratildi.';
+          }
+        }
+      }
     }
 
     // Merge extracted files into parsedJson
