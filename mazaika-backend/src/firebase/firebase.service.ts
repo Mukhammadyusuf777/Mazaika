@@ -56,26 +56,37 @@ export class FirebaseService {
   }
 
   // Helper CRUD methods
-  async getActiveBots() {
-    const snap = await this.db.collection('bots').where('status', '==', 'active').get();
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+  async getActiveBots(): Promise<any[]> {
+    if (!this.dbInstance) return [];
+    try {
+      const snapshot = await this.dbInstance.collection('bots').where('status', '==', 'active').get();
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (e: any) {
+      this.logger.error(`Error in getActiveBots: ${e.message}`);
+      return [];
+    }
   }
 
-  async getBot(botId: string) {
-    const snap = await this.db.collection('bots').doc(botId).get();
-    if (snap.exists) {
-      return { id: snap.id, ...snap.data() } as any;
+  async getBotConfig(botId: string): Promise<any> {
+    if (!this.dbInstance) return null;
+    try {
+      const doc = await this.dbInstance.collection('bots').doc(botId).get();
+      return doc.exists ? doc.data() : null;
+    } catch (e: any) {
+      this.logger.error(`Error in getBotConfig: ${e.message}`);
+      return null;
     }
-    return null;
   }
 
   async updateBotStatus(botId: string, status: string) {
-    await this.db.collection('bots').doc(botId).update({ status, updatedAt: new Date() }).catch(() => {});
+    if (!this.dbInstance) return;
+    await this.dbInstance.collection('bots').doc(botId).update({ status, updatedAt: new Date() }).catch(() => {});
   }
 
   async getBotWorkflow(botId: string) {
+    if (!this.dbInstance) return null;
     // In our Firestore setup, main workflow is stored at bots/{botId}/workflows/main
-    const snap = await this.db.collection('bots').doc(botId).collection('workflows').doc('main').get();
+    const snap = await this.dbInstance.collection('bots').doc(botId).collection('workflows').doc('main').get();
     if (snap.exists) {
       return { id: snap.id, ...snap.data() } as any;
     }
@@ -83,7 +94,8 @@ export class FirebaseService {
   }
 
   async getContact(botId: string, telegramId: string) {
-    const snap = await this.db
+    if (!this.dbInstance) return null;
+    const snap = await this.dbInstance
       .collection('bots')
       .doc(botId)
       .collection('contacts')
@@ -99,7 +111,8 @@ export class FirebaseService {
   }
 
   async createContact(botId: string, data: any) {
-    const ref = this.db.collection('bots').doc(botId).collection('contacts').doc();
+    if (!this.dbInstance) return data;
+    const ref = this.dbInstance.collection('bots').doc(botId).collection('contacts').doc();
     const contactData = {
       ...data,
       id: ref.id,
@@ -111,7 +124,8 @@ export class FirebaseService {
   }
 
   async updateContactState(botId: string, contactId: string, state: string) {
-    await this.db
+    if (!this.dbInstance) return;
+    await this.dbInstance
       .collection('bots')
       .doc(botId)
       .collection('contacts')
@@ -120,7 +134,8 @@ export class FirebaseService {
   }
 
   async addMessage(botId: string, contactId: string, text: string, direction: 'inbound' | 'outbound') {
-    await this.db
+    if (!this.dbInstance) return;
+    await this.dbInstance
       .collection('bots')
       .doc(botId)
       .collection('contacts')
