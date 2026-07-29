@@ -40,6 +40,8 @@ export interface ChatState {
     imageMimeType?: string,
     activeConfig?: any
   ) => Promise<AgentResponsePayload | null>
+
+  migrateHistory: (oldId: string, newId: string) => void
 }
 
 function makeWelcomeMessages(projectId: string): ChatMessage[] {
@@ -117,6 +119,18 @@ export const useChatStore = create<ChatState>()(
             [id]: makeWelcomeMessages(id)
           }
         }
+      }),
+
+      migrateHistory: (oldId, newId) => set((state) => {
+        const history = state.chats[oldId] || []
+        // We only migrate if there's actual history (more than just welcome message)
+        if (history.length <= 1) return {} 
+        
+        const newChats = { ...state.chats }
+        newChats[newId] = history.map(msg => ({ ...msg })) // clone
+        delete newChats[oldId] // optional, clean up workspace chat
+        
+        return { chats: newChats, projectId: newId }
       }),
 
       sendMessage: async (text, overrideMode, targetEntity, imageBase64, imageMimeType, activeConfig) => {

@@ -65,10 +65,11 @@ CRITICAL CREATION RULES (PREMIUM DESIGN):
    - DO NOT output plain, boring, or "hello world" layouts. The site must look like a $10,000 professional web app.
    - WRITE AT LEAST 250 LINES OF HTML/CSS/JS. DO NOT GIVE SIMPLE MOCKUPS. YOU MUST DELIVER A FULLY CODED, PRODUCTION-READY INTERFACE.
 2. TAILWINDCSS: Use TailwindCSS via CDN (<script src="https://cdn.tailwindcss.com"></script>). Add custom tailwind config in a script tag if necessary to define primary/secondary colors.
-3. ICONS & IMAGES: Use FontAwesome via CDN for icons (<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">). Use real Unsplash images (e.g., https://source.unsplash.com/random/800x600/?fashion,shoes) instead of blank placeholders.
+3. ICONS & IMAGES: Use FontAwesome via CDN for icons (<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">). Use real Picsum images (e.g., https://picsum.photos/seed/your-keyword/800/600) instead of blank placeholders.
 4. REAL DATA: Populate the site with realistic dummy data (products, prices, reviews) in the USER'S LANGUAGE.
 5. SPA NAVIGATION: Create a JS function to switch between views (e.g. Home, Catalog, Cart) by toggling 'hidden' classes. DO NOT use href="page.html".
 6. DO NOT BE LAZY. Write out all the code for headers, hero sections, feature grids, pricing tables, testimonials, and footers.
+7. LLAMA WARNING: You MUST generate complete, working HTML. DO NOT output partial tags or stop mid-sentence. You MUST finish the HTML document (</html>).
 
 For MINI APP generation:
 - Include Telegram Mini App SDK: <script src="https://telegram.org/js/telegram-web-app.js"></script>

@@ -350,6 +350,9 @@ export default function AiWorkspacePage() {
 
       alert(`🎉 "${activeConfig.appName || 'AI Loyiha'}" muvaffaqiyatli saqlandi!`)
 
+      // ✅ Migrate the chat history from the workspace workspace to the new project
+      useChatStore.getState().migrateHistory(projectId, newBot.id)
+
       if (activeConfig.target_entity === 'bot') {
         navigate(`/bot/${newBot.id}/editor`)
       } else if (activeConfig.target_entity === 'bot_and_mini_app') {
