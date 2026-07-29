@@ -94,28 +94,47 @@ let FirebaseService = FirebaseService_1 = class FirebaseService {
         return this.dbInstance;
     }
     async getActiveBots() {
-        const snap = await this.db.collection('bots').where('status', '==', 'active').get();
-        return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (!this.dbInstance)
+            return [];
+        try {
+            const snapshot = await this.dbInstance.collection('bots').where('status', '==', 'active').get();
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+        catch (e) {
+            this.logger.error(`Error in getActiveBots: ${e.message}`);
+            return [];
+        }
     }
     async getBot(botId) {
-        const snap = await this.db.collection('bots').doc(botId).get();
-        if (snap.exists) {
-            return { id: snap.id, ...snap.data() };
+        if (!this.dbInstance)
+            return null;
+        try {
+            const doc = await this.dbInstance.collection('bots').doc(botId).get();
+            return doc.exists ? { id: doc.id, ...doc.data() } : null;
         }
-        return null;
+        catch (e) {
+            this.logger.error(`Error in getBot: ${e.message}`);
+            return null;
+        }
     }
     async updateBotStatus(botId, status) {
-        await this.db.collection('bots').doc(botId).update({ status, updatedAt: new Date() }).catch(() => { });
+        if (!this.dbInstance)
+            return;
+        await this.dbInstance.collection('bots').doc(botId).update({ status, updatedAt: new Date() }).catch(() => { });
     }
     async getBotWorkflow(botId) {
-        const snap = await this.db.collection('bots').doc(botId).collection('workflows').doc('main').get();
+        if (!this.dbInstance)
+            return null;
+        const snap = await this.dbInstance.collection('bots').doc(botId).collection('workflows').doc('main').get();
         if (snap.exists) {
             return { id: snap.id, ...snap.data() };
         }
         return null;
     }
     async getContact(botId, telegramId) {
-        const snap = await this.db
+        if (!this.dbInstance)
+            return null;
+        const snap = await this.dbInstance
             .collection('bots')
             .doc(botId)
             .collection('contacts')
@@ -129,7 +148,9 @@ let FirebaseService = FirebaseService_1 = class FirebaseService {
         return null;
     }
     async createContact(botId, data) {
-        const ref = this.db.collection('bots').doc(botId).collection('contacts').doc();
+        if (!this.dbInstance)
+            return data;
+        const ref = this.dbInstance.collection('bots').doc(botId).collection('contacts').doc();
         const contactData = {
             ...data,
             id: ref.id,
@@ -140,7 +161,9 @@ let FirebaseService = FirebaseService_1 = class FirebaseService {
         return contactData;
     }
     async updateContactState(botId, contactId, state) {
-        await this.db
+        if (!this.dbInstance)
+            return;
+        await this.dbInstance
             .collection('bots')
             .doc(botId)
             .collection('contacts')
@@ -148,7 +171,9 @@ let FirebaseService = FirebaseService_1 = class FirebaseService {
             .update({ state, updatedAt: new Date() });
     }
     async addMessage(botId, contactId, text, direction) {
-        await this.db
+        if (!this.dbInstance)
+            return;
+        await this.dbInstance
             .collection('bots')
             .doc(botId)
             .collection('contacts')

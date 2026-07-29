@@ -13,11 +13,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.WorkflowService = void 0;
 const common_1 = require("@nestjs/common");
 const firebase_service_1 = require("../firebase/firebase.service");
+const mazaika_engine_service_1 = require("../cloud/mazaika-engine.service");
 let WorkflowService = WorkflowService_1 = class WorkflowService {
     firebaseService;
+    mazaikaEngineService;
     logger = new common_1.Logger(WorkflowService_1.name);
-    constructor(firebaseService) {
+    constructor(firebaseService, mazaikaEngineService) {
         this.firebaseService = firebaseService;
+        this.mazaikaEngineService = mazaikaEngineService;
     }
     async processIncomingMessage(botId, telegramId, text, ctx) {
         this.logger.log(`Processing input from ${telegramId} for bot ${botId}: ${text}`);
@@ -629,21 +632,13 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 const target = node.data?.variable;
                 if (code && target) {
                     try {
-                        const isValidIdentifier = (key) => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key);
-                        const validKeys = Object.keys(variables).filter(isValidIdentifier);
-                        const validVals = validKeys.map(k => {
-                            const val = variables[k];
-                            if (typeof val === 'string') {
-                                const num = Number(val);
-                                if (!isNaN(num) && val.trim() !== '') {
-                                    return num;
-                                }
-                            }
-                            return val;
-                        });
-                        const func = new Function('variables', ...validKeys, `return (${code})`);
-                        const result = func(variables, ...validVals);
-                        return { wait: false, stateUpdates: { variables: { ...variables, [target]: result } } };
+                        const result = await this.mazaikaEngineService.runUserScript(botId, code, variables);
+                        if (result && !result.error) {
+                            return { wait: false, stateUpdates: { variables: { ...variables, [target]: result } } };
+                        }
+                        else if (result && result.error) {
+                            this.logger.error(`JS Engine error in node ${node.id} for bot ${botId}: ${result.error}`);
+                        }
                     }
                     catch (err) {
                         this.logger.error(`JS Node error in node ${node.id} for bot ${botId}: ${err.message}`);
@@ -1229,6 +1224,7 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
 exports.WorkflowService = WorkflowService;
 exports.WorkflowService = WorkflowService = WorkflowService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [firebase_service_1.FirebaseService])
+    __metadata("design:paramtypes", [firebase_service_1.FirebaseService,
+        mazaika_engine_service_1.MazaikaEngineService])
 ], WorkflowService);
 //# sourceMappingURL=workflow.service.js.map

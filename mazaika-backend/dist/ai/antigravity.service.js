@@ -5,13 +5,21 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 var AntigravityService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AntigravityService = void 0;
 const common_1 = require("@nestjs/common");
 const prompts_1 = require("./prompts");
+const mazaika_db_service_1 = require("../cloud/mazaika-db.service");
 let AntigravityService = AntigravityService_1 = class AntigravityService {
+    mazaikaDb;
     logger = new common_1.Logger(AntigravityService_1.name);
+    constructor(mazaikaDb) {
+        this.mazaikaDb = mazaikaDb;
+    }
     async generate(rawInput) {
         return this.generateFullProject(rawInput);
     }
@@ -92,6 +100,11 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                     bot_code: botData?.bot_code || ''
                 }
             };
+            if (finalResult.html) {
+                const slug = promptText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').substring(0, 20) || 'default-site';
+                await this.mazaikaDb.save('global', `site_${slug}`, finalResult);
+                finalResult.explanation += `\n\n🌐 Sening sayting Mazaika Cloud'da tayyor: /cloud/sites/${slug}`;
+            }
             return finalResult;
         }
         catch (error) {
@@ -119,6 +132,8 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
     }
     async callCloudflareAI(accountId, apiToken, systemInstruction, userPrompt) {
         const models = [
+            'google/gemini-3.1-pro',
+            'anthropic/claude-fable-5',
             '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
             '@cf/meta/llama-3.1-70b-instruct',
             '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
@@ -249,13 +264,33 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                 explanation: 'Sayt muvaffaqiyatli yaratildi!'
             };
             if (!hasFiles) {
-                htmlPart = text.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim();
+                let rawHtml = text.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim();
+                const fallbackMatch = rawHtml.match(/(?:<!DOCTYPE html>\s*)?<html[\s\S]*/i);
+                if (fallbackMatch) {
+                    htmlPart = fallbackMatch[0];
+                    parsedJson.explanation = isRawRussian(text) ? rawHtml.replace(fallbackMatch[0], '').trim() || 'Код готов!' : rawHtml.replace(fallbackMatch[0], '').trim() || 'Kod tayyor!';
+                }
+                else {
+                    htmlPart = rawHtml;
+                }
                 parsedJson.html = htmlPart;
                 parsedJson.source_code = htmlPart;
             }
         }
         else {
             htmlPart = parsedJson.html || parsedJson.source_code || parsedJson.website_html || '';
+            if (!htmlPart && typeof parsedJson.explanation === 'string' && parsedJson.explanation.includes('<html')) {
+                const fallbackMatch = parsedJson.explanation.match(/(?:<!DOCTYPE html>\s*)?<html[\s\S]*/i);
+                if (fallbackMatch) {
+                    htmlPart = fallbackMatch[0];
+                    parsedJson.source_code = htmlPart;
+                    parsedJson.html = htmlPart;
+                    parsedJson.explanation = parsedJson.explanation.replace(fallbackMatch[0], '').trim();
+                    if (!parsedJson.explanation) {
+                        parsedJson.explanation = isRawRussian(text) ? 'Готово! Код сгенерирован.' : 'Tayyor! Kod yaratildi.';
+                    }
+                }
+            }
         }
         if (hasFiles) {
             parsedJson.files = files;
@@ -332,7 +367,8 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
 };
 exports.AntigravityService = AntigravityService;
 exports.AntigravityService = AntigravityService = AntigravityService_1 = __decorate([
-    (0, common_1.Injectable)()
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [mazaika_db_service_1.MazaikaDbService])
 ], AntigravityService);
 function isRawRussian(rawInput) {
     const text = typeof rawInput === 'string' ? rawInput : (rawInput?.prompt || '');

@@ -26,8 +26,15 @@ NODE TYPES (ONLY use these exact type strings):
 - question: {"id":"node_3", "type":"question", "position":{"x":100,"y":350}, "data":{"label":"Savol", "emoji":"❓", "color":"#ffb830", "text":"Ismingizni kiriting:", "variable":"user_name"}}
 - condition: {"id":"node_4", "type":"condition", "position":{"x":400,"y":550}, "data":{"label":"Tekshiruv", "emoji":"🔀", "color":"#ff6b6b", "variable":"user_name", "operator":"!=", "value":""}}
 - http: {"id":"node_5", "type":"http", "position":{"x":100,"y":750}, "data":{"label":"API So'rov", "emoji":"🌐", "color":"#00f5c4", "url":"https://api.example.com/data", "method":"GET", "resultVariable":"api_result"}}
-- javascript: {"id":"node_6", "type":"javascript", "position":{"x":400,"y":750}, "data":{"label":"Kod", "emoji":"⚡", "color":"#ff9f43", "code":"return { message: 'Hello ' + variables.user_name };"}}
+- javascript: {"id":"node_6", "type":"javascript", "position":{"x":400,"y":750}, "data":{"label":"Kod", "emoji":"⚡", "color":"#ff9f43", "variable":"output", "code":"await Mazaika.db.save('orders', input); output = { success: true };"}}
 
+Mazaika Cloud Core (JavaScript Execution Context):
+- Your code runs in a sandboxed Node.js environment.
+- The input data from previous nodes is available in the 'input' object (e.g., input.user_name).
+- To return data to the next node, assign it to the 'output' variable.
+- You can use 'await Mazaika.db.save(collection, data)' to save data to the internal database.
+- You can use 'await Mazaika.db.get(collection)' to retrieve data.
+- Do NOT use require(), fetch, external databases, or third-party APIs for storage. Mazaika handles everything natively!
 IMPORTANT rules for the message node:
 - To add buttons to a message, put them in the buttons array of the MESSAGE node (NOT a separate button_group node)
 - Buttons can be simple strings: {"buttons": ["Mahsulotlar", "Biz haqimizda", "Aloqa"]}

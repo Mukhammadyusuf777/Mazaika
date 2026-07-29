@@ -1,11 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { FirebaseService } from '../firebase/firebase.service';
+import { MazaikaEngineService } from '../cloud/mazaika-engine.service';
 
 @Injectable()
 export class WorkflowService {
   private readonly logger = new Logger(WorkflowService.name);
 
-  constructor(private firebaseService: FirebaseService) {}
+  constructor(
+    private firebaseService: FirebaseService,
+    private mazaikaEngineService: MazaikaEngineService
+  ) {}
+
 
   async processIncomingMessage(botId: string, telegramId: string, text: string, ctx: any) {
     this.logger.log(`Processing input from ${telegramId} for bot ${botId}: ${text}`);
@@ -684,25 +689,15 @@ export class WorkflowService {
         const target = node.data?.variable;
         if (code && target) {
           try {
-            // 1. Prepare casted variables scope to avoid string concatenation bugs (+ operator)
-            const isValidIdentifier = (key: string) => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key);
-            const validKeys = Object.keys(variables).filter(isValidIdentifier);
-            const validVals = validKeys.map(k => {
-              const val = variables[k];
-              if (typeof val === 'string') {
-                const num = Number(val);
-                if (!isNaN(num) && val.trim() !== '') {
-                  return num;
-                }
-              }
-              return val;
-            });
-
-            // 2. Build the sandboxed evaluation function injecting variables as local scope variables
-            const func = new Function('variables', ...validKeys, `return (${code})`);
-            const result = func(variables, ...validVals);
-
-            return { wait: false, stateUpdates: { variables: { ...variables, [target]: result } } };
+            // Use the advanced Mazaika Cloud Engine for sandboxed, async execution
+            const result = await this.mazaikaEngineService.runUserScript(botId, code, variables);
+            
+            // If the script successfully returned something or didn't throw an error
+            if (result && !result.error) {
+              return { wait: false, stateUpdates: { variables: { ...variables, [target]: result } } };
+            } else if (result && result.error) {
+              this.logger.error(`JS Engine error in node ${node.id} for bot ${botId}: ${result.error}`);
+            }
           } catch (err: any) {
             this.logger.error(`JS Node error in node ${node.id} for bot ${botId}: ${err.message}`);
           }

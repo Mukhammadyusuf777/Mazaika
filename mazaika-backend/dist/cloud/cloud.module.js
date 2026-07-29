@@ -6,20 +6,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AppModule = void 0;
+exports.CloudModule = void 0;
 const common_1 = require("@nestjs/common");
-const firebase_module_1 = require("./firebase/firebase.module");
-const bot_module_1 = require("./bot/bot.module");
-const ai_module_1 = require("./ai/ai.module");
-const cloud_module_1 = require("./cloud/cloud.module");
-let AppModule = class AppModule {
+const mazaika_db_service_1 = require("./mazaika-db.service");
+const mazaika_engine_service_1 = require("./mazaika-engine.service");
+const mazaika_hosting_controller_1 = require("./mazaika-hosting.controller");
+let CloudModule = class CloudModule {
 };
-exports.AppModule = AppModule;
-exports.AppModule = AppModule = __decorate([
+exports.CloudModule = CloudModule;
+exports.CloudModule = CloudModule = __decorate([
     (0, common_1.Module)({
-        imports: [firebase_module_1.FirebaseModule, bot_module_1.BotModule, ai_module_1.AiModule, cloud_module_1.CloudModule],
-        controllers: [],
-        providers: [],
+        controllers: [mazaika_hosting_controller_1.MazaikaHostingController],
+        providers: [mazaika_db_service_1.MazaikaDbService, mazaika_engine_service_1.MazaikaEngineService],
+        exports: [mazaika_db_service_1.MazaikaDbService, mazaika_engine_service_1.MazaikaEngineService]
     })
-], AppModule);
-//# sourceMappingURL=app.module.js.map
+], CloudModule);
+//# sourceMappingURL=cloud.module.js.map

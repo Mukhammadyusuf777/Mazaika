@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ROUTING_AGENT_PROMPT, BOT_AGENT_PROMPT, WEBAPP_AGENT_PROMPT } from './prompts';
+import { MazaikaDbService } from '../cloud/mazaika-db.service';
 
 export interface GenerateDto {
   prompt: string;
@@ -11,6 +12,8 @@ export interface GenerateDto {
 @Injectable()
 export class AntigravityService {
   private readonly logger = new Logger(AntigravityService.name);
+
+  constructor(private readonly mazaikaDb: MazaikaDbService) {}
 
   async generate(rawInput: any): Promise<any> {
     return this.generateFullProject(rawInput);
@@ -112,6 +115,14 @@ export class AntigravityService {
           bot_code: botData?.bot_code || ''
         }
       };
+
+      // Mazaika Cloud Core: Automatically host the generated site
+      if (finalResult.html) {
+        // Simple slug generation for demo
+        const slug = promptText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').substring(0, 20) || 'default-site';
+        await this.mazaikaDb.save('global', `site_${slug}`, finalResult);
+        finalResult.explanation += `\n\n🌐 Sening sayting Mazaika Cloud'da tayyor: /cloud/sites/${slug}`;
+      }
 
       return finalResult;
 
