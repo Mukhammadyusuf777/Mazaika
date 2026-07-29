@@ -10,11 +10,13 @@ exports.AiModule = void 0;
 const common_1 = require("@nestjs/common");
 const ai_controller_1 = require("./ai.controller");
 const antigravity_service_1 = require("./antigravity.service");
+const cloud_module_1 = require("../cloud/cloud.module");
 let AiModule = class AiModule {
 };
 exports.AiModule = AiModule;
 exports.AiModule = AiModule = __decorate([
     (0, common_1.Module)({
+        imports: [cloud_module_1.CloudModule],
         controllers: [ai_controller_1.AiController],
         providers: [antigravity_service_1.AntigravityService],
         exports: [antigravity_service_1.AntigravityService],
