@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { User, CreditCard, Key, Shield, LogOut, ChevronLeft, Save, Check } from 'lucide-react'
 import { useAuthStore } from '../../store/useAuthStore'
+import { useChatStore } from '../../store/useChatStore'
 import { auth } from '../../api/firebase'
 import './ProfilePage.css'
 
@@ -23,6 +24,7 @@ export default function ProfilePage() {
   }
 
   const handleLogout = () => {
+    useChatStore.getState().clearAllChats()
     auth.signOut()
     navigate('/')
   }

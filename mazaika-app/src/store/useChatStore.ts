@@ -42,6 +42,7 @@ export interface ChatState {
   ) => Promise<AgentResponsePayload | null>
 
   migrateHistory: (oldId: string, newId: string) => void
+  clearAllChats: () => void
 }
 
 function makeWelcomeMessages(projectId: string): ChatMessage[] {
@@ -133,6 +134,12 @@ export const useChatStore = create<ChatState>()(
         return { chats: newChats, projectId: newId }
       }),
 
+      clearAllChats: () => set({ 
+        chats: { 'default': makeWelcomeMessages('default') },
+        projectId: 'default',
+        activeConfig: null
+      }),
+
       sendMessage: async (text, overrideMode, targetEntity, imageBase64, imageMimeType, activeConfig) => {
         const { addMessage, projectId, chats } = get()
         
@@ -185,6 +192,11 @@ export const useChatStore = create<ChatState>()(
                 ...res.project_data,
                 has_more: res.project_data.has_more
               })
+            }
+            // ✅ AUTO-SYNC: Update activeConfig on PATCH
+            if (res.execution_mode === 'PATCH' && res.patch_operations) {
+              const { applyPatchOperations } = get()
+              applyPatchOperations(res.patch_operations)
             }
           }
           return res
