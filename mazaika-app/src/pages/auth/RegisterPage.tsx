@@ -83,7 +83,7 @@ export default function RegisterPage() {
     setIsLoading(true); setError('')
     try {
       const result = await signInWithPopup(auth, googleProvider)
-      saveUser(result.user)
+      await saveUser(result.user)
     } catch (e: any) { setError(e.message) }
     finally { setIsLoading(false) }
   }
@@ -96,7 +96,7 @@ export default function RegisterPage() {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password)
       await updateProfile(result.user, { displayName: name })
-      saveUser(result.user, name)
+      await saveUser(result.user, name)
     } catch (e: any) { setError(e.message) }
     finally { setIsLoading(false) }
   }

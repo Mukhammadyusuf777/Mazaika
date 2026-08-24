@@ -79,7 +79,7 @@ export default function LoginPage() {
     setIsLoading(true); setError('')
     try {
       const result = await signInWithPopup(auth, googleProvider)
-      saveUser(result.user)
+      await saveUser(result.user)
     } catch (e: any) {
       setError(e.message)
     } finally { setIsLoading(false) }
@@ -91,7 +91,7 @@ export default function LoginPage() {
     setIsLoading(true); setError('')
     try {
       const result = await signInWithEmailAndPassword(auth, email, password)
-      saveUser(result.user)
+      await saveUser(result.user)
     } catch (firebaseError: any) {
       setError(firebaseError.message)
     } finally {
