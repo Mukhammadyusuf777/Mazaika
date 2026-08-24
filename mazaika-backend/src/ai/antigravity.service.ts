@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ROUTING_AGENT_PROMPT, BOT_AGENT_PROMPT, WEBAPP_AGENT_PROMPT } from './prompts';
+import { ROUTING_AGENT_PROMPT, BOT_AGENT_PROMPT, WEBAPP_AGENT_PROMPT, WEBAPP_PATCH_PROMPT, BOT_PATCH_PROMPT } from './prompts';
 import { MazaikaDbService } from '../cloud/mazaika-db.service';
 
 export interface GenerateDto {
@@ -14,6 +14,66 @@ export class AntigravityService {
   private readonly logger = new Logger(AntigravityService.name);
 
   constructor(private readonly mazaikaDb: MazaikaDbService) {}
+
+  /**
+   * Applies an array of SEARCH/REPLACE text patches to the source code.
+   * Returns the patched code, or the original code if a patch fails to match.
+   */
+  private applyWebPatches(sourceCode: string, patches: Array<{ search: string; replace: string }>): string {
+    let result = sourceCode;
+    let appliedCount = 0;
+
+    for (const patch of patches) {
+      if (!patch.search || !patch.replace) continue;
+
+      const idx = result.indexOf(patch.search);
+      if (idx !== -1) {
+        result = result.substring(0, idx) + patch.replace + result.substring(idx + patch.search.length);
+        appliedCount++;
+        this.logger.log(`✅ Patch applied (search length: ${patch.search.length})`);
+      } else {
+        this.logger.warn(`⚠️ Patch search string NOT FOUND in source. Patch skipped.`);
+      }
+    }
+
+    this.logger.log(`🔧 Applied ${appliedCount}/${patches.length} patches`);
+    return result;
+  }
+
+  /**
+   * Applies structural patches to a bot's nodes and edges arrays.
+   */
+  private applyBotPatches(currentBlocks: any[], currentEdges: any[], patchResult: any): { blocks: any[]; edges: any[] } {
+    let blocks = [...(currentBlocks || [])];
+    let edges = [...(currentEdges || [])];
+
+    // Add new nodes
+    if (patchResult.add_nodes?.length) {
+      blocks = [...blocks, ...patchResult.add_nodes];
+    }
+    // Modify existing nodes
+    if (patchResult.modify_nodes?.length) {
+      for (const modified of patchResult.modify_nodes) {
+        const idx = blocks.findIndex(b => b.id === modified.id);
+        if (idx !== -1) blocks[idx] = modified;
+      }
+    }
+    // Remove nodes
+    if (patchResult.remove_node_ids?.length) {
+      blocks = blocks.filter(b => !patchResult.remove_node_ids.includes(b.id));
+    }
+    // Add edges
+    if (patchResult.add_edges?.length) {
+      edges = [...edges, ...patchResult.add_edges];
+    }
+    // Remove edges
+    if (patchResult.remove_edge_ids?.length) {
+      edges = edges.filter(e => !patchResult.remove_edge_ids.includes(e.id));
+    }
+
+    this.logger.log(`🔧 Bot patch: +${patchResult.add_nodes?.length || 0} nodes, ~${patchResult.modify_nodes?.length || 0} modified, -${patchResult.remove_node_ids?.length || 0} removed`);
+    return { blocks, edges };
+  }
 
   async generate(rawInput: any): Promise<any> {
     return this.generateFullProject(rawInput);
@@ -34,6 +94,7 @@ export class AntigravityService {
       let existingHtml = '';
       let imageBase64 = '';
       let imageMimeType = 'image/jpeg';
+      let projectState: any = null;
 
       if (typeof rawInput === 'string') {
         promptText = rawInput;
@@ -42,12 +103,14 @@ export class AntigravityService {
         existingHtml = rawInput.currentHtml || rawInput.html || rawInput.siteHtml || rawInput.currentConfig?.source_code || rawInput.currentConfig?.html || '';
         imageBase64 = rawInput.imageBase64 || '';
         imageMimeType = rawInput.imageMimeType || 'image/jpeg';
+        projectState = rawInput.projectState || rawInput.currentConfig?.project_state || null;
         if (rawInput.chatHistory?.length > 0) chatHistory = rawInput.chatHistory;
         if (rawInput.targetEntity) targetEntity = rawInput.targetEntity;
       }
 
       if (!existingHtml && currentConfig) {
         existingHtml = currentConfig.source_code || currentConfig.html || '';
+        projectState = projectState || currentConfig.project_state || null;
       }
 
       const googleKey = (
@@ -57,87 +120,174 @@ export class AntigravityService {
         ''
       ).trim();
 
+      // Determine if this is an EDIT (patch mode) or a NEW generation (full mode)
+      const isEditMode = existingHtml.trim().length > 50;
+
       // Step 1: Routing Agent
       let target = targetEntity;
       if (!target) {
         const routeRes = await this.callAI(ROUTING_AGENT_PROMPT, promptText, '', '', 0, true, googleKey);
         if (routeRes && routeRes.target) {
-          target = routeRes.target === 'bot_only' ? 'bot_and_mini_app' : routeRes.target; 
+          target = routeRes.target === 'bot_only' ? 'bot_and_mini_app' : routeRes.target;
         } else {
           target = 'bot_and_mini_app'; // Default
         }
       }
 
-      this.logger.log(`🚀 Routing determined target: ${target}`);
+      this.logger.log(`🚀 Routing: target=${target} | mode=${isEditMode ? 'PATCH' : 'FULL'}`);
 
-      // Base context
+      // Build context: conversation history (compact, last 5 messages)
       const historyContext = chatHistory.length > 0
-        ? `\n\nPrevious conversation:\n${chatHistory.slice(-5).map(m => `${m.role === 'user' ? 'User' : 'Antigravity'}: ${m.content}`).join('\n')}\n`
+        ? `\n\nCONVERSATION HISTORY (last 5 messages):\n${chatHistory.slice(-5).map(m => `${m.role === 'user' ? 'User' : 'Antigravity'}: ${m.content}`).join('\n')}\n`
         : '';
 
-      const isEditMode = existingHtml.trim().length > 50;
+      // Build PROJECT_STATE context to prevent Context Drift
+      const stateContext = projectState
+        ? `\n\nPROJECT ARCHITECTURE & CONTEXT (do NOT deviate from this):\n${JSON.stringify(projectState, null, 2)}\n`
+        : '';
 
-      // Parallel Agents
       let botData: any = null;
       let siteData: any = null;
 
-      const userRequest = `USER REQUEST: "${promptText}"\n${historyContext}`;
+      if (isEditMode) {
+        // === PATCH MODE: surgical edits ===
+        const userRequestForPatch = `USER REQUEST: "${promptText}"${historyContext}${stateContext}
 
-      if (target === 'site_only') {
-        siteData = await this.callAI(WEBAPP_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false, googleKey);
-      } else if (target === 'bot_and_mini_app') {
-        const tasks = [
-          this.callAI(BOT_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false, googleKey),
-          this.callAI(WEBAPP_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false, googleKey)
-        ];
-        
-        const [botRes, siteRes] = await Promise.all(tasks);
-        botData = botRes;
-        siteData = siteRes;
-      }
+CURRENT SITE CODE (apply patches to this):
+\`\`\`html
+${existingHtml.substring(0, 12000)}${existingHtml.length > 12000 ? '\n... (truncated for token limit)' : ''}
+\`\`\``;
 
-      // Combine Results
-      const finalResult = {
-        type: target === 'site_only' ? 'site' : 'bot_and_mini_app',
-        execution_mode: 'FULL_GENERATION',
-        target_entity: target,
-        title: 'AI Generated Project',
-        explanation: siteData?.explanation || botData?.explanation || 'Generatsiya yakunlandi!',
-        html: siteData?.html || existingHtml,
-        source_code: siteData?.html || existingHtml,
-        website_html: siteData?.html || existingHtml,
-        project_data: {
-          target_entity: target,
-          source_code: siteData?.html || existingHtml,
-          html: siteData?.html || existingHtml,
-          bot_blocks: botData?.bot_blocks || currentConfig?.bot_blocks || [],
-          bot_edges: botData?.bot_edges || currentConfig?.bot_edges || [],
-          bot_code: botData?.bot_code || ''
+        const currentBotBlocks = rawInput?.currentConfig?.bot_blocks || [];
+        const currentBotEdges = rawInput?.currentConfig?.bot_edges || [];
+        const userRequestForBotPatch = `USER REQUEST: "${promptText}"${historyContext}${stateContext}
+
+CURRENT BOT FLOW (apply patches to this):
+Bot Nodes: ${JSON.stringify(currentBotBlocks.slice(0, 20))}
+Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
+
+        if (target === 'site_only') {
+          siteData = await this.callAI(WEBAPP_PATCH_PROMPT, userRequestForPatch, imageBase64, imageMimeType, 0, false, googleKey);
+        } else {
+          const tasks = [
+            this.callAI(BOT_PATCH_PROMPT, userRequestForBotPatch, '', '', 0, false, googleKey),
+            this.callAI(WEBAPP_PATCH_PROMPT, userRequestForPatch, imageBase64, imageMimeType, 0, false, googleKey)
+          ];
+          const [botPatch, sitePatch] = await Promise.all(tasks);
+          botData = botPatch;
+          siteData = sitePatch;
         }
-      };
 
-      // Mazaika Cloud Core: Automatically host the generated site
-      if (finalResult.html) {
-        // Simple slug generation for demo
-        const slug = promptText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').substring(0, 20) || 'default-site';
-        await this.mazaikaDb.save('global', `site_${slug}`, finalResult);
-        finalResult.explanation += `\n\n🌐 Sening sayting Mazaika Cloud'da tayyor: /cloud/sites/${slug}`;
+        // Apply patches to existing code
+        let finalHtml = existingHtml;
+        if (siteData?.patches?.length > 0) {
+          finalHtml = this.applyWebPatches(existingHtml, siteData.patches);
+        } else if (siteData?.html) {
+          // Fallback: AI returned full HTML even in patch mode (e.g. first time or DeepSeek fallback)
+          finalHtml = siteData.html;
+          this.logger.warn('⚠️ AI returned full HTML in patch mode. Accepting full HTML as fallback.');
+        }
+
+        // Apply bot patches
+        let finalBotBlocks = currentBotBlocks;
+        let finalBotEdges = currentBotEdges;
+        if (botData && (botData.add_nodes || botData.modify_nodes || botData.remove_node_ids)) {
+          const patched = this.applyBotPatches(currentBotBlocks, currentBotEdges, botData);
+          finalBotBlocks = patched.blocks;
+          finalBotEdges = patched.edges;
+        } else if (botData?.bot_blocks) {
+          finalBotBlocks = botData.bot_blocks;
+          finalBotEdges = botData.bot_edges || currentBotEdges;
+        }
+
+        const updatedProjectState = siteData?.project_state || botData?.project_state || projectState;
+
+        const finalResult = {
+          type: target === 'site_only' ? 'site' : 'bot_and_mini_app',
+          execution_mode: 'PATCH',
+          target_entity: target,
+          title: 'AI Patched Project',
+          explanation: siteData?.explanation || botData?.explanation || 'Muvaffaqiyatli yangilandi!',
+          analysis: siteData?.analysis || botData?.analysis || '',
+          html: finalHtml,
+          source_code: finalHtml,
+          website_html: finalHtml,
+          project_state: updatedProjectState,
+          project_data: {
+            target_entity: target,
+            source_code: finalHtml,
+            html: finalHtml,
+            bot_blocks: finalBotBlocks,
+            bot_edges: finalBotEdges,
+            bot_code: botData?.bot_code || rawInput?.currentConfig?.bot_code || '',
+            project_state: updatedProjectState
+          }
+        };
+
+        return finalResult;
+
+      } else {
+        // === FULL GENERATION MODE: create from scratch ===
+        const userRequest = `USER REQUEST: "${promptText}"${historyContext}`;
+
+        if (target === 'site_only') {
+          siteData = await this.callAI(WEBAPP_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false, googleKey);
+        } else if (target === 'bot_and_mini_app') {
+          const tasks = [
+            this.callAI(BOT_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false, googleKey),
+            this.callAI(WEBAPP_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false, googleKey)
+          ];
+          const [botRes, siteRes] = await Promise.all(tasks);
+          botData = botRes;
+          siteData = siteRes;
+        }
+
+        const newProjectState = siteData?.project_state || botData?.project_state || null;
+
+        const finalResult = {
+          type: target === 'site_only' ? 'site' : 'bot_and_mini_app',
+          execution_mode: 'FULL_GENERATION',
+          target_entity: target,
+          title: 'AI Generated Project',
+          explanation: siteData?.explanation || botData?.explanation || 'Generatsiya yakunlandi!',
+          html: siteData?.html || existingHtml,
+          source_code: siteData?.html || existingHtml,
+          website_html: siteData?.html || existingHtml,
+          project_state: newProjectState,
+          project_data: {
+            target_entity: target,
+            source_code: siteData?.html || existingHtml,
+            html: siteData?.html || existingHtml,
+            bot_blocks: botData?.bot_blocks || currentConfig?.bot_blocks || [],
+            bot_edges: botData?.bot_edges || currentConfig?.bot_edges || [],
+            bot_code: botData?.bot_code || '',
+            project_state: newProjectState
+          }
+        };
+
+        // Mazaika Cloud Core: Automatically host the generated site
+        if (finalResult.html) {
+          const slug = promptText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').substring(0, 20) || 'default-site';
+          await this.mazaikaDb.save('global', `site_${slug}`, finalResult);
+          finalResult.explanation += `\n\n🌐 Sening sayting Mazaika Cloud'da tayyor: /cloud/sites/${slug}`;
+        }
+
+        return finalResult;
       }
-
-      return finalResult;
 
     } catch (error: any) {
       this.logger.error(`Fatal Service Error: ${error.message}`);
       return {
         type: 'site',
-        execution_mode: 'FULL_GENERATION',
+        execution_mode: 'ERROR',
         target_entity: 'site_only',
         title: 'Error',
         explanation: 'Xatolik yuz berdi. Qayta urinib koring.',
-        html: rawInput?.currentHtml || ''
+        html: rawInput?.currentHtml || rawInput?.currentConfig?.html || ''
       };
     }
   }
+
 
   private async callAI(
     systemInstruction: string,
