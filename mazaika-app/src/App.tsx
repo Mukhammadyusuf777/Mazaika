@@ -6,7 +6,6 @@ import { ErrorBoundary } from './components/layout/ErrorBoundary'
 
 // Pages
 import LandingPage from './pages/LandingPage'
-import LandingPage3D from './pages/LandingPage3D'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
@@ -41,8 +40,7 @@ function App() {
         <FloatingAICopilot projectType="bot" />
         <Routes>
           {/* Public */}
-          <Route path="/" element={<LandingPage3D />} />
-          <Route path="/classic" element={<LandingPage />} />
+          <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             
