@@ -41,7 +41,8 @@ function App() {
         <FloatingAICopilot projectType="bot" />
         <Routes>
           {/* Public */}
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<LandingPage3D />} />
+          <Route path="/classic" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             
