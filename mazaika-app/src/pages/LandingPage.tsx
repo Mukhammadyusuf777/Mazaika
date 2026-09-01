@@ -566,25 +566,6 @@ export default function LandingPage() {
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
             >
-              {/* SVG spinning ring */}
-              <svg className="mockup-spin-ring" viewBox="0 0 440 440" fill="none">
-                <defs>
-                  <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#7c3cfa"/>
-                    <stop offset="25%" stopColor="#3b82f6"/>
-                    <stop offset="50%" stopColor="#00f5d4"/>
-                    <stop offset="75%" stopColor="#f72585"/>
-                    <stop offset="100%" stopColor="#fbbf24"/>
-                  </linearGradient>
-                </defs>
-                <circle cx="220" cy="220" r="210" stroke="url(#ring-grad)" strokeWidth="1.5" strokeDasharray="80 60" strokeLinecap="round"/>
-              </svg>
-
-              {/* Second counter-spinning ring */}
-              <svg className="mockup-spin-ring-2" viewBox="0 0 440 440" fill="none">
-                <circle cx="220" cy="220" r="190" stroke="rgba(0,245,212,0.15)" strokeWidth="1" strokeDasharray="30 20"/>
-              </svg>
-
               {/* Floating node cards */}
               <div className="mock-node mock-node-1">🧩 Greeting node</div>
               <div className="mock-node mock-node-2">💳 Payment node</div>

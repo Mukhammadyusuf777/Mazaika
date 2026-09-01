@@ -1,313 +1,140 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RoundedBox, Sphere, Torus, Float } from '@react-three/drei';
+import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 
-// ─── UI LAYER ─────────────────────────────────────────────────────────────
-function UILayer({ positionY }: { positionY: number }) {
-  const groupRef = useRef<THREE.Group>(null);
-  
-  useFrame(({ clock }) => {
-    if (groupRef.current) {
-      groupRef.current.position.y = positionY + Math.sin(clock.elapsedTime * 1.2) * 0.08;
-    }
-  });
-
-  return (
-    <group ref={groupRef}>
-      {/* Base Glowing Glass Slab */}
-      <mesh>
-        <boxGeometry args={[5.2, 3.2, 0.08]} />
-        <meshStandardMaterial
-          color="#0d1b2a"
-          emissive="#00f0ff"
-          emissiveIntensity={0.25}
-          roughness={0.1}
-          metalness={0.8}
-          transparent
-          opacity={0.65}
-        />
-      </mesh>
-      {/* Neon Edge Outline */}
-      <lineSegments>
-        <edgesGeometry args={[new THREE.BoxGeometry(5.2, 3.2, 0.08)]} />
-        <lineBasicMaterial color="#00f0ff" linewidth={2} transparent opacity={0.9} />
-      </lineSegments>
-
-      {/* Floating 3D Widget 1: Telegram Bot Chat Card */}
-      <Float speed={2} rotationIntensity={0.2} floatIntensity={0.3}>
-        <group position={[-1.2, 0.4, 0.35]}>
-          <RoundedBox args={[2.2, 1.4, 0.08]} radius={0.06} smoothness={4}>
-            <meshStandardMaterial color="#1b263b" emissive="#9d00ff" emissiveIntensity={0.3} roughness={0.2} transparent opacity={0.85} />
-          </RoundedBox>
-          <lineSegments>
-            <edgesGeometry args={[new THREE.BoxGeometry(2.2, 1.4, 0.08)]} />
-            <lineBasicMaterial color="#9d00ff" transparent opacity={0.8} />
-          </lineSegments>
-          
-          {/* Avatar Icon */}
-          <mesh position={[-0.75, 0.35, 0.06]}>
-            <circleGeometry args={[0.16, 32]} />
-            <meshBasicMaterial color="#00f0ff" />
-          </mesh>
-          {/* Header Line */}
-          <mesh position={[0.05, 0.35, 0.06]}>
-            <planeGeometry args={[1.1, 0.08]} />
-            <meshBasicMaterial color="#ffffff" />
-          </mesh>
-          {/* Message Bubble 1 */}
-          <mesh position={[-0.1, 0.05, 0.06]}>
-            <planeGeometry args={[1.5, 0.22]} />
-            <meshBasicMaterial color="#00f0ff" transparent opacity={0.35} />
-          </mesh>
-          {/* Message Bubble 2 (Action Button) */}
-          <mesh position={[0.1, -0.32, 0.06]}>
-            <planeGeometry args={[1.3, 0.24]} />
-            <meshBasicMaterial color="#9d00ff" transparent opacity={0.7} />
-          </mesh>
-        </group>
-      </Float>
-
-      {/* Floating 3D Widget 2: Analytics & Payment Card */}
-      <Float speed={2.5} rotationIntensity={0.2} floatIntensity={0.4}>
-        <group position={[1.3, -0.3, 0.3]}>
-          <RoundedBox args={[1.9, 1.5, 0.08]} radius={0.06} smoothness={4}>
-            <meshStandardMaterial color="#0d1b2a" emissive="#00f0ff" emissiveIntensity={0.25} roughness={0.2} transparent opacity={0.85} />
-          </RoundedBox>
-          <lineSegments>
-            <edgesGeometry args={[new THREE.BoxGeometry(1.9, 1.5, 0.08)]} />
-            <lineBasicMaterial color="#00f0ff" transparent opacity={0.8} />
-          </lineSegments>
-          
-          {/* Stat Bar 1 */}
-          <mesh position={[-0.45, -0.2, 0.06]}>
-            <planeGeometry args={[0.16, 0.6]} />
-            <meshBasicMaterial color="#00f0ff" />
-          </mesh>
-          {/* Stat Bar 2 */}
-          <mesh position={[-0.15, -0.05, 0.06]}>
-            <planeGeometry args={[0.16, 0.9]} />
-            <meshBasicMaterial color="#9d00ff" />
-          </mesh>
-          {/* Stat Bar 3 */}
-          <mesh position={[0.15, 0.1, 0.06]}>
-            <planeGeometry args={[0.16, 1.2]} />
-            <meshBasicMaterial color="#00f5d4" />
-          </mesh>
-          {/* Stat Bar 4 */}
-          <mesh position={[0.45, 0.25, 0.06]}>
-            <planeGeometry args={[0.16, 1.5]} />
-            <meshBasicMaterial color="#f72585" />
-          </mesh>
-        </group>
-      </Float>
-    </group>
-  );
+interface LegoBlockProps {
+  initialPos: [number, number, number];
+  driftDir: [number, number, number];
+  separation: number;
+  color: string;
+  glowColor: string;
+  size?: [number, number, number];
+  rotationSpeed?: number;
 }
 
-// ─── CODE LAYER ───────────────────────────────────────────────────────────
-function CodeLayer({ positionY }: { positionY: number }) {
-  const groupRef = useRef<THREE.Group>(null);
+function ModularLegoBlock({
+  initialPos,
+  driftDir,
+  separation,
+  color,
+  glowColor,
+  size = [1.1, 1.1, 1.1],
+  rotationSpeed = 0.5,
+}: LegoBlockProps) {
+  const meshRef = useRef<THREE.Group>(null);
 
   useFrame(({ clock }) => {
-    if (groupRef.current) {
-      groupRef.current.position.y = positionY + Math.sin(clock.elapsedTime * 1.2 + 2) * 0.08;
-    }
-  });
-
-  return (
-    <group ref={groupRef}>
-      {/* Base Glowing Glass Slab */}
-      <mesh>
-        <boxGeometry args={[5.2, 3.2, 0.08]} />
-        <meshStandardMaterial
-          color="#10002b"
-          emissive="#7b2cbf"
-          emissiveIntensity={0.3}
-          roughness={0.1}
-          metalness={0.8}
-          transparent
-          opacity={0.65}
-        />
-      </mesh>
-      <lineSegments>
-        <edgesGeometry args={[new THREE.BoxGeometry(5.2, 3.2, 0.08)]} />
-        <lineBasicMaterial color="#a855f7" linewidth={2} transparent opacity={0.9} />
-      </lineSegments>
-
-      {/* 3D Code Nodes & Logic Grid */}
-      <group position={[0, 0, 0.1]}>
-        {/* Code Lines as Neon Bars */}
-        {[
-          { y: 0.9, x: -1.2, w: 1.8, c: '#00f0ff' },
-          { y: 0.9, x: 0.4, w: 1.0, c: '#9d00ff' },
-          { y: 0.6, x: -0.8, w: 2.2, c: '#f72585' },
-          { y: 0.3, x: -1.0, w: 1.4, c: '#00f5d4' },
-          { y: 0.0, x: -0.4, w: 2.4, c: '#a855f7' },
-          { y: -0.3, x: -1.2, w: 1.2, c: '#00f0ff' },
-          { y: -0.6, x: -0.6, w: 2.0, c: '#fbbf24' },
-          { y: -0.9, x: -1.0, w: 1.6, c: '#00f5d4' },
-        ].map((line, idx) => (
-          <mesh key={idx} position={[line.x, line.y, 0]}>
-            <planeGeometry args={[line.w, 0.12]} />
-            <meshBasicMaterial color={line.c} transparent opacity={0.85} />
-          </mesh>
-        ))}
-
-        {/* Floating Node Chips */}
-        <Float speed={3} rotationIntensity={0.3} floatIntensity={0.5}>
-          <group position={[1.4, 0.5, 0.3]}>
-            <RoundedBox args={[1.2, 0.5, 0.06]} radius={0.04}>
-              <meshStandardMaterial color="#00f0ff" emissive="#00f0ff" emissiveIntensity={0.8} />
-            </RoundedBox>
-          </group>
-        </Float>
-        <Float speed={2.8} rotationIntensity={0.3} floatIntensity={0.5}>
-          <group position={[1.2, -0.6, 0.3]}>
-            <RoundedBox args={[1.4, 0.5, 0.06]} radius={0.04}>
-              <meshStandardMaterial color="#f72585" emissive="#f72585" emissiveIntensity={0.8} />
-            </RoundedBox>
-          </group>
-        </Float>
-      </group>
-    </group>
-  );
-}
-
-// ─── AI LAYER ─────────────────────────────────────────────────────────────
-function AILayer({ positionY }: { positionY: number }) {
-  const groupRef = useRef<THREE.Group>(null);
-  const coreRef = useRef<THREE.Mesh>(null);
-  const ring1Ref = useRef<THREE.Mesh>(null);
-  const ring2Ref = useRef<THREE.Mesh>(null);
-  const particlesRef = useRef<THREE.Points>(null);
-
-  const particleCount = 350;
-  const particlePositions = useMemo(() => {
-    const pos = new Float32Array(particleCount * 3);
-    for (let i = 0; i < particleCount; i++) {
-      const radius = 0.6 + Math.random() * 2.2;
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-      pos[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
-      pos[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
-      pos[i * 3 + 2] = radius * Math.cos(phi);
-    }
-    return pos;
-  }, []);
-
-  useFrame(({ clock }) => {
+    if (!meshRef.current) return;
     const t = clock.elapsedTime;
-    if (groupRef.current) {
-      groupRef.current.position.y = positionY + Math.sin(t * 1.2 + 4) * 0.08;
-    }
-    if (coreRef.current) {
-      const scale = 1 + Math.sin(t * 3) * 0.15;
-      coreRef.current.scale.set(scale, scale, scale);
-      coreRef.current.rotation.y = t * 0.5;
-      coreRef.current.rotation.x = t * 0.3;
-    }
-    if (ring1Ref.current) {
-      ring1Ref.current.rotation.x = t * 1.2;
-      ring1Ref.current.rotation.y = t * 0.8;
-    }
-    if (ring2Ref.current) {
-      ring2Ref.current.rotation.y = -t * 1.0;
-      ring2Ref.current.rotation.z = t * 0.6;
-    }
-    if (particlesRef.current) {
-      particlesRef.current.rotation.y = t * 0.2;
-      particlesRef.current.rotation.z = t * 0.1;
-    }
+
+    // Subtle breathing / floating motion
+    const floatY = Math.sin(t * rotationSpeed + initialPos[0] * 2) * 0.08;
+    const floatRotX = Math.sin(t * 0.4 + initialPos[1]) * 0.04;
+    const floatRotY = Math.cos(t * 0.3 + initialPos[2]) * 0.04;
+
+    // Calculate current position based on scroll separation
+    meshRef.current.position.x = initialPos[0] + driftDir[0] * separation;
+    meshRef.current.position.y = initialPos[1] + driftDir[1] * separation + floatY;
+    meshRef.current.position.z = initialPos[2] + driftDir[2] * separation;
+
+    meshRef.current.rotation.x = floatRotX;
+    meshRef.current.rotation.y = floatRotY;
   });
 
+  const [w, h, d] = size;
+
   return (
-    <group ref={groupRef}>
-      {/* Base Glowing Glass Slab */}
-      <mesh>
-        <boxGeometry args={[5.2, 3.2, 0.08]} />
-        <meshStandardMaterial
-          color="#050a30"
-          emissive="#00f0ff"
-          emissiveIntensity={0.3}
-          roughness={0.1}
-          metalness={0.8}
+    <group ref={meshRef} position={initialPos}>
+      {/* Outer Obsidian Glass Body */}
+      <RoundedBox args={[w, h, d]} radius={0.08} smoothness={4}>
+        <meshPhysicalMaterial
+          color={color}
+          metalness={0.15}
+          roughness={0.15}
+          transmission={0.88}
+          thickness={1.4}
+          ior={1.5}
           transparent
-          opacity={0.65}
+          opacity={0.75}
+          reflectivity={0.8}
+          clearcoat={0.8}
         />
-      </mesh>
+      </RoundedBox>
+
+      {/* Elegant Glowing Edges */}
       <lineSegments>
-        <edgesGeometry args={[new THREE.BoxGeometry(5.2, 3.2, 0.08)]} />
-        <lineBasicMaterial color="#00f0ff" linewidth={2} transparent opacity={0.9} />
+        <edgesGeometry args={[new THREE.BoxGeometry(w, h, d)]} />
+        <lineBasicMaterial color={glowColor} transparent opacity={0.65} />
       </lineSegments>
 
-      {/* AI Core Nucleus */}
-      <Sphere ref={coreRef} args={[0.55, 24, 24]} position={[0, 0, 0.3]}>
+      {/* Lego Studs on Top Face */}
+      {[-w / 4, w / 4].map((sx, i) =>
+        [-d / 4, d / 4].map((sz, j) => (
+          <mesh key={`${i}-${j}`} position={[sx, h / 2 + 0.06, sz]}>
+            <cylinderGeometry args={[0.14, 0.14, 0.12, 16]} />
+            <meshPhysicalMaterial
+              color={color}
+              metalness={0.2}
+              roughness={0.1}
+              transmission={0.8}
+              transparent
+              opacity={0.8}
+            />
+          </mesh>
+        ))
+      )}
+
+      {/* Internal Pulsing Neon AI Core */}
+      <mesh position={[0, 0, 0]}>
+        <boxGeometry args={[w * 0.42, h * 0.42, d * 0.42]} />
         <meshStandardMaterial
-          color="#9d00ff"
-          emissive="#00f0ff"
-          emissiveIntensity={2.5}
-          wireframe
-        />
-      </Sphere>
-
-      {/* Inner Glowing Core */}
-      <Sphere args={[0.35, 16, 16]} position={[0, 0, 0.3]}>
-        <meshBasicMaterial color="#ffffff" />
-      </Sphere>
-
-      {/* Orbiting Quantum Rings */}
-      <Torus ref={ring1Ref} args={[1.0, 0.02, 16, 64]} position={[0, 0, 0.3]}>
-        <meshBasicMaterial color="#00f0ff" />
-      </Torus>
-      <Torus ref={ring2Ref} args={[1.35, 0.02, 16, 64]} position={[0, 0, 0.3]}>
-        <meshBasicMaterial color="#f72585" />
-      </Torus>
-
-      {/* Particle Swarm */}
-      <points ref={particlesRef} position={[0, 0, 0.3]}>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[particlePositions, 3]} />
-        </bufferGeometry>
-        <pointsMaterial
-          color="#00f5d4"
-          size={0.06}
+          color={glowColor}
+          emissive={glowColor}
+          emissiveIntensity={1.6}
+          roughness={0.2}
           transparent
           opacity={0.9}
-          sizeAttenuation
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
         />
-      </points>
+      </mesh>
     </group>
   );
 }
 
-// ─── MAIN EXPORT ──────────────────────────────────────────────────────────
 export interface ExplodedLayersProps {
   separation: number;
 }
 
 export function ExplodedLayers({ separation }: ExplodedLayersProps) {
-  return (
-    <group scale={1.15}>
-      <UILayer positionY={separation} />
-      <CodeLayer positionY={0} />
-      <AILayer positionY={-separation} />
+  // Pre-configured block matrix representing Mazaika's modular Lego architecture
+  const blocks = useMemo(() => [
+    // Central Anchor Blocks (Disperse outwards to left & right on scroll)
+    { initialPos: [-0.9, 0.6, 0.3] as [number, number, number], driftDir: [-2.4, 0.8, -0.5] as [number, number, number], color: '#09101d', glowColor: '#00F0FF', size: [1.2, 0.8, 1.2] as [number, number, number], rotationSpeed: 0.6 },
+    { initialPos: [0.8, 0.7, -0.2] as [number, number, number], driftDir: [2.5, 0.9, -0.8] as [number, number, number], color: '#130c24', glowColor: '#8B5CF6', size: [1.3, 0.9, 1.3] as [number, number, number], rotationSpeed: 0.5 },
+    { initialPos: [-0.7, -0.7, 0.5] as [number, number, number], driftDir: [-2.2, -0.9, 0.4] as [number, number, number], color: '#09101d', glowColor: '#00F0FF', size: [1.1, 1.1, 1.1] as [number, number, number], rotationSpeed: 0.7 },
+    { initialPos: [0.9, -0.6, 0.2] as [number, number, number], driftDir: [2.3, -0.8, 0.6] as [number, number, number], color: '#130c24', glowColor: '#8B5CF6', size: [1.2, 0.9, 1.2] as [number, number, number], rotationSpeed: 0.4 },
 
-      {/* Glowing Vertical Connector Beams */}
-      {separation > 0.1 && (
-        <>
-          {[-2.3, 2.3].map((x) =>
-            [-1.4, 1.4].map((z) => (
-              <mesh key={`${x}-${z}`} position={[x, 0, z]}>
-                <cylinderGeometry args={[0.025, 0.025, separation * 2.2, 16]} />
-                <meshBasicMaterial color="#00f0ff" transparent opacity={0.7} />
-              </mesh>
-            ))
-          )}
-        </>
-      )}
+    // Peripheral Supporting Modules
+    { initialPos: [-1.8, -0.1, -0.6] as [number, number, number], driftDir: [-3.2, 0.2, -1.2] as [number, number, number], color: '#08111e', glowColor: '#38BDF8', size: [0.9, 0.9, 0.9] as [number, number, number], rotationSpeed: 0.8 },
+    { initialPos: [1.9, 0.2, -0.5] as [number, number, number], driftDir: [3.4, 0.3, -1.0] as [number, number, number], color: '#140c24', glowColor: '#A855F7', size: [1.0, 0.8, 1.0] as [number, number, number], rotationSpeed: 0.55 },
+    { initialPos: [0.1, 1.4, -0.4] as [number, number, number], driftDir: [0.2, 2.2, -1.5] as [number, number, number], color: '#09101d', glowColor: '#00F0FF', size: [1.0, 0.7, 1.0] as [number, number, number], rotationSpeed: 0.65 },
+    { initialPos: [-0.1, -1.4, -0.3] as [number, number, number], driftDir: [-0.3, -2.4, -1.2] as [number, number, number], color: '#130c24', glowColor: '#8B5CF6', size: [1.1, 0.8, 1.1] as [number, number, number], rotationSpeed: 0.5 },
+  ], []);
+
+  return (
+    <group position={[0, 0, 0]}>
+      {blocks.map((block, idx) => (
+        <ModularLegoBlock
+          key={idx}
+          initialPos={block.initialPos}
+          driftDir={block.driftDir}
+          separation={separation}
+          color={block.color}
+          glowColor={block.glowColor}
+          size={block.size}
+          rotationSpeed={block.rotationSpeed}
+        />
+      ))}
     </group>
   );
 }
