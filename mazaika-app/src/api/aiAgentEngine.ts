@@ -35,7 +35,7 @@ export async function queryAntigravityAgent(
     imageMimeType?: string
   }
 ): Promise<AgentResponsePayload> {
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+  const baseUrl = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' && window.location.hostname.includes('pages.dev') ? 'https://mazaika.onrender.com' : 'http://localhost:3000')
   const backendUrl = `${baseUrl}/api/ai/generate`
 
   try {
