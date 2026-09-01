@@ -315,16 +315,20 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
     systemInstruction: string,
     userPrompt: string
   ): Promise<any> {
+    // Priority model list: most powerful first, lighter fallbacks after
+    // DeepSeek-R1-32b is the primary "Mazaika AI" brain — best reasoning and code generation
     const models = [
-      '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
-      '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
-      '@cf/meta/llama-3.1-70b-instruct',
-      '@cf/qwen/qwen1.5-14b-chat'
+      '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',        // PRIMARY: best reasoning + code
+      '@cf/meta/llama-3.3-70b-instruct-fp8-fast',             // FAST FALLBACK: 70B fast
+      '@cf/meta/llama-3.1-70b-instruct',                      // FALLBACK: 70B standard
+      '@cf/meta/llama-3.2-11b-vision-instruct',               // LITE FALLBACK
     ];
 
     for (const model of models) {
       try {
         const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
+        this.logger.log(`🤖 Mazaika AI → Cloudflare (${model})`);
+
         const res = await fetch(url, {
           method: 'POST',
           headers: {
@@ -336,28 +340,33 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
               { role: 'system', content: systemInstruction },
               { role: 'user', content: userPrompt }
             ],
-            max_tokens: 8192
+            max_tokens: 16384,    // Increased: was 8192 → now 16384 for full code output
+            temperature: 0.2,     // Lower = more deterministic, better JSON compliance
           })
         });
 
         if (res.ok) {
           const data = await res.json();
-          const text = data.result?.choices?.[0]?.message?.content || data.result?.response;
+          // DeepSeek-R1 wraps answer in <think>...</think> tags — strip them
+          let text = data.result?.choices?.[0]?.message?.content || data.result?.response || '';
+          text = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+
           if (text) {
             const parsed = this.extractJsonObjectWithSelfHeal(text);
             if (parsed) {
-              this.logger.log(`✅ Cloudflare Workers AI (${model}) succeeded!`);
+              this.logger.log(`✅ Mazaika AI (${model}) — success`);
               return parsed;
             }
           }
         } else {
           const errText = await res.text().catch(() => '');
-          this.logger.warn(`Cloudflare AI ${model} HTTP ${res.status}: ${errText.substring(0, 150)}`);
+          this.logger.warn(`⚠️ Mazaika AI (${model}) HTTP ${res.status}: ${errText.substring(0, 200)}`);
         }
       } catch (e: any) {
-        this.logger.warn(`Cloudflare AI ${model} error: ${e.message}`);
+        this.logger.warn(`⚠️ Mazaika AI (${model}) error: ${e.message}`);
       }
     }
+    this.logger.error('❌ All Cloudflare AI models failed');
     return null;
   }
 

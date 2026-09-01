@@ -259,11 +259,12 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
             '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
             '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
             '@cf/meta/llama-3.1-70b-instruct',
-            '@cf/qwen/qwen1.5-14b-chat'
+            '@cf/meta/llama-3.2-11b-vision-instruct',
         ];
         for (const model of models) {
             try {
                 const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`;
+                this.logger.log(`🤖 Mazaika AI → Cloudflare (${model})`);
                 const res = await fetch(url, {
                     method: 'POST',
                     headers: {
@@ -275,29 +276,32 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
                             { role: 'system', content: systemInstruction },
                             { role: 'user', content: userPrompt }
                         ],
-                        max_tokens: 8192
+                        max_tokens: 16384,
+                        temperature: 0.2,
                     })
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    const text = data.result?.choices?.[0]?.message?.content || data.result?.response;
+                    let text = data.result?.choices?.[0]?.message?.content || data.result?.response || '';
+                    text = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
                     if (text) {
                         const parsed = this.extractJsonObjectWithSelfHeal(text);
                         if (parsed) {
-                            this.logger.log(`✅ Cloudflare Workers AI (${model}) succeeded!`);
+                            this.logger.log(`✅ Mazaika AI (${model}) — success`);
                             return parsed;
                         }
                     }
                 }
                 else {
                     const errText = await res.text().catch(() => '');
-                    this.logger.warn(`Cloudflare AI ${model} HTTP ${res.status}: ${errText.substring(0, 150)}`);
+                    this.logger.warn(`⚠️ Mazaika AI (${model}) HTTP ${res.status}: ${errText.substring(0, 200)}`);
                 }
             }
             catch (e) {
-                this.logger.warn(`Cloudflare AI ${model} error: ${e.message}`);
+                this.logger.warn(`⚠️ Mazaika AI (${model}) error: ${e.message}`);
             }
         }
+        this.logger.error('❌ All Cloudflare AI models failed');
         return null;
     }
     async callGemini(apiKey, systemInstruction, userPrompt, imageBase64, imageMimeType, attempt, jsonMode) {
