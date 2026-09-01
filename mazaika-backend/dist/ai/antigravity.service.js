@@ -20,6 +20,50 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
     constructor(mazaikaDb) {
         this.mazaikaDb = mazaikaDb;
     }
+    applyWebPatches(sourceCode, patches) {
+        let result = sourceCode;
+        let appliedCount = 0;
+        for (const patch of patches) {
+            if (!patch.search || !patch.replace)
+                continue;
+            const idx = result.indexOf(patch.search);
+            if (idx !== -1) {
+                result = result.substring(0, idx) + patch.replace + result.substring(idx + patch.search.length);
+                appliedCount++;
+                this.logger.log(`✅ Patch applied (search length: ${patch.search.length})`);
+            }
+            else {
+                this.logger.warn(`⚠️ Patch search string NOT FOUND in source. Patch skipped.`);
+            }
+        }
+        this.logger.log(`🔧 Applied ${appliedCount}/${patches.length} patches`);
+        return result;
+    }
+    applyBotPatches(currentBlocks, currentEdges, patchResult) {
+        let blocks = [...(currentBlocks || [])];
+        let edges = [...(currentEdges || [])];
+        if (patchResult.add_nodes?.length) {
+            blocks = [...blocks, ...patchResult.add_nodes];
+        }
+        if (patchResult.modify_nodes?.length) {
+            for (const modified of patchResult.modify_nodes) {
+                const idx = blocks.findIndex(b => b.id === modified.id);
+                if (idx !== -1)
+                    blocks[idx] = modified;
+            }
+        }
+        if (patchResult.remove_node_ids?.length) {
+            blocks = blocks.filter(b => !patchResult.remove_node_ids.includes(b.id));
+        }
+        if (patchResult.add_edges?.length) {
+            edges = [...edges, ...patchResult.add_edges];
+        }
+        if (patchResult.remove_edge_ids?.length) {
+            edges = edges.filter(e => !patchResult.remove_edge_ids.includes(e.id));
+        }
+        this.logger.log(`🔧 Bot patch: +${patchResult.add_nodes?.length || 0} nodes, ~${patchResult.modify_nodes?.length || 0} modified, -${patchResult.remove_node_ids?.length || 0} removed`);
+        return { blocks, edges };
+    }
     async generate(rawInput) {
         return this.generateFullProject(rawInput);
     }
@@ -32,6 +76,7 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
             let existingHtml = '';
             let imageBase64 = '';
             let imageMimeType = 'image/jpeg';
+            let projectState = null;
             if (typeof rawInput === 'string') {
                 promptText = rawInput;
             }
@@ -40,6 +85,7 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                 existingHtml = rawInput.currentHtml || rawInput.html || rawInput.siteHtml || rawInput.currentConfig?.source_code || rawInput.currentConfig?.html || '';
                 imageBase64 = rawInput.imageBase64 || '';
                 imageMimeType = rawInput.imageMimeType || 'image/jpeg';
+                projectState = rawInput.projectState || rawInput.currentConfig?.project_state || null;
                 if (rawInput.chatHistory?.length > 0)
                     chatHistory = rawInput.chatHistory;
                 if (rawInput.targetEntity)
@@ -47,11 +93,13 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
             }
             if (!existingHtml && currentConfig) {
                 existingHtml = currentConfig.source_code || currentConfig.html || '';
+                projectState = projectState || currentConfig.project_state || null;
             }
             const googleKey = (rawInput?.googleKey ||
                 process.env.GOOGLE_AI_STUDIO_KEY ||
                 process.env.GEMINI_API_KEY ||
                 '').trim();
+            const isEditMode = existingHtml.trim().length > 50;
             let target = targetEntity;
             if (!target) {
                 const routeRes = await this.callAI(prompts_1.ROUTING_AGENT_PROMPT, promptText, '', '', 0, true, googleKey);
@@ -62,60 +110,136 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
                     target = 'bot_and_mini_app';
                 }
             }
-            this.logger.log(`🚀 Routing determined target: ${target}`);
+            this.logger.log(`🚀 Routing: target=${target} | mode=${isEditMode ? 'PATCH' : 'FULL'}`);
             const historyContext = chatHistory.length > 0
-                ? `\n\nPrevious conversation:\n${chatHistory.slice(-5).map(m => `${m.role === 'user' ? 'User' : 'Antigravity'}: ${m.content}`).join('\n')}\n`
+                ? `\n\nCONVERSATION HISTORY (last 5 messages):\n${chatHistory.slice(-5).map(m => `${m.role === 'user' ? 'User' : 'Antigravity'}: ${m.content}`).join('\n')}\n`
                 : '';
-            const isEditMode = existingHtml.trim().length > 50;
+            const stateContext = projectState
+                ? `\n\nPROJECT ARCHITECTURE & CONTEXT (do NOT deviate from this):\n${JSON.stringify(projectState, null, 2)}\n`
+                : '';
             let botData = null;
             let siteData = null;
-            const userRequest = `USER REQUEST: "${promptText}"\n${historyContext}`;
-            if (target === 'site_only') {
-                siteData = await this.callAI(prompts_1.WEBAPP_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false, googleKey);
-            }
-            else if (target === 'bot_and_mini_app') {
-                const tasks = [
-                    this.callAI(prompts_1.BOT_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false, googleKey),
-                    this.callAI(prompts_1.WEBAPP_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false, googleKey)
-                ];
-                const [botRes, siteRes] = await Promise.all(tasks);
-                botData = botRes;
-                siteData = siteRes;
-            }
-            const finalResult = {
-                type: target === 'site_only' ? 'site' : 'bot_and_mini_app',
-                execution_mode: 'FULL_GENERATION',
-                target_entity: target,
-                title: 'AI Generated Project',
-                explanation: siteData?.explanation || botData?.explanation || 'Generatsiya yakunlandi!',
-                html: siteData?.html || existingHtml,
-                source_code: siteData?.html || existingHtml,
-                website_html: siteData?.html || existingHtml,
-                project_data: {
-                    target_entity: target,
-                    source_code: siteData?.html || existingHtml,
-                    html: siteData?.html || existingHtml,
-                    bot_blocks: botData?.bot_blocks || currentConfig?.bot_blocks || [],
-                    bot_edges: botData?.bot_edges || currentConfig?.bot_edges || [],
-                    bot_code: botData?.bot_code || ''
+            if (isEditMode) {
+                const userRequestForPatch = `USER REQUEST: "${promptText}"${historyContext}${stateContext}
+
+CURRENT SITE CODE (apply patches to this):
+\`\`\`html
+${existingHtml.substring(0, 12000)}${existingHtml.length > 12000 ? '\n... (truncated for token limit)' : ''}
+\`\`\``;
+                const currentBotBlocks = rawInput?.currentConfig?.bot_blocks || [];
+                const currentBotEdges = rawInput?.currentConfig?.bot_edges || [];
+                const userRequestForBotPatch = `USER REQUEST: "${promptText}"${historyContext}${stateContext}
+
+CURRENT BOT FLOW (apply patches to this):
+Bot Nodes: ${JSON.stringify(currentBotBlocks.slice(0, 20))}
+Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
+                if (target === 'site_only') {
+                    siteData = await this.callAI(prompts_1.WEBAPP_PATCH_PROMPT, userRequestForPatch, imageBase64, imageMimeType, 0, false, googleKey);
                 }
-            };
-            if (finalResult.html) {
-                const slug = promptText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').substring(0, 20) || 'default-site';
-                await this.mazaikaDb.save('global', `site_${slug}`, finalResult);
-                finalResult.explanation += `\n\n🌐 Sening sayting Mazaika Cloud'da tayyor: /cloud/sites/${slug}`;
+                else {
+                    const tasks = [
+                        this.callAI(prompts_1.BOT_PATCH_PROMPT, userRequestForBotPatch, '', '', 0, false, googleKey),
+                        this.callAI(prompts_1.WEBAPP_PATCH_PROMPT, userRequestForPatch, imageBase64, imageMimeType, 0, false, googleKey)
+                    ];
+                    const [botPatch, sitePatch] = await Promise.all(tasks);
+                    botData = botPatch;
+                    siteData = sitePatch;
+                }
+                let finalHtml = existingHtml;
+                if (siteData?.patches?.length > 0) {
+                    finalHtml = this.applyWebPatches(existingHtml, siteData.patches);
+                }
+                else if (siteData?.html) {
+                    finalHtml = siteData.html;
+                    this.logger.warn('⚠️ AI returned full HTML in patch mode. Accepting full HTML as fallback.');
+                }
+                let finalBotBlocks = currentBotBlocks;
+                let finalBotEdges = currentBotEdges;
+                if (botData && (botData.add_nodes || botData.modify_nodes || botData.remove_node_ids)) {
+                    const patched = this.applyBotPatches(currentBotBlocks, currentBotEdges, botData);
+                    finalBotBlocks = patched.blocks;
+                    finalBotEdges = patched.edges;
+                }
+                else if (botData?.bot_blocks) {
+                    finalBotBlocks = botData.bot_blocks;
+                    finalBotEdges = botData.bot_edges || currentBotEdges;
+                }
+                const updatedProjectState = siteData?.project_state || botData?.project_state || projectState;
+                const finalResult = {
+                    type: target === 'site_only' ? 'site' : 'bot_and_mini_app',
+                    execution_mode: 'PATCH',
+                    target_entity: target,
+                    title: 'AI Patched Project',
+                    explanation: siteData?.explanation || botData?.explanation || 'Muvaffaqiyatli yangilandi!',
+                    analysis: siteData?.analysis || botData?.analysis || '',
+                    html: finalHtml,
+                    source_code: finalHtml,
+                    website_html: finalHtml,
+                    project_state: updatedProjectState,
+                    project_data: {
+                        target_entity: target,
+                        source_code: finalHtml,
+                        html: finalHtml,
+                        bot_blocks: finalBotBlocks,
+                        bot_edges: finalBotEdges,
+                        bot_code: botData?.bot_code || rawInput?.currentConfig?.bot_code || '',
+                        project_state: updatedProjectState
+                    }
+                };
+                return finalResult;
             }
-            return finalResult;
+            else {
+                const userRequest = `USER REQUEST: "${promptText}"${historyContext}`;
+                if (target === 'site_only') {
+                    siteData = await this.callAI(prompts_1.WEBAPP_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false, googleKey);
+                }
+                else if (target === 'bot_and_mini_app') {
+                    const tasks = [
+                        this.callAI(prompts_1.BOT_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false, googleKey),
+                        this.callAI(prompts_1.WEBAPP_AGENT_PROMPT, userRequest, imageBase64, imageMimeType, 0, false, googleKey)
+                    ];
+                    const [botRes, siteRes] = await Promise.all(tasks);
+                    botData = botRes;
+                    siteData = siteRes;
+                }
+                const newProjectState = siteData?.project_state || botData?.project_state || null;
+                const finalResult = {
+                    type: target === 'site_only' ? 'site' : 'bot_and_mini_app',
+                    execution_mode: 'FULL_GENERATION',
+                    target_entity: target,
+                    title: 'AI Generated Project',
+                    explanation: siteData?.explanation || botData?.explanation || 'Generatsiya yakunlandi!',
+                    html: siteData?.html || existingHtml,
+                    source_code: siteData?.html || existingHtml,
+                    website_html: siteData?.html || existingHtml,
+                    project_state: newProjectState,
+                    project_data: {
+                        target_entity: target,
+                        source_code: siteData?.html || existingHtml,
+                        html: siteData?.html || existingHtml,
+                        bot_blocks: botData?.bot_blocks || currentConfig?.bot_blocks || [],
+                        bot_edges: botData?.bot_edges || currentConfig?.bot_edges || [],
+                        bot_code: botData?.bot_code || '',
+                        project_state: newProjectState
+                    }
+                };
+                if (finalResult.html) {
+                    const slug = promptText.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').substring(0, 20) || 'default-site';
+                    await this.mazaikaDb.save('global', `site_${slug}`, finalResult);
+                    finalResult.explanation += `\n\n🌐 Sening sayting Mazaika Cloud'da tayyor: /cloud/sites/${slug}`;
+                }
+                return finalResult;
+            }
         }
         catch (error) {
             this.logger.error(`Fatal Service Error: ${error.message}`);
             return {
                 type: 'site',
-                execution_mode: 'FULL_GENERATION',
+                execution_mode: 'ERROR',
                 target_entity: 'site_only',
                 title: 'Error',
                 explanation: 'Xatolik yuz berdi. Qayta urinib koring.',
-                html: rawInput?.currentHtml || ''
+                html: rawInput?.currentHtml || rawInput?.currentConfig?.html || ''
             };
         }
     }
@@ -132,11 +256,9 @@ let AntigravityService = AntigravityService_1 = class AntigravityService {
     }
     async callCloudflareAI(accountId, apiToken, systemInstruction, userPrompt) {
         const models = [
-            'google/gemini-3.1-pro',
-            'anthropic/claude-fable-5',
+            '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
             '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
             '@cf/meta/llama-3.1-70b-instruct',
-            '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
             '@cf/qwen/qwen1.5-14b-chat'
         ];
         for (const model of models) {

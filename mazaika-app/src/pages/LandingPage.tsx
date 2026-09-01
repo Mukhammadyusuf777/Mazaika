@@ -3,7 +3,7 @@ import { Sparkles, Loader2, Bot, Zap } from 'lucide-react'
 import { useTranslation } from '../hooks/useTranslation'
 import { useRef, useCallback, useEffect, useState } from 'react'
 import './LandingPage.css'
-
+import { BackgroundScene3D } from '../components/3d/BackgroundScene3D';
 const TRANSLATIONS = {
   UZ: {
     navFeatures: 'Imkoniyatlar',
@@ -581,7 +581,8 @@ export default function LandingPage() {
   const handleMagnetLeave = () => setMagnetPos({ x: 0, y: 0 })
 
   return (
-    <div className="landing-page">
+    <div className="landing-page lp-main">
+      <BackgroundScene3D />
       {/* ── 3D PARTICLE NETWORK CANVAS ─────────────────────────── */}
       <ParticleCanvas />
 

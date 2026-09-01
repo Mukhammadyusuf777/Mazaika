@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Разрешаем пользователям создавать и редактировать ТОЛЬКО свой собственный профиль
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Разрешаем авторизованным пользователям работать с ботами
+    match /bots/{botId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Для всех остальных коллекций (временно разрешаем доступ для авторизованных)
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
