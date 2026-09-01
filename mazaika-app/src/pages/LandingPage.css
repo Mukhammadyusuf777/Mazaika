@@ -125,7 +125,7 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; }
   position: relative;
   overflow: hidden;
   min-height: 100vh;
-  background: #01010a;
+  background: transparent;
 }
 
 /* Animated subtle grid */

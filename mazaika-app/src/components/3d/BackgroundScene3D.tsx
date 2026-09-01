@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Environment, Stars, AdaptiveDpr, AdaptiveEvents } from '@react-three/drei';
+import { Stars, AdaptiveDpr } from '@react-three/drei';
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -11,66 +11,91 @@ gsap.registerPlugin(ScrollTrigger);
 function SceneController() {
   const { camera } = useThree();
   const sceneGroup = useRef<THREE.Group>(null);
+  
+  // Track scroll state
   const state = useRef({
-    separation: 0,
-    cameraZ: 6,
+    separation: 1.6, // Start slightly exploded so it looks amazing right away!
+    cameraZ: 6.5,
     cameraY: 0,
-    rotationX: 0,
-    rotationY: 0,
+    cameraX: 0,
+    rotationX: -0.2,
+    rotationY: 0.35,
     rotationZ: 0,
   });
 
+  // Track mouse coordinates for subtle parallax
+  const mouse = useRef({ x: 0, y: 0 });
+
   useEffect(() => {
-    // We animate state object using GSAP and apply it to Three.js in useFrame
+    const handleMouseMove = (e: MouseEvent) => {
+      mouse.current.x = (e.clientX / window.innerWidth - 0.5) * 2;
+      mouse.current.y = (e.clientY / window.innerHeight - 0.5) * 2;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
         scrollTrigger: {
-          trigger: '.lp-main',
+          trigger: '.landing-page',
           start: 'top top',
           end: 'bottom bottom',
-          scrub: 1,
+          scrub: 1.2,
         }
       });
 
-      // Phase 1: Scroll to Features -> Explode layers and tilt
+      // 1. Hero -> Features: Expand to full Exploded View and tilt
       tl.to(state.current, {
-        separation: 2.5,
-        rotationX: -Math.PI / 6,
-        rotationY: -Math.PI / 8,
-        cameraZ: 8,
-        ease: 'power2.inOut',
+        separation: 2.8,
+        rotationX: -0.35,
+        rotationY: -0.5,
+        cameraZ: 8.0,
+        cameraX: 0.5,
+        ease: 'power1.inOut',
       }, 0);
 
-      // Phase 2: Scroll to AI -> Focus on bottom layer
+      // 2. Features -> AI Section: Focus on bottom layer
       tl.to(state.current, {
-        cameraY: -2.5, // Move camera down
-        rotationX: -Math.PI / 4,
-        cameraZ: 7,
-        ease: 'power2.inOut',
+        separation: 3.0,
+        cameraY: -2.8,
+        cameraZ: 6.8,
+        rotationX: -0.45,
+        rotationY: 0.6,
+        ease: 'power1.inOut',
       }, 1);
 
-      // Phase 3: Scroll to Pricing/CTA -> Collapse back
+      // 3. AI -> Pricing & CTA: Re-align into dynamic stack
       tl.to(state.current, {
-        separation: 0,
+        separation: 1.2,
         cameraY: 0,
-        rotationX: 0,
-        rotationY: 0,
-        cameraZ: 6,
-        ease: 'power2.inOut',
+        cameraZ: 7.2,
+        rotationX: -0.15,
+        rotationY: 0.2,
+        ease: 'power1.inOut',
       }, 2);
     });
 
-    return () => ctx.revert();
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      ctx.revert();
+    };
   }, []);
 
-  useFrame(() => {
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    
+    // Smooth mouse parallax + base rotation
+    const targetRotX = state.current.rotationX - mouse.current.y * 0.15 + Math.sin(t * 0.5) * 0.03;
+    const targetRotY = state.current.rotationY + mouse.current.x * 0.2 + Math.cos(t * 0.4) * 0.05;
+
     if (sceneGroup.current) {
-      sceneGroup.current.rotation.x = THREE.MathUtils.lerp(sceneGroup.current.rotation.x, state.current.rotationX, 0.1);
-      sceneGroup.current.rotation.y = THREE.MathUtils.lerp(sceneGroup.current.rotation.y, state.current.rotationY, 0.1);
-      sceneGroup.current.rotation.z = THREE.MathUtils.lerp(sceneGroup.current.rotation.z, state.current.rotationZ, 0.1);
+      sceneGroup.current.rotation.x = THREE.MathUtils.lerp(sceneGroup.current.rotation.x, targetRotX, 0.08);
+      sceneGroup.current.rotation.y = THREE.MathUtils.lerp(sceneGroup.current.rotation.y, targetRotY, 0.08);
+      sceneGroup.current.rotation.z = THREE.MathUtils.lerp(sceneGroup.current.rotation.z, state.current.rotationZ, 0.08);
     }
-    camera.position.z = THREE.MathUtils.lerp(camera.position.z, state.current.cameraZ, 0.1);
-    camera.position.y = THREE.MathUtils.lerp(camera.position.y, state.current.cameraY, 0.1);
+
+    camera.position.x = THREE.MathUtils.lerp(camera.position.x, state.current.cameraX, 0.08);
+    camera.position.y = THREE.MathUtils.lerp(camera.position.y, state.current.cameraY, 0.08);
+    camera.position.z = THREE.MathUtils.lerp(camera.position.z, state.current.cameraZ, 0.08);
     camera.lookAt(0, state.current.cameraY, 0);
   });
 
@@ -83,26 +108,36 @@ function SceneController() {
 
 export function BackgroundScene3D() {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: -1, pointerEvents: 'none', background: '#02040a' }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 0, // Behind HTML content but above background color
+        pointerEvents: 'none',
+        overflow: 'hidden',
+      }}
+    >
       <Canvas
-        camera={{ position: [0, 0, 6], fov: 45 }}
-        gl={{ antialias: false, powerPreference: 'high-performance', alpha: true }}
+        camera={{ position: [0, 0, 6.5], fov: 45 }}
+        gl={{
+          antialias: true,
+          alpha: true,
+          powerPreference: 'high-performance',
+        }}
       >
-        <AdaptiveDpr pixelated />
-        <AdaptiveEvents />
-        <color attach="background" args={['#02040a']} />
-        <fog attach="fog" args={['#02040a', 5, 20]} />
+        <AdaptiveDpr pixelated={false} />
         
-        {/* Lights */}
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[5, 10, 5]} intensity={1} color="#00f0ff" />
-        <directionalLight position={[-5, -10, -5]} intensity={1} color="#9d00ff" />
+        {/* Crisp Lighting with Vibrant Colors */}
+        <ambientLight intensity={0.8} />
+        <pointLight position={[10, 10, 10]} intensity={3.5} color="#00f0ff" distance={30} />
+        <pointLight position={[-10, -10, -5]} intensity={3.0} color="#9d00ff" distance={30} />
+        <pointLight position={[0, 0, 8]} intensity={1.5} color="#ffffff" distance={20} />
+        <directionalLight position={[0, 15, 5]} intensity={2.0} color="#00f5d4" />
         
-        {/* Environment */}
-        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-        <Environment preset="night" />
-        
-        {/* Main Logic */}
+        {/* Background Starry Nebula */}
+        <Stars radius={80} depth={40} count={3500} factor={4} saturation={1} fade speed={1.5} />
+
+        {/* 3D Scene */}
         <SceneController />
       </Canvas>
     </div>
