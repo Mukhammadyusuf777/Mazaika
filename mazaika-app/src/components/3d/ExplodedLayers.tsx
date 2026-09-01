@@ -1,140 +1,295 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RoundedBox } from '@react-three/drei';
+import { RoundedBox, Text, QuadraticBezierLine } from '@react-three/drei';
 import * as THREE from 'three';
 
-interface LegoBlockProps {
-  initialPos: [number, number, number];
-  driftDir: [number, number, number];
-  separation: number;
+interface WorkflowNodeData {
+  id: string;
+  title: string;
+  icon: string;
+  subtitle: string;
   color: string;
-  glowColor: string;
-  size?: [number, number, number];
-  rotationSpeed?: number;
+  pos: [number, number, number];
+  drift: [number, number, number];
 }
 
-function ModularLegoBlock({
-  initialPos,
-  driftDir,
+const WORKFLOW_NODES: WorkflowNodeData[] = [
+  {
+    id: 'start',
+    title: 'Start Trigger',
+    icon: '🚀',
+    subtitle: '/start command',
+    color: '#10B981',
+    pos: [-2.2, 1.4, 0],
+    drift: [-1.8, 1.2, -0.6],
+  },
+  {
+    id: 'message',
+    title: 'Interactive Menu',
+    icon: '💬',
+    subtitle: 'Buttons & Catalog',
+    color: '#38BDF8',
+    pos: [-0.4, 0.9, 0.4],
+    drift: [-1.2, 0.6, 0.2],
+  },
+  {
+    id: 'ai',
+    title: 'Mazaika AI Agent',
+    icon: '🧠',
+    subtitle: 'DeepSeek R1 Core',
+    color: '#00F0FF',
+    pos: [1.6, 1.2, -0.2],
+    drift: [1.6, 1.0, -0.4],
+  },
+  {
+    id: 'payme',
+    title: 'Payme / Click',
+    icon: '💳',
+    subtitle: 'Auto Invoice (UZS)',
+    color: '#F59E0B',
+    pos: [0.8, -0.7, 0.6],
+    drift: [1.8, -1.0, 0.8],
+  },
+  {
+    id: 'analytics',
+    title: 'Live Analytics',
+    icon: '📊',
+    subtitle: 'Conversion & CRM',
+    color: '#8B5CF6',
+    pos: [-1.6, -0.8, -0.3],
+    drift: [-2.0, -1.2, -0.5],
+  },
+  {
+    id: 'webhook',
+    title: 'Webhook API',
+    icon: '⚡',
+    subtitle: 'HTTP REST Sync',
+    color: '#EC4899',
+    pos: [2.6, -0.3, -0.8],
+    drift: [2.8, -0.4, -1.2],
+  },
+];
+
+const CONNECTIONS = [
+  { from: 0, to: 1, color: '#38BDF8' },
+  { from: 1, to: 2, color: '#00F0FF' },
+  { from: 2, to: 3, color: '#F59E0B' },
+  { from: 2, to: 4, color: '#8B5CF6' },
+  { from: 3, to: 5, color: '#EC4899' },
+];
+
+function WorkflowNode3D({
+  data,
   separation,
-  color,
-  glowColor,
-  size = [1.1, 1.1, 1.1],
-  rotationSpeed = 0.5,
-}: LegoBlockProps) {
-  const meshRef = useRef<THREE.Group>(null);
+}: {
+  data: WorkflowNodeData;
+  separation: number;
+}) {
+  const groupRef = useRef<THREE.Group>(null);
 
   useFrame(({ clock }) => {
-    if (!meshRef.current) return;
+    if (!groupRef.current) return;
     const t = clock.elapsedTime;
 
-    // Subtle breathing / floating motion
-    const floatY = Math.sin(t * rotationSpeed + initialPos[0] * 2) * 0.08;
-    const floatRotX = Math.sin(t * 0.4 + initialPos[1]) * 0.04;
-    const floatRotY = Math.cos(t * 0.3 + initialPos[2]) * 0.04;
+    // Gentle organic floating oscillation
+    const floatY = Math.sin(t * 1.2 + data.pos[0] * 1.5) * 0.07;
+    const floatRotX = Math.sin(t * 0.5 + data.pos[1]) * 0.03;
+    const floatRotY = Math.cos(t * 0.4 + data.pos[2]) * 0.03;
 
-    // Calculate current position based on scroll separation
-    meshRef.current.position.x = initialPos[0] + driftDir[0] * separation;
-    meshRef.current.position.y = initialPos[1] + driftDir[1] * separation + floatY;
-    meshRef.current.position.z = initialPos[2] + driftDir[2] * separation;
+    // Disperse outwards on scroll to keep center clear
+    groupRef.current.position.x = data.pos[0] + data.drift[0] * separation;
+    groupRef.current.position.y = data.pos[1] + data.drift[1] * separation + floatY;
+    groupRef.current.position.z = data.pos[2] + data.drift[2] * separation;
 
-    meshRef.current.rotation.x = floatRotX;
-    meshRef.current.rotation.y = floatRotY;
+    groupRef.current.rotation.x = floatRotX;
+    groupRef.current.rotation.y = floatRotY;
   });
 
-  const [w, h, d] = size;
-
   return (
-    <group ref={meshRef} position={initialPos}>
-      {/* Outer Obsidian Glass Body */}
-      <RoundedBox args={[w, h, d]} radius={0.08} smoothness={4}>
+    <group ref={groupRef} position={data.pos}>
+      {/* Dark Obsidian Glass Base Panel */}
+      <RoundedBox args={[2.1, 1.05, 0.06]} radius={0.06} smoothness={4}>
         <meshPhysicalMaterial
-          color={color}
-          metalness={0.15}
-          roughness={0.15}
-          transmission={0.88}
-          thickness={1.4}
-          ior={1.5}
+          color="#0b101c"
+          metalness={0.2}
+          roughness={0.12}
+          transmission={0.85}
+          thickness={0.8}
           transparent
-          opacity={0.75}
-          reflectivity={0.8}
-          clearcoat={0.8}
+          opacity={0.88}
+          reflectivity={0.9}
         />
       </RoundedBox>
 
-      {/* Elegant Glowing Edges */}
+      {/* Subtle Glowing Perimeter Border */}
       <lineSegments>
-        <edgesGeometry args={[new THREE.BoxGeometry(w, h, d)]} />
-        <lineBasicMaterial color={glowColor} transparent opacity={0.65} />
+        <edgesGeometry args={[new THREE.BoxGeometry(2.1, 1.05, 0.06)]} />
+        <lineBasicMaterial color={data.color} transparent opacity={0.7} />
       </lineSegments>
 
-      {/* Lego Studs on Top Face */}
-      {[-w / 4, w / 4].map((sx, i) =>
-        [-d / 4, d / 4].map((sz, j) => (
-          <mesh key={`${i}-${j}`} position={[sx, h / 2 + 0.06, sz]}>
-            <cylinderGeometry args={[0.14, 0.14, 0.12, 16]} />
-            <meshPhysicalMaterial
-              color={color}
-              metalness={0.2}
-              roughness={0.1}
-              transmission={0.8}
-              transparent
-              opacity={0.8}
-            />
-          </mesh>
-        ))
-      )}
-
-      {/* Internal Pulsing Neon AI Core */}
-      <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[w * 0.42, h * 0.42, d * 0.42]} />
-        <meshStandardMaterial
-          color={glowColor}
-          emissive={glowColor}
-          emissiveIntensity={1.6}
-          roughness={0.2}
-          transparent
-          opacity={0.9}
-        />
+      {/* Top Header Banner */}
+      <mesh position={[0, 0.36, 0.035]}>
+        <planeGeometry args={[1.98, 0.22]} />
+        <meshBasicMaterial color={data.color} transparent opacity={0.2} />
       </mesh>
+
+      {/* Port Connector Left (Input) */}
+      <mesh position={[-1.06, 0, 0]}>
+        <circleGeometry args={[0.07, 16]} />
+        <meshBasicMaterial color={data.color} />
+      </mesh>
+
+      {/* Port Connector Right (Output) */}
+      <mesh position={[1.06, 0, 0]}>
+        <circleGeometry args={[0.07, 16]} />
+        <meshBasicMaterial color={data.color} />
+      </mesh>
+
+      {/* Node Title */}
+      <Text
+        position={[-0.85, 0.36, 0.045]}
+        fontSize={0.12}
+        color="#FFFFFF"
+        anchorX="left"
+        anchorY="middle"
+        font={undefined}
+      >
+        {`${data.icon}  ${data.title}`}
+      </Text>
+
+      {/* Node Subtitle / Payload Info */}
+      <Text
+        position={[-0.85, 0.02, 0.045]}
+        fontSize={0.095}
+        color="#94A3B8"
+        anchorX="left"
+        anchorY="middle"
+        font={undefined}
+      >
+        {data.subtitle}
+      </Text>
+
+      {/* Status Active Badge */}
+      <mesh position={[0.7, -0.26, 0.04]}>
+        <planeGeometry args={[0.42, 0.16]} />
+        <meshBasicMaterial color={data.color} transparent opacity={0.25} />
+      </mesh>
+      <Text
+        position={[0.7, -0.26, 0.045]}
+        fontSize={0.075}
+        color={data.color}
+        anchorX="center"
+        anchorY="middle"
+        font={undefined}
+      >
+        ACTIVE
+      </Text>
     </group>
   );
 }
 
+// ─── DATA PULSE PARTICLE ON CURVE ──────────────────────────────────────────
+function DataPulse({
+  start,
+  end,
+  mid,
+  color,
+  speed = 1.0,
+  offset = 0,
+}: {
+  start: [number, number, number];
+  end: [number, number, number];
+  mid: [number, number, number];
+  color: string;
+  speed?: number;
+  offset?: number;
+}) {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  const curve = useMemo(() => {
+    return new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(...start),
+      new THREE.Vector3(...mid),
+      new THREE.Vector3(...end)
+    );
+  }, [start, end, mid]);
+
+  useFrame(({ clock }) => {
+    if (!meshRef.current) return;
+    const progress = ((clock.elapsedTime * speed * 0.4 + offset) % 1);
+    const point = curve.getPoint(progress);
+    meshRef.current.position.set(point.x, point.y, point.z);
+  });
+
+  return (
+    <mesh ref={meshRef}>
+      <sphereGeometry args={[0.045, 12, 12]} />
+      <meshBasicMaterial color={color} />
+    </mesh>
+  );
+}
+
+// ─── WORKFLOW CONNECTIONS GRAPH ────────────────────────────────────────────
+function WorkflowConnections({ separation }: { separation: number }) {
+  // Calculate dynamic node positions factoring in separation
+  const currentPositions = useMemo(() => {
+    return WORKFLOW_NODES.map((n) => [
+      n.pos[0] + n.drift[0] * separation,
+      n.pos[1] + n.drift[1] * separation,
+      n.pos[2] + n.drift[2] * separation,
+    ] as [number, number, number]);
+  }, [separation]);
+
+  return (
+    <group>
+      {CONNECTIONS.map((c, idx) => {
+        const startPos = currentPositions[c.from];
+        const endPos = currentPositions[c.to];
+
+        const mid: [number, number, number] = [
+          (startPos[0] + endPos[0]) / 2,
+          (startPos[1] + endPos[1]) / 2 + 0.3,
+          (startPos[2] + endPos[2]) / 2 + 0.2,
+        ];
+
+        return (
+          <group key={idx}>
+            {/* Glowing Wire Cable */}
+            <QuadraticBezierLine
+              start={startPos}
+              end={endPos}
+              mid={mid}
+              color={c.color}
+              lineWidth={1.2}
+              transparent
+              opacity={0.45}
+            />
+
+            {/* Flowing Energy Data Pulses */}
+            <DataPulse start={startPos} end={endPos} mid={mid} color={c.color} speed={1.2} offset={0} />
+            <DataPulse start={startPos} end={endPos} mid={mid} color={c.color} speed={1.2} offset={0.5} />
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+// ─── MAIN EXPORT ──────────────────────────────────────────────────────────
 export interface ExplodedLayersProps {
   separation: number;
 }
 
 export function ExplodedLayers({ separation }: ExplodedLayersProps) {
-  // Pre-configured block matrix representing Mazaika's modular Lego architecture
-  const blocks = useMemo(() => [
-    // Central Anchor Blocks (Disperse outwards to left & right on scroll)
-    { initialPos: [-0.9, 0.6, 0.3] as [number, number, number], driftDir: [-2.4, 0.8, -0.5] as [number, number, number], color: '#09101d', glowColor: '#00F0FF', size: [1.2, 0.8, 1.2] as [number, number, number], rotationSpeed: 0.6 },
-    { initialPos: [0.8, 0.7, -0.2] as [number, number, number], driftDir: [2.5, 0.9, -0.8] as [number, number, number], color: '#130c24', glowColor: '#8B5CF6', size: [1.3, 0.9, 1.3] as [number, number, number], rotationSpeed: 0.5 },
-    { initialPos: [-0.7, -0.7, 0.5] as [number, number, number], driftDir: [-2.2, -0.9, 0.4] as [number, number, number], color: '#09101d', glowColor: '#00F0FF', size: [1.1, 1.1, 1.1] as [number, number, number], rotationSpeed: 0.7 },
-    { initialPos: [0.9, -0.6, 0.2] as [number, number, number], driftDir: [2.3, -0.8, 0.6] as [number, number, number], color: '#130c24', glowColor: '#8B5CF6', size: [1.2, 0.9, 1.2] as [number, number, number], rotationSpeed: 0.4 },
-
-    // Peripheral Supporting Modules
-    { initialPos: [-1.8, -0.1, -0.6] as [number, number, number], driftDir: [-3.2, 0.2, -1.2] as [number, number, number], color: '#08111e', glowColor: '#38BDF8', size: [0.9, 0.9, 0.9] as [number, number, number], rotationSpeed: 0.8 },
-    { initialPos: [1.9, 0.2, -0.5] as [number, number, number], driftDir: [3.4, 0.3, -1.0] as [number, number, number], color: '#140c24', glowColor: '#A855F7', size: [1.0, 0.8, 1.0] as [number, number, number], rotationSpeed: 0.55 },
-    { initialPos: [0.1, 1.4, -0.4] as [number, number, number], driftDir: [0.2, 2.2, -1.5] as [number, number, number], color: '#09101d', glowColor: '#00F0FF', size: [1.0, 0.7, 1.0] as [number, number, number], rotationSpeed: 0.65 },
-    { initialPos: [-0.1, -1.4, -0.3] as [number, number, number], driftDir: [-0.3, -2.4, -1.2] as [number, number, number], color: '#130c24', glowColor: '#8B5CF6', size: [1.1, 0.8, 1.1] as [number, number, number], rotationSpeed: 0.5 },
-  ], []);
-
   return (
-    <group position={[0, 0, 0]}>
-      {blocks.map((block, idx) => (
-        <ModularLegoBlock
-          key={idx}
-          initialPos={block.initialPos}
-          driftDir={block.driftDir}
-          separation={separation}
-          color={block.color}
-          glowColor={block.glowColor}
-          size={block.size}
-          rotationSpeed={block.rotationSpeed}
-        />
+    <group scale={1.15}>
+      {/* Connected 3D Bot Workflow Nodes */}
+      {WORKFLOW_NODES.map((node) => (
+        <WorkflowNode3D key={node.id} data={node} separation={separation} />
       ))}
+
+      {/* Animated Data Transfer Wires */}
+      <WorkflowConnections separation={separation} />
     </group>
   );
 }

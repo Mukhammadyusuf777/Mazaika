@@ -383,21 +383,38 @@ const TRANSLATIONS = {
 }
 
 // Scroll reveal hook
-function useScrollReveal() {
+function useScrollReveal(dependency?: any) {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('revealed')
+            entry.target.classList.add('revealed');
           }
-        })
+        });
       },
-      { threshold: 0.1, rootMargin: '0px 0px -60px 0px' }
-    )
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el))
-    return () => observer.disconnect()
-  }, [])
+      { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
+    );
+
+    // Initial check
+    const elements = document.querySelectorAll('.reveal');
+    elements.forEach(el => observer.observe(el));
+
+    // Fallback: If page loads already scrolled or fast scroll
+    const timer = setTimeout(() => {
+      document.querySelectorAll('.reveal').forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight - 40) {
+          el.classList.add('revealed');
+        }
+      });
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [dependency]);
 }
 
 export default function LandingPage() {
@@ -405,7 +422,7 @@ export default function LandingPage() {
   const { lang, changeLanguage } = useTranslation()
   const t = TRANSLATIONS[lang as keyof typeof TRANSLATIONS] || TRANSLATIONS['UZ']
 
-  useScrollReveal()
+  useScrollReveal(lang)
 
   // ── 3D tilt phone ──────────────────────────────────────────
   const phoneRef = useRef<HTMLDivElement>(null)
