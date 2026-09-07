@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Sparkles, Send, Bot, Save, Globe, Menu, X, MessageSquare, Trash2, Paperclip, Zap, Code2 } from 'lucide-react'
 import { useChatStore } from '../../store/useChatStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -148,6 +148,7 @@ const renderCanvasBlock = (b: any, bIdx: number, activeConfig: any, onEditClick?
 
 export default function AiWorkspacePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuthStore()
   const { chats, isLoading, sendMessage, activeConfig, setActiveConfig, clearMessages, projectId, setProjectId } = useChatStore()
   const messages = chats[projectId] || []
@@ -159,7 +160,7 @@ export default function AiWorkspacePage() {
   }
 
   const [aiTargetEntity, setAiTargetEntity] = useState<'bot_and_mini_app' | 'site_only'>('bot_and_mini_app')
-  const [promptInput, setPromptInput] = useState('')
+  const [promptInput, setPromptInput] = useState<string>((location.state as any)?.prompt || '')
   const [savingBot, setSavingBot] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [projects, setProjects] = useState<any[]>([])

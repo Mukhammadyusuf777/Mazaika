@@ -1,24 +1,36 @@
+/* =============================================
+   MAZAIKA — Profile Page
+   Theme: Dark Obsidian & Glass
+   ============================================= */
+
 .profile-page {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: var(--bg-main);
-  color: var(--text-main);
+  background: #06070B;
+  color: #F8FAFC;
+  font-family: var(--font-body, 'Inter', -apple-system, sans-serif);
 }
 
 .profile-header {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--border-color);
-  background-color: var(--bg-panel);
+  padding: 18px 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(6, 9, 16, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  z-index: 10;
 }
 
 .profile-header h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-family: var(--font-display, 'Outfit', sans-serif);
+  font-size: 1.35rem;
+  font-weight: 800;
   margin: 0;
+  color: #fff;
+  letter-spacing: -0.02em;
 }
 
 .profile-content {
@@ -29,12 +41,14 @@
 
 .profile-sidebar {
   width: 280px;
-  border-right: 1px solid var(--border-color);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
   padding: 24px 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background-color: var(--bg-panel);
+  background: rgba(6, 9, 16, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 .tab-btn {
@@ -42,30 +56,32 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: transparent;
-  color: var(--text-secondary);
-  border: none;
+  color: #94A3B8;
+  border: 1px solid transparent;
   cursor: pointer;
-  font-size: 0.95rem;
-  font-weight: 500;
+  font-size: 0.92rem;
+  font-weight: 600;
   text-align: left;
   transition: all 0.2s ease;
 }
 
 .tab-btn:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
 }
 
 .tab-btn.active {
-  background-color: var(--accent-blue-transparent);
-  color: var(--accent-blue);
+  background: linear-gradient(90deg, rgba(0, 217, 255, 0.14), rgba(0, 217, 255, 0.02));
+  color: #00D9FF;
+  border-color: rgba(0, 217, 255, 0.25);
+  box-shadow: 0 0 20px rgba(0, 217, 255, 0.12);
 }
 
 .sidebar-divider {
   height: 1px;
-  background-color: var(--border-color);
+  background: rgba(255, 255, 255, 0.08);
   margin: 16px 0;
 }
 
@@ -73,80 +89,92 @@
   flex: 1;
   padding: 40px;
   overflow-y: auto;
+  background: #06070B;
 }
 
 .profile-card {
-  max-width: 600px;
-  background-color: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 32px;
+  max-width: 640px;
+  background: rgba(12, 17, 28, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 36px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 
 .profile-card h3 {
+  font-family: var(--font-display, 'Outfit', sans-serif);
   font-size: 1.5rem;
+  font-weight: 800;
   margin: 0 0 8px 0;
+  color: #fff;
 }
 
 .profile-card .subtitle {
-  color: var(--text-secondary);
-  margin-bottom: 32px;
-  font-size: 0.95rem;
+  color: #94A3B8;
+  margin-bottom: 30px;
+  font-size: 0.92rem;
 }
 
 .form-group {
-  margin-bottom: 24px;
+  margin-bottom: 22px;
 }
 
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.9rem;
+  color: #CBD5E1;
 }
 
 .form-group .input {
   width: 100%;
   padding: 12px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background-color: var(--bg-main);
-  color: var(--text-main);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(6, 9, 16, 0.85);
+  color: #fff;
   font-size: 0.95rem;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .form-group .input:focus {
-  border-color: var(--accent-blue);
+  border-color: #00D9FF;
   outline: none;
+  box-shadow: 0 0 16px rgba(0, 217, 255, 0.25);
 }
 
 .form-group .input:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .help-text {
   display: block;
   margin-top: 8px;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
+  color: #64748B;
+  font-size: 0.82rem;
 }
 
 .form-actions {
   margin-top: 32px;
   padding-top: 24px;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .billing-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px;
-  border-radius: 12px;
+  padding: 24px 28px;
+  border-radius: 16px;
   color: white;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.4) 0%, rgba(0, 217, 255, 0.3) 100%);
+  border: 1px solid rgba(0, 217, 255, 0.35);
+  box-shadow: 0 10px 30px rgba(0, 217, 255, 0.15);
 }
 
 .plan-info {
@@ -156,13 +184,16 @@
 }
 
 .plan-name {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-family: var(--font-display, 'Outfit', sans-serif);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .plan-price {
   font-size: 0.9rem;
   opacity: 0.9;
+  color: #E2E8F0;
 }
 
 .usage-stats {
@@ -172,21 +203,22 @@
 }
 
 .stat-card {
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background-color: var(--bg-main);
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(6, 9, 16, 0.8);
 }
 
 .stat-card h4 {
   margin: 0 0 12px 0;
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  font-weight: 600;
+  color: #94A3B8;
 }
 
 .progress-bar {
   height: 8px;
-  background-color: var(--border-color);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 8px;
@@ -194,20 +226,22 @@
 
 .progress-bar .fill {
   height: 100%;
-  background-color: var(--accent-blue);
+  background: linear-gradient(90deg, #00D9FF, #00F5C4);
   border-radius: 4px;
+  box-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
 }
 
 .stat-card span {
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 600;
+  color: #CBD5E1;
 }
 
 .api-key-box {
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
   padding: 24px;
-  background-color: var(--bg-main);
+  background: rgba(6, 9, 16, 0.8);
 }
 
 .api-key-header {
@@ -215,11 +249,21 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 16px;
-  font-weight: 500;
+  font-weight: 700;
+  color: #fff;
 }
 
 .api-key-value {
   display: flex;
   gap: 12px;
   margin-bottom: 8px;
+}
+
+.text-red-500 {
+  color: #FF4D6D !important;
+}
+
+.text-red-500:hover {
+  background: rgba(255, 77, 109, 0.12) !important;
+  color: #FF6B8B !important;
 }
