@@ -76,12 +76,16 @@ export default function AppLayout() {
           }} 
           data-tooltip="Dashboard"
         >
-          <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
-            <rect x="2" y="2" width="10" height="10" rx="3" fill="#1e90ff"/>
-            <rect x="16" y="2" width="10" height="10" rx="3" fill="#00f5c4" opacity="0.8"/>
-            <rect x="2" y="16" width="10" height="10" rx="3" fill="#00f5c4" opacity="0.8"/>
-            <rect x="16" y="16" width="10" height="10" rx="3" fill="#1e90ff" opacity="0.5"/>
-          </svg>
+          <div style={{
+            width: 28, height: 28,
+            background: 'linear-gradient(135deg, rgba(0,217,255,0.25), rgba(124,58,237,0.35))',
+            border: '1px solid rgba(0,217,255,0.4)',
+            borderRadius: 8,
+            display: 'grid',
+            placeItems: 'center'
+          }}>
+            <Sparkles size={14} color="#00D9FF" />
+          </div>
         </div>
 
         <div className="sidebar-divider" />
@@ -111,8 +115,8 @@ export default function AppLayout() {
           <button 
             className="sidebar-item" 
             onClick={() => navigate('/dashboard/ai-workspace')}
-            data-tooltip="AI Workspace"
-            style={{ color: '#a855f7' }}
+            data-tooltip="Mazaika AI"
+            style={{ color: '#00D9FF' }}
           >
             <Sparkles size={20} />
           </button>
@@ -149,7 +153,7 @@ export default function AppLayout() {
                   <Bot size={18} style={{ color: 'var(--accent-blue)' }} />
                   <span style={{ fontWeight: 600, fontSize: '13px' }}>{projectName}</span>
                   <span className="badge badge-aqua" style={{ fontSize: '9px', padding: '1px 6px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10d974' }}></span>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }}></span>
                     Faol
                   </span>
                 </>
@@ -170,9 +174,9 @@ export default function AppLayout() {
             <button 
               className="btn btn-ghost btn-sm" 
               onClick={() => navigate('/dashboard/ai-workspace')}
-              style={{ gap: 6, color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.3)', background: 'rgba(168, 85, 247, 0.08)' }}
+              style={{ gap: 6, color: '#00D9FF', border: '1px solid rgba(0, 217, 255, 0.35)', background: 'rgba(0, 217, 255, 0.08)' }}
             >
-              <Sparkles size={14} /> AI Workspace
+              <Sparkles size={14} /> Mazaika AI
             </button>
             <button 
               className="btn btn-ghost btn-sm btn-icon"

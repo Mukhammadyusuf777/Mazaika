@@ -33,7 +33,7 @@ const TRANSLATIONS = {
     showcaseTitle: 'Mazaika Studio • Interaktiv Mahsulot Simulyatori',
     tabFlow: 'Vizual Sxema (Node Graph)',
     tabMiniApp: 'Telegram Mini App (Do\'kon)',
-    tabAI: 'Mazaika AI Copilot',
+    tabAI: 'Mazaika AI',
     tabPay: 'Payme & Click To\'lov',
     tabCRM: 'Jonli CRM & Analitika',
 
@@ -98,7 +98,7 @@ const TRANSLATIONS = {
     showcaseTitle: 'Mazaika Studio • Интерактивный Симулятор Продукта',
     tabFlow: 'Визуальный граф (Node Workflow)',
     tabMiniApp: 'Telegram Mini App (Магазин)',
-    tabAI: 'Mazaika AI Copilot',
+    tabAI: 'Mazaika AI',
     tabPay: 'Платежи Payme & Click',
     tabCRM: 'CRM и Живая Аналитика',
 
@@ -163,7 +163,7 @@ const TRANSLATIONS = {
     showcaseTitle: 'Mazaika Studio • Live Interactive Product Simulator',
     tabFlow: 'Visual Node Workflow',
     tabMiniApp: 'Telegram Mini App (Store)',
-    tabAI: 'Mazaika AI Copilot',
+    tabAI: 'Mazaika AI',
     tabPay: 'Payme & Click Checkout',
     tabCRM: 'Live CRM & Analytics',
 
@@ -457,7 +457,7 @@ export default function LandingPage() {
                       <div className="flow-node node-ai">
                         <div className="node-head cyan">
                           <span className="node-icon">🤖</span>
-                          <span className="node-type">AI COPILOT</span>
+                          <span className="node-type">MAZAIKA AI</span>
                           <span className="node-status">ACTIVE</span>
                         </div>
                         <div className="node-body">
@@ -961,7 +961,7 @@ const PizzaBotFlow = {
               <div className="bento-glow"></div>
               <div className="bento-tag">DEEPSEEK-R1</div>
               <div className="bento-icon-lg">🤖</div>
-              <h3>Mazaika AI Copilot</h3>
+              <h3>Mazaika AI</h3>
               <p>
                 Shunchaki o'zbek yoki rus tilida bot vazifasini yozing.
                 AI arxitektor bir zumda to'liq mantiqni yaratib beradi va xatolarni to'g'irlaydi.
@@ -1237,7 +1237,7 @@ const PizzaBotFlow = {
                 <li><span className="check">✓</span> Barcha 22+ blok turlari</li>
                 <li><span className="check">✓</span> <strong>Payme & Click to'lovlari</strong></li>
                 <li><span className="check">✓</span> <strong>Telegram Mini App (Do'kon)</strong></li>
-                <li><span className="check">✓</span> Mazaika AI Copilot (DeepSeek)</li>
+                <li><span className="check">✓</span> Mazaika AI (DeepSeek)</li>
                 <li><span className="check">✓</span> Google Sheets va Webhook</li>
               </ul>
               <button className="btn-primary-neon" onClick={() => navigate('/register')}>
@@ -1380,7 +1380,7 @@ const PizzaBotFlow = {
               <h4>Mahsulot</h4>
               <a href="#features">Vizual Konstruktor</a>
               <a href="#demo">Telegram Mini Apps</a>
-              <a href="#demo">Mazaika AI Copilot</a>
+              <a href="#demo">Mazaika AI</a>
               <a href="#demo">Payme & Click Billing</a>
             </div>
 

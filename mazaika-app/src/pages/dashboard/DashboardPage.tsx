@@ -137,12 +137,9 @@ export default function DashboardPage() {
       {/* ===== SIDEBAR ===== */}
       <aside className="dash-sidebar">
         <div className="dash-logo" onClick={() => navigate('/')}>
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <rect x="2" y="2" width="10" height="10" rx="3" fill="#1e90ff"/>
-            <rect x="16" y="2" width="10" height="10" rx="3" fill="#00f5c4" opacity="0.8"/>
-            <rect x="2" y="16" width="10" height="10" rx="3" fill="#00f5c4" opacity="0.8"/>
-            <rect x="16" y="16" width="10" height="10" rx="3" fill="#1e90ff" opacity="0.5"/>
-          </svg>
+          <div className="dash-logo-icon">
+            <Sparkles size={16} color="#00D9FF" />
+          </div>
           <span>Mazaika</span>
         </div>
 
