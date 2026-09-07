@@ -3,14 +3,15 @@ import { useParams } from 'react-router-dom'
 import {
   Globe, Save, Eye, CheckCircle, Sparkles, Bot, Loader2, Send,
   Copy, Check, RefreshCw, Zap, Laptop, Smartphone,
-  Sliders, X, ImagePlus, AlertCircle, Code
+  Sliders, X, ImagePlus, AlertCircle, Code, ExternalLink
 } from 'lucide-react'
-
 import Editor from '@monaco-editor/react'
 
 import { getSiteConfig, saveSiteConfig, updateBot } from '../../api/firestore'
 import { useChatStore } from '../../store/useChatStore'
 import { useAuthStore } from '../../store/useAuthStore'
+import { siteTemplates } from '../../data/siteTemplates'
+import './SiteBuilderPage.css'
 
 export interface Block {
   id: string
@@ -36,15 +37,14 @@ interface SiteConfig {
 const DEFAULT_CONFIG: SiteConfig = {
   appName: 'My Website',
   theme: 'glassmorphism',
-  themeColor: '#1e90ff',
+  themeColor: '#00D9FF',
   blocks: [],
   source_code: '',
   files: {}
 }
 
 const getSafeSourceCode = (html: string | undefined) => {
-  if (!html) return '';
-  // Inject a script at the end of the body to prevent ALL default link navigation inside iframe
+  if (!html) return ''
   const scriptToInject = `
     <script>
       document.addEventListener('click', function(e) {
@@ -55,14 +55,8 @@ const getSafeSourceCode = (html: string | undefined) => {
         if (target && target.tagName === 'A') {
           const href = target.getAttribute('href');
           const targetAttr = target.getAttribute('target');
-          
-          // If it's an external link opening in a new tab, allow it
           if (targetAttr === '_blank') return;
-          
-          // OTHERWISE, PREVENT DEFAULT NAVIGATION (This stops the iframe from reloading Mazaika!)
           e.preventDefault();
-          
-          // If it was a simple anchor link (e.g. href="#about"), manually scroll to it
           if (href && href.startsWith('#') && href.length > 1) {
             const el = document.getElementById(href.substring(1));
             if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -70,13 +64,13 @@ const getSafeSourceCode = (html: string | undefined) => {
         }
       });
     </script>
-  `;
-  
+  `
   if (html.includes('</body>')) {
-    return html.replace('</body>', scriptToInject + '</body>');
+    return html.replace('</body>', scriptToInject + '</body>')
   }
-  return html + scriptToInject;
-};
+  return html + scriptToInject
+}
+
 export default function SiteBuilderPage() {
   const { botId } = useParams<{ botId: string }>()
   const { user } = useAuthStore()
@@ -88,7 +82,7 @@ export default function SiteBuilderPage() {
   const [siteTitle, setSiteTitle] = useState('')
   const [siteSlug, setSiteSlug] = useState('')
   const [siteDesc, setSiteDesc] = useState('')
-  const [updateCounter, setUpdateCounter] = useState(0) // ✅ for iframe re-render
+  const [updateCounter, setUpdateCounter] = useState(0)
   const [selfHealingStatus, setSelfHealingStatus] = useState<'idle' | 'healing' | 'failed'>('idle')
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview')
   const [activeFile, setActiveFile] = useState<string>('index.html')
@@ -96,6 +90,22 @@ export default function SiteBuilderPage() {
   // Image upload state
   const [pendingImage, setPendingImage] = useState<{ base64: string; mimeType: string; previewUrl: string } | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const selfHealRetryCount = useRef(0)
+
+  const { activeConfig, chats, sendMessage, isLoading, clearMessages, projectId, setProjectId, setActiveConfig } = useChatStore()
+  const messages = chats[projectId] || []
+  const isGenerating = isLoading
+  const activeProjectId = projectId
+
+  const switchProject = (id: string, conf: any) => {
+    setProjectId(id)
+    if (conf !== null) setActiveConfig(conf)
+  }
+
+  const [promptInput, setPromptInput] = useState('')
+  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null)
 
   const generateUnifiedHtml = (files: Record<string, string> | undefined, fallbackHtml: string | undefined) => {
     if (!files || Object.keys(files).length === 0) return fallbackHtml || ''
@@ -128,20 +138,6 @@ export default function SiteBuilderPage() {
     window.open(blobUrl, '_blank')
   }
 
-  const { activeConfig, chats, sendMessage, isLoading, clearMessages, projectId, setProjectId, setActiveConfig } = useChatStore()
-  const messages = chats[projectId] || []
-  const isGenerating = isLoading
-  const activeProjectId = projectId
-  const switchProject = (id: string, config: any) => {
-    setProjectId(id)
-    if (config !== null) setActiveConfig(config)
-  }
-  const [promptInput, setPromptInput] = useState('')
-  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const selfHealRetryCount = useRef(0)
-
   // Sync botId with AI context
   useEffect(() => {
     if (botId) setProjectId(botId)
@@ -156,13 +152,13 @@ export default function SiteBuilderPage() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, isGenerating])
 
   useEffect(() => {
     const fetchConfig = async () => {
       if (!botId) return
       setIsSaving(true)
-      setConfig(DEFAULT_CONFIG) // Clear immediately
+      setConfig(DEFAULT_CONFIG)
       try {
         const data = await getSiteConfig(botId)
         if (data) {
@@ -182,10 +178,10 @@ export default function SiteBuilderPage() {
     fetchConfig()
   }, [botId])
 
-  // ✅ Sync activeConfig to SiteConfig
+  // Sync activeConfig to SiteConfig
   useEffect(() => {
     if (!activeConfig) return
-    if (botId && activeProjectId !== botId) return // Prevent race conditions!
+    if (botId && activeProjectId !== botId) return
 
     const newHtml = activeConfig.source_code || activeConfig.html || ''
     if (!newHtml) return
@@ -193,23 +189,20 @@ export default function SiteBuilderPage() {
     selfHealRetryCount.current = 0
     setSelfHealingStatus('idle')
     
-    const nextConfig = {
-      ...config,
+    const nextConfig: SiteConfig = {
       theme: activeConfig.theme || config.theme,
       themeColor: activeConfig.themeColor || config.themeColor,
       appName: activeConfig.appName || config.appName,
       blocks: activeConfig.blocks || config.blocks,
       source_code: newHtml,
-      files: activeConfig.files || config.files,
-      has_more: activeConfig.has_more || false
-    };
+      files: activeConfig.files || config.files
+    }
     
     setConfig(nextConfig)
-    setUpdateCounter(c => c + 1) // ✅ force iframe re-render
+    setUpdateCounter(c => c + 1)
 
-    // ✅ AUTO-SAVE to prevent data loss on reload
     if (botId && newHtml !== config.source_code) {
-      saveSiteConfig(botId, nextConfig as any).catch(console.error);
+      saveSiteConfig(botId, nextConfig as any).catch(console.error)
     }
   }, [activeConfig, botId, activeProjectId])
 
@@ -228,7 +221,6 @@ export default function SiteBuilderPage() {
     } catch (err) {
       alert('Rasm yuklashda xatolik yuz berdi')
     }
-    // Reset input
     e.target.value = ''
   }
 
@@ -239,7 +231,7 @@ export default function SiteBuilderPage() {
     const image = pendingImage
     setPromptInput('')
     setPendingImage(null)
-    if (textareaRef.current) textareaRef.current.style.height = '48px'
+    if (textareaRef.current) textareaRef.current.style.height = '44px'
     
     await sendMessage(
       msg,
@@ -259,8 +251,8 @@ export default function SiteBuilderPage() {
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPromptInput(e.target.value)
-    e.target.style.height = '48px'
-    e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px'
+    e.target.style.height = '44px'
+    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
   }
 
   const handleSave = async () => {
@@ -280,6 +272,26 @@ export default function SiteBuilderPage() {
     }
   }
 
+  const handleApplyTemplate = (tmpl: any) => {
+    const files = tmpl.files || { 'index.html': tmpl.html || '' }
+    const sourceHtml = files['index.html'] || tmpl.html || ''
+    const newConfig: SiteConfig = {
+      appName: tmpl.name,
+      theme: 'glassmorphism',
+      themeColor: '#00D9FF',
+      blocks: [],
+      source_code: sourceHtml,
+      files: files
+    }
+    setConfig(newConfig)
+    setSiteTitle(tmpl.name)
+    setUpdateCounter(c => c + 1)
+    setActiveTab('preview')
+    if (botId) {
+      saveSiteConfig(botId, newConfig as any).catch(console.error)
+      updateBot(botId, { name: tmpl.name }).catch(console.error)
+    }
+  }
 
   const copyMsg = (id: string, text: string) => {
     navigator.clipboard.writeText(text)
@@ -297,32 +309,32 @@ export default function SiteBuilderPage() {
     : 'AI'
 
   const SITE_QUICK_PROMPTS = [
-    { icon: '🎨', label: 'Rang o\'zgartir', text: 'Asosiy rangni to\'q ko\'k-binafsha gradientga o\'zgartir' },
-    { icon: '⚡', label: 'Animatsiya', text: 'Hero bo\'limiga chiroyli kirish animatsiyasini qo\'sh' },
-    { icon: '📱', label: 'Mobil', text: 'Mobil qurilmalarda yaxshiroq ko\'rinishi uchun optimizatsiya qil' },
-    { icon: '🛒', label: 'Mahsulot', text: 'Tovarlar katalogi va xarid bo\'limini qo\'sh' },
-    { icon: '📞', label: 'Aloqa', text: 'Bog\'lanish formasi va Telegram tugmasini qo\'sh' },
-    { icon: '✨', label: 'Modernlashtir', text: 'Butun dizaynni zamonaviy glassmorphism ko\'rinishga o\'zgartir' },
+    { icon: '🚀', label: 'SaaS Landing', text: 'AI servislar uchun zamonaviy dark theme SaaS landing sahifa yarat' },
+    { icon: '🎨', label: 'Obsidian Neon', text: 'Asosiy ranglarni neon cyan (#00D9FF) va dark obsidian uslubiga mosla' },
+    { icon: '⚡', label: 'Animatsiya', text: 'Hero bo\'limiga chiroyli 3D kirish animatsiyalarini qo\'sh' },
+    { icon: '📱', label: 'Mobil Moslashuv', text: 'Mobil qurilmalarda to\'liq qulay ko\'rinishi uchun mosla' },
+    { icon: '🛒', label: 'Katalog', text: 'Mahsulotlar katalogi, narxlar jadvali va xarid tugmasini qo\'sh' },
+    { icon: '📞', label: 'Aloqa & Form', text: 'Mijozlar buyurtmasi uchun chiroyli forma va Telegram tugmasini qo\'sh' }
   ]
 
   const renderMarkdown = (text: string) => {
     const lines = text.split('\n')
     return lines.map((line, i) => {
-      if (line.startsWith('## ')) return <p key={i} style={{ fontWeight: 700, fontSize: 14, color: '#fff', margin: '10px 0 4px' }}>{line.slice(3)}</p>
+      if (line.startsWith('## ')) return <p key={i} style={{ fontWeight: 700, fontSize: 13.5, color: '#FFF', margin: '8px 0 4px' }}>{line.slice(3)}</p>
       if (line.startsWith('- ') || line.startsWith('• ')) {
         return (
-          <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginBottom: 3 }}>
-            <span style={{ color: '#a855f7', marginTop: 2, flexShrink: 0 }}>•</span>
-            <span style={{ color: '#e2e8f0' }}>{line.slice(2)}</span>
+          <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginBottom: 2 }}>
+            <span style={{ color: '#00D9FF', marginTop: 1, flexShrink: 0 }}>•</span>
+            <span style={{ color: '#E2E8F0' }}>{line.slice(2)}</span>
           </div>
         )
       }
-      if (line.trim() === '') return <div key={i} style={{ height: 6 }} />
+      if (line.trim() === '') return <div key={i} style={{ height: 4 }} />
       const parts = line.split(/(\*\*.*?\*\*)/g)
       return (
-        <p key={i} style={{ margin: '2px 0', color: '#e2e8f0' }}>
+        <p key={i} style={{ margin: '2px 0', color: '#E2E8F0' }}>
           {parts.map((p, j) => p.startsWith('**') && p.endsWith('**')
-            ? <strong key={j} style={{ color: '#fff' }}>{p.slice(2, -2)}</strong>
+            ? <strong key={j} style={{ color: '#FFF' }}>{p.slice(2, -2)}</strong>
             : p
           )}
         </p>
@@ -331,28 +343,32 @@ export default function SiteBuilderPage() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100%', background: '#090d16', color: '#fff', width: '100%', fontFamily: 'inherit' }}>
+    <div className="site-builder-cyber">
       {/* ===== LEFT: AI CHAT ===== */}
-      <div style={{ width: '420px', borderRight: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', background: 'linear-gradient(160deg, #0d1526 0%, #0a0f1e 100%)' }}>
+      <div className="sb-chat-panel">
         {/* Chat Header */}
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(168,85,247,0.05)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ background: 'linear-gradient(135deg, #a855f7, #3b82f6)', padding: 8, borderRadius: 12, boxShadow: '0 4px 12px rgba(168,85,247,0.4)' }}>
-              <Sparkles size={16} color="#fff" />
+        <div className="sb-chat-header">
+          <div className="sb-brand-wrap">
+            <div className="sb-brand-icon">
+              <Sparkles size={18} />
             </div>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>Mazaika AI Architect</div>
-              <div style={{ fontSize: 10, color: isGenerating ? '#a855f7' : selfHealingStatus === 'healing' ? '#ffb830' : '#10d974' }}>
-                {isGenerating ? '● Ishlayapti...' : selfHealingStatus === 'healing' ? '● Tuzatmoqda...' : selfHealingStatus === 'failed' ? '● Xatolik' : '● Tayyor'}
+              <div className="sb-brand-title">
+                Mazaika AI
+                <span className="sb-model-tag">DeepSeek-R1</span>
+              </div>
+              <div className={`sb-status-indicator ${isGenerating ? 'working' : selfHealingStatus === 'healing' ? 'healing' : selfHealingStatus === 'failed' ? 'error' : 'ready'}`}>
+                <span className="sb-status-dot" />
+                <span>{isGenerating ? 'AI kod yozmoqda...' : selfHealingStatus === 'healing' ? 'Kodni tekshirmoqda...' : selfHealingStatus === 'failed' ? 'Xatolik yuz berdi' : 'Veb-Sayt Studiyasi Tayyor'}</span>
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 4 }}>
-            <button onClick={retryLast} title="Qayta yuborish" disabled={isGenerating || messages.length < 2} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 6, borderRadius: 7, display: 'flex', alignItems: 'center', opacity: (isGenerating || messages.length < 2) ? 0.3 : 1 }}>
-              <RefreshCw size={13} />
+          <div className="sb-header-actions">
+            <button className="sb-header-btn" onClick={retryLast} title="Qayta yuborish" disabled={isGenerating || messages.length < 2}>
+              <RefreshCw size={14} />
             </button>
-            <button onClick={() => { if (window.confirm('Chatni tozalash?')) clearMessages() }} title="Tozalash" style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 6, borderRadius: 7, display: 'flex', alignItems: 'center' }}>
-              <Zap size={13} />
+            <button className="sb-header-btn" onClick={() => { if (window.confirm('Chatni tozalashni xohlaysizmi?')) clearMessages() }} title="Tozalash">
+              <Zap size={14} />
             </button>
           </div>
         </div>
@@ -361,135 +377,109 @@ export default function SiteBuilderPage() {
         {selfHealingStatus === 'failed' && (
           <div style={{ padding: '8px 16px', background: 'rgba(239,68,68,0.1)', borderBottom: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#fca5a5' }}>
             <AlertCircle size={13} />
-            ИИ не смог исправить HTML. Попробуйте другой запрос.
+            <span>HTML kodni tuzatishda xatolik yuz berdi. Boshqa so'rov yuborib ko'ring.</span>
             <button onClick={() => setSelfHealingStatus('idle')} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#fca5a5', cursor: 'pointer' }}>
               <X size={12} />
             </button>
           </div>
         )}
 
-        {/* Messages */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 14, scrollbarWidth: 'thin' }}>
-          {messages.length <= 1 && (
-            <div style={{ textAlign: 'center', padding: '16px 8px' }}>
-              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(168,85,247,0.2), rgba(59,130,246,0.2))', border: '1px solid rgba(168,85,247,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', color: '#a855f7' }}>
-                <Globe size={20} />
-              </div>
-              <p style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0', margin: '0 0 6px' }}>Sayt yaratishni boshlaylik!</p>
-              <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 16px', lineHeight: 1.5 }}>📸 Rasm yuboring yoki quyidagi misollardan birini tanlang</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
-                {SITE_QUICK_PROMPTS.map((q, i) => (
-                  <button key={i} onClick={() => handleSend(q.text)} style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '6px 12px', fontSize: 11, color: '#94a3b8', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
-                    onMouseEnter={e => { (e.currentTarget as any).style.background = 'rgba(168,85,247,0.15)'; (e.currentTarget as any).style.color = '#e2e8f0'; (e.currentTarget as any).style.borderColor = 'rgba(168,85,247,0.4)' }}
-                    onMouseLeave={e => { (e.currentTarget as any).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as any).style.color = '#94a3b8'; (e.currentTarget as any).style.borderColor = 'rgba(255,255,255,0.1)' }}
-                  >{q.icon} {q.label}</button>
-                ))}
-              </div>
-            </div>
-          )}
+        {/* Quick Presets Bar */}
+        <div className="sb-presets-bar">
+          {SITE_QUICK_PROMPTS.map((q, i) => (
+            <button key={i} className="sb-preset-chip" onClick={() => handleSend(q.text)}>
+              <span>{q.icon}</span>
+              <span>{q.label}</span>
+            </button>
+          ))}
+        </div>
 
+        {/* Messages Stream */}
+        <div className="sb-messages-stream">
           {messages.map((m) => (
-            <div key={m.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: m.sender === 'user' ? 'row-reverse' : 'row' }}>
-              {m.sender === 'agent' && (
-                <div style={{ background: 'linear-gradient(135deg, #1e90ff, #a855f7)', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2, boxShadow: '0 2px 8px rgba(168,85,247,0.3)' }}>
-                  <Bot size={12} color="#fff" />
+            <div key={m.id} className={`sb-message-row ${m.sender === 'user' ? 'user' : 'ai'}`}>
+              {m.sender === 'agent' ? (
+                <div className="sb-msg-avatar ai">
+                  <Bot size={14} />
                 </div>
-              )}
-              <div style={{ flex: 1, maxWidth: '84%', display: 'flex', flexDirection: 'column', gap: 4, alignItems: m.sender === 'user' ? 'flex-end' : 'flex-start' }}>
-                {/* Image preview in message */}
-                {m.imageUrl && (
-                  <img src={m.imageUrl} alt="uploaded" style={{ maxWidth: 200, maxHeight: 150, borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', marginBottom: 4 }} />
-                )}
-                <div style={{
-                  padding: '10px 14px', borderRadius: 14, fontSize: 13, lineHeight: 1.55, wordBreak: 'break-word',
-                  ...(m.sender === 'user'
-                    ? { background: 'linear-gradient(135deg, #1e90ff, #2563eb)', color: '#fff', borderBottomRightRadius: 4, boxShadow: '0 4px 14px rgba(30,144,255,0.25)' }
-                    : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderBottomLeftRadius: 4, color: '#e2e8f0' })
-                }}>
-                  {m.sender === 'agent' ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>{renderMarkdown(m.text)}</div>
-                  ) : m.text}
-                </div>
-                {m.sender === 'agent' && (
-                  <button onClick={() => copyMsg(m.id, m.text)} style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 6, padding: '2px 7px', fontSize: 10, color: '#64748b', cursor: 'pointer', opacity: 0.8 }}>
-                    {copiedMsgId === m.id ? <><Check size={10} /> Nusxalandi</> : <><Copy size={10} /> Nusxa</>}
-                  </button>
-                )}
-              </div>
-              {m.sender === 'user' && (
-                <div style={{ background: 'linear-gradient(135deg, #a855f7, #1e90ff)', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2, fontSize: 9, fontWeight: 700, color: '#fff' }}>
+              ) : (
+                <div className="sb-msg-avatar user">
                   {userInitials}
                 </div>
               )}
+
+              <div className="sb-bubble-wrap">
+                {m.imageUrl && (
+                  <img src={m.imageUrl} alt="uploaded visual" style={{ maxWidth: 220, maxHeight: 150, borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', marginBottom: 4 }} />
+                )}
+                <div className={`sb-bubble ${m.sender === 'user' ? 'user' : 'ai'}`}>
+                  {m.sender === 'agent' ? renderMarkdown(m.text) : m.text}
+                </div>
+                {m.sender === 'agent' && (
+                  <button className="sb-copy-btn" onClick={() => copyMsg(m.id, m.text)}>
+                    {copiedMsgId === m.id ? <><Check size={10} /> Nusxalandi</> : <><Copy size={10} /> Nusxa olish</>}
+                  </button>
+                )}
+              </div>
             </div>
           ))}
 
           {(isGenerating || selfHealingStatus === 'healing') && (
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <div style={{ background: 'linear-gradient(135deg, #1e90ff, #a855f7)', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Bot size={12} color="#fff" />
+            <div className="sb-message-row ai">
+              <div className="sb-msg-avatar ai">
+                <Sparkles size={14} />
               </div>
-              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, borderBottomLeftRadius: 4, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 5 }}>
-                {selfHealingStatus === 'healing' && <span style={{ fontSize: 11, color: '#ffb830', marginRight: 4 }}>🔧</span>}
-                {[0, 200, 400].map((delay, i) => (
-                  <span key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: selfHealingStatus === 'healing' ? 'linear-gradient(135deg, #ffb830, #f97316)' : 'linear-gradient(135deg, #1e90ff, #a855f7)', display: 'inline-block', animation: `siteTypingBounce 1.3s ease-in-out ${delay}ms infinite` }} />
-                ))}
+              <div className="sb-typing-bubble">
+                <div className="sb-typing-dots">
+                  <span /><span /><span />
+                </div>
+                <span className="sb-typing-text">
+                  {selfHealingStatus === 'healing' ? 'HTML struktura optimallashmoqda...' : 'Mazaika AI sayt kodini generatsiya qilmoqda...'}
+                </span>
               </div>
             </div>
           )}
 
-          <style>{`
-            @keyframes siteTypingBounce {
-              0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-              40% { transform: translateY(-6px); opacity: 1; }
-            }
-          `}</style>
           <div ref={messagesEndRef} />
         </div>
 
         {/* Continuation Button */}
         {Boolean(activeConfig?.has_more) && !isGenerating && (
           <button
-            onClick={() => handleSend('Продолжи генерацию и добавь оставшиеся страницы и секции сайта')}
+            onClick={() => handleSend('Davom ettir va qolgan bo\'limlar hamda sahifalar kodini to\'liq yoz')}
             style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              width: '100%', padding: '10px 16px', borderRadius: 12, marginBottom: 10,
-              background: 'linear-gradient(135deg, #10d974, #1e90ff)', color: '#fff',
-              border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              boxShadow: '0 4px 16px rgba(16,217,116,0.3)', transition: 'all 0.2s', animation: 'pulse 2s infinite'
+              margin: '0 16px 10px', padding: '10px 16px', borderRadius: 12,
+              background: 'rgba(0, 245, 196, 0.12)', border: '1px solid rgba(0, 245, 196, 0.3)',
+              color: '#00F5C4', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
             }}
           >
-            <Zap size={16} /> ⚡ Продолжить генерацию сайта (Добавить страницы)
+            <Zap size={14} /> Generatsiyani davom ettirish (Sahifalarni qo'shish) ⚡
           </button>
         )}
 
-        {/* Input Area */}
-        <div style={{ padding: '14px 16px 16px', background: 'rgba(0,0,0,0.3)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          {/* Image preview */}
+        {/* Prompt Input Dock */}
+        <div className="sb-input-dock">
           {pendingImage && (
-            <div style={{ marginBottom: 10, position: 'relative', display: 'inline-block' }}>
-              <img src={pendingImage.previewUrl} alt="preview" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 8, border: '2px solid rgba(168,85,247,0.5)' }} />
-              <button
-                onClick={() => setPendingImage(null)}
-                style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, borderRadius: '50%', background: '#ef4444', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}
-              >
+            <div className="sb-image-preview-badge">
+              <img src={pendingImage.previewUrl} alt="preview" />
+              <button className="sb-image-preview-remove" onClick={() => setPendingImage(null)}>
                 <X size={10} />
               </button>
             </div>
           )}
 
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: promptInput || pendingImage ? 'rgba(30,144,255,0.05)' : 'rgba(255,255,255,0.03)', border: `1px solid ${promptInput || pendingImage ? 'rgba(30,144,255,0.4)' : 'rgba(255,255,255,0.09)'}`, borderRadius: 14, padding: '8px 8px 8px 14px', transition: 'all 0.2s', boxShadow: promptInput ? '0 0 0 3px rgba(30,144,255,0.08)' : 'none' }}>
+          <div className={`sb-input-box ${promptInput || pendingImage ? 'active' : ''}`}>
             <textarea
               ref={textareaRef}
               value={promptInput}
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
               disabled={isGenerating}
-              placeholder="Saytga nimalar qo'shamiz? Yoki 📸 rasm yuboring..."
-              style={{ flex: 1, background: 'transparent', border: 'none', color: '#fff', fontSize: 13, resize: 'none', outline: 'none', minHeight: 48, maxHeight: 140, lineHeight: 1.5, fontFamily: 'inherit', padding: 0 }}
+              placeholder={pendingImage ? "Rasm bo'yicha talablarni yozing..." : "Saytingizni tasvirlang yoki 📸 rasm yuboring..."}
+              className="sb-textarea"
             />
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, flexShrink: 0, paddingBottom: 2 }}>
-              {/* Image upload button */}
+            <div className="sb-dock-buttons">
               <input
                 ref={imageInputRef}
                 type="file"
@@ -498,102 +488,114 @@ export default function SiteBuilderPage() {
                 onChange={handleImageSelect}
               />
               <button
+                className={`sb-dock-attach-btn ${pendingImage ? 'has-image' : ''}`}
                 onClick={() => imageInputRef.current?.click()}
                 disabled={isGenerating}
                 title="Rasm yuborish (Vision AI)"
-                style={{
-                  width: 34, height: 34, borderRadius: 10,
-                  background: pendingImage ? 'rgba(168,85,247,0.3)' : 'rgba(255,255,255,0.07)',
-                  border: `1px solid ${pendingImage ? 'rgba(168,85,247,0.6)' : 'rgba(255,255,255,0.1)'}`,
-                  color: pendingImage ? '#a855f7' : '#94a3b8',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: isGenerating ? 'not-allowed' : 'pointer', transition: 'all 0.2s', flexShrink: 0,
-                  opacity: isGenerating ? 0.4 : 1
-                }}
               >
-                <ImagePlus size={14} />
+                <ImagePlus size={15} />
               </button>
 
-              {/* Send button */}
               <button
+                className="sb-dock-send-btn"
                 onClick={() => handleSend()}
                 disabled={(!promptInput.trim() && !pendingImage) || isGenerating}
-                style={{
-                  width: 34, height: 34, borderRadius: 10,
-                  background: ((promptInput.trim() || pendingImage) && !isGenerating) ? 'linear-gradient(135deg, #1e90ff, #a855f7)' : 'rgba(255,255,255,0.07)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: ((promptInput.trim() || pendingImage) && !isGenerating) ? 'pointer' : 'not-allowed',
-                  transition: 'all 0.2s',
-                  boxShadow: ((promptInput.trim() || pendingImage) && !isGenerating) ? '0 4px 14px rgba(30,144,255,0.4)' : 'none',
-                  flexShrink: 0
-                }}
               >
-                {isGenerating ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={14} />}
+                {isGenerating ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Send size={15} />}
               </button>
             </div>
           </div>
-          <div style={{ fontSize: 10, color: '#475569', marginTop: 8, textAlign: 'center' }}>
-            AI yaratgan sayt o'ng tomonda ko'rinadi • 📸 Rasm yuborib dizayn ko'rsating
+          <div className="sb-dock-hint">
+            Mazaika AI • O'ng tomonda jonli sayt ko'rinadi
           </div>
         </div>
       </div>
 
-      {/* ===== RIGHT: LIVE PREVIEW ===== */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#020617', padding: 16, gap: 12, position: 'relative' }}>
-        {/* Preview Controls */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: 3 }}>
+      {/* ===== RIGHT: LIVE PREVIEW & CODE CANVAS ===== */}
+      <div className="sb-canvas-panel">
+        <div className="sb-canvas-ambient-orb cyan" />
+        <div className="sb-canvas-ambient-orb violet" />
+
+        {/* Canvas Controls Bar */}
+        <div className="sb-canvas-controls">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* Code / Preview Switcher */}
+            <div className="sb-toggle-group">
               <button 
-                onClick={() => setActiveTab('code')}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: activeTab === 'code' ? 600 : 400, color: activeTab === 'code' ? '#fff' : '#94a3b8', background: activeTab === 'code' ? 'rgba(30,144,255,0.2)' : 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}>
-                <Code size={14} color={activeTab === 'code' ? '#1e90ff' : 'currentColor'} /> Code
+                className={`sb-toggle-btn ${activeTab === 'preview' ? 'active preview' : ''}`}
+                onClick={() => setActiveTab('preview')}
+              >
+                <Globe size={14} />
+                <span>Ko'rinish</span>
               </button>
               <button 
-                onClick={() => setActiveTab('preview')}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 8, fontSize: 13, fontWeight: activeTab === 'preview' ? 600 : 400, color: activeTab === 'preview' ? '#fff' : '#94a3b8', background: activeTab === 'preview' ? 'rgba(168,85,247,0.2)' : 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s' }}>
-                <Globe size={14} color={activeTab === 'preview' ? '#a855f7' : 'currentColor'} /> Preview
+                className={`sb-toggle-btn ${activeTab === 'code' ? 'active code' : ''}`}
+                onClick={() => setActiveTab('code')}
+              >
+                <Code size={14} />
+                <span>Kod (Monaco)</span>
               </button>
             </div>
+
             {config.source_code && (
-              <span style={{ fontSize: 10, color: '#10d974', background: 'rgba(16,217,116,0.1)', border: '1px solid rgba(16,217,116,0.2)', borderRadius: 20, padding: '2px 8px' }}>
-                ● Tayyor
+              <span style={{ fontSize: 11, color: '#10B981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 20, padding: '3px 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }} />
+                <span>{config.appName || 'Sayt'} Tayyor</span>
               </span>
             )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: 3, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', visibility: activeTab === 'preview' ? 'visible' : 'hidden' }}>
-            <button onClick={() => setDeviceMode('desktop')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, border: 'none', background: deviceMode === 'desktop' ? 'rgba(30,144,255,0.2)' : 'transparent', color: deviceMode === 'desktop' ? '#1e90ff' : '#94a3b8', cursor: 'pointer', fontWeight: deviceMode === 'desktop' ? 600 : 400 }}>
-              <Laptop size={14} /> Desktop
-            </button>
-            <button onClick={() => setDeviceMode('mobile')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, fontSize: 12, border: 'none', background: deviceMode === 'mobile' ? 'rgba(168,85,247,0.2)' : 'transparent', color: deviceMode === 'mobile' ? '#a855f7' : '#94a3b8', cursor: 'pointer', fontWeight: deviceMode === 'mobile' ? 600 : 400 }}>
-              <Smartphone size={14} /> Mobile
-            </button>
-          </div>
+          {/* Desktop / Mobile Switcher */}
+          {activeTab === 'preview' && (
+            <div className="sb-toggle-group">
+              <button 
+                className={`sb-toggle-btn ${deviceMode === 'desktop' ? 'active' : ''}`}
+                onClick={() => setDeviceMode('desktop')}
+              >
+                <Laptop size={14} />
+                <span>Kompyuter</span>
+              </button>
+              <button 
+                className={`sb-toggle-btn ${deviceMode === 'mobile' ? 'active' : ''}`}
+                onClick={() => setDeviceMode('mobile')}
+              >
+                <Smartphone size={14} />
+                <span>Telefon</span>
+              </button>
+            </div>
+          )}
 
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            {saveSuccess && <span style={{ color: '#10d974', display: 'flex', alignItems: 'center', fontSize: 13, gap: 5 }}><CheckCircle size={14} /> Saqlandi!</span>}
-            <button onClick={() => setIsSettingsOpen(true)} style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.05)', fontSize: 13, color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>
-              <Sliders size={14} /> Sozlamalar
+          {/* Action Buttons */}
+          <div className="sb-canvas-actions">
+            {saveSuccess && (
+              <span style={{ color: '#10B981', display: 'flex', alignItems: 'center', fontSize: 12, gap: 5, fontWeight: 600 }}>
+                <CheckCircle size={14} /> Saqlandi!
+              </span>
+            )}
+            <button className="sb-action-btn" onClick={() => setIsSettingsOpen(true)}>
+              <Sliders size={14} />
+              <span>Sozlamalar</span>
             </button>
-            <button onClick={handleSave} disabled={isSaving} style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 13, background: '#1e90ff', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}>
-              <Save size={14} /> {isSaving ? 'Saqlanmoqda...' : 'Saqlash'}
+            <button className="sb-action-btn primary" onClick={handleSave} disabled={isSaving}>
+              <Save size={14} />
+              <span>{isSaving ? 'Saqlanmoqda...' : 'Saqlash'}</span>
             </button>
-            <button onClick={handleOpenInNewTab} style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.05)', fontSize: 13, color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>
-              <Eye size={14} /> Ochish
+            <button className="sb-action-btn" onClick={handleOpenInNewTab}>
+              <Eye size={14} />
+              <span>Ochish</span>
             </button>
           </div>
         </div>
 
-        {/* Preview / Code Frame */}
-        <div style={{ flex: 1, background: '#0d1526', borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.6)', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+        {/* Main Canvas Frame */}
+        <div className="sb-main-frame">
           {activeTab === 'code' ? (
-            <div style={{ width: '100%', height: '100%', display: 'flex', background: '#1e1e1e' }}>
-              {/* VS Code Left Sidebar (File Explorer) */}
-              <div style={{ width: 220, borderRight: '1px solid #333', display: 'flex', flexDirection: 'column', background: '#252526' }}>
-                <div style={{ padding: '10px 12px', fontSize: 11, fontWeight: 600, color: '#cccccc', textTransform: 'uppercase', letterSpacing: 0.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>Explorer</span>
+            /* Monaco Code Editor */
+            <div style={{ width: '100%', height: '100%', display: 'flex', background: '#0B0E17' }}>
+              {/* Explorer Sidebar */}
+              <div style={{ width: 220, borderRight: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', background: '#090B12' }}>
+                <div style={{ padding: '12px 14px', fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: 0.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <span>Fayllar (VFS)</span>
                   <button 
                     onClick={() => {
                       const name = window.prompt('Fayl nomini kiriting (masalan, style.css):')
@@ -610,59 +612,54 @@ export default function SiteBuilderPage() {
                         }
                       }
                     }}
-                    style={{ background: 'none', border: 'none', color: '#cccccc', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    style={{ background: 'none', border: 'none', color: '#00D9FF', cursor: 'pointer', fontSize: 14, fontWeight: 'bold' }}
                     title="Yangi fayl qo'shish"
                   >
                     +
                   </button>
                 </div>
-                <div style={{ flex: 1, overflowY: 'auto' }}>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
                   {Object.keys(config.files || { 'index.html': config.source_code || '' }).map(fileName => (
                     <div 
                       key={fileName}
                       onClick={() => setActiveFile(fileName)}
                       style={{ 
-                        padding: '6px 12px 6px 24px', 
-                        fontSize: 13, 
-                        color: activeFile === fileName ? '#fff' : '#cccccc',
-                        background: activeFile === fileName ? '#37373d' : 'transparent',
+                        padding: '8px 16px', 
+                        fontSize: 12.5, 
+                        color: activeFile === fileName ? '#FFF' : '#94A3B8',
+                        background: activeFile === fileName ? 'rgba(0,217,255,0.1)' : 'transparent',
+                        borderLeft: activeFile === fileName ? '3px solid #00D9FF' : '3px solid transparent',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 6
+                        gap: 8,
+                        transition: 'all 0.15s'
                       }}
-                      onMouseEnter={e => { if (activeFile !== fileName) (e.currentTarget as any).style.background = '#2a2d2e' }}
-                      onMouseLeave={e => { if (activeFile !== fileName) (e.currentTarget as any).style.background = 'transparent' }}
                     >
-                      <span style={{ color: fileName.endsWith('.html') ? '#e34c26' : fileName.endsWith('.css') ? '#264de4' : fileName.endsWith('.js') ? '#f7df1e' : '#cccccc' }}>
+                      <span style={{ color: fileName.endsWith('.html') ? '#E34C26' : fileName.endsWith('.css') ? '#264DE4' : fileName.endsWith('.js') ? '#F7DF1E' : '#94A3B8' }}>
                         {fileName.endsWith('.js') ? '{}' : fileName.endsWith('.css') ? '#' : '<>'}
                       </span>
-                      {fileName}
+                      <span>{fileName}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* VS Code Main Editor Area */}
+              {/* Editor Workspace */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                {/* VS Code Top File Bar */}
-                <div style={{ height: 36, background: '#252526', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0', borderBottom: '1px solid #333', userSelect: 'none' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1e1e1e', padding: '6px 12px', borderTop: '2px solid #007acc', fontSize: 12, color: '#cccccc', borderRight: '1px solid #333', height: '100%' }}>
-                    <span style={{ color: activeFile.endsWith('.html') ? '#e34c26' : activeFile.endsWith('.css') ? '#264de4' : activeFile.endsWith('.js') ? '#f7df1e' : '#cccccc', fontWeight: 'bold' }}>
-                      {activeFile.endsWith('.js') ? '{}' : activeFile.endsWith('.css') ? '#' : '<>'}
-                    </span>
+                <div style={{ height: 38, background: '#090B12', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#00D9FF', fontWeight: 600 }}>
                     <span>{activeFile}</span>
-                    {isGenerating && <Loader2 size={12} style={{ animation: 'spin 1s linear infinite', color: '#1e90ff', marginLeft: 4 }} />}
+                    {isGenerating && <Loader2 size={12} style={{ animation: 'spin 1s linear infinite', marginLeft: 4 }} />}
                   </div>
                   {isGenerating && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: '#1e90ff', background: 'rgba(30,144,255,0.1)', padding: '3px 10px', borderRadius: 12, border: '1px solid rgba(30,144,255,0.2)', marginRight: 12 }}>
-                      <Sparkles size={12} style={{ animation: 'pulse 1.5s infinite' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#00D9FF', background: 'rgba(0,217,255,0.1)', padding: '3px 10px', borderRadius: 12 }}>
+                      <Sparkles size={12} />
                       <span>AI kod yozmoqda...</span>
                     </div>
                   )}
                 </div>
 
-                {/* Editor */}
                 <div style={{ flex: 1, position: 'relative' }}>
                   <Editor
                     height="100%"
@@ -682,7 +679,7 @@ export default function SiteBuilderPage() {
                     }}
                     options={{
                       minimap: { enabled: false },
-                      fontSize: 14,
+                      fontSize: 13.5,
                       wordWrap: 'on',
                       padding: { top: 12, bottom: 12 },
                       formatOnPaste: true,
@@ -691,54 +688,101 @@ export default function SiteBuilderPage() {
                     }}
                   />
                 </div>
-
-                {/* VS Code Bottom Status Bar */}
-                <div style={{ height: 24, background: '#007acc', color: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 12px', fontSize: 11, fontWeight: 500 }}>
-                  <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-                    <span>● Ready</span>
-                    <span>UTF-8</span>
-                    <span style={{ textTransform: 'uppercase' }}>{activeFile.split('.').pop()}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-                    <span>Mazaika AI Architect</span>
-                  </div>
-                </div>
               </div>
             </div>
           ) : !config.source_code ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b', flexDirection: 'column', gap: 16 }}>
-              <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(168,85,247,0.1)', border: '2px dashed rgba(168,85,247,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Globe size={36} style={{ opacity: 0.4, color: '#a855f7' }} />
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <p style={{ fontSize: 15, fontWeight: 600, color: '#94a3b8', margin: '0 0 8px' }}>Sayt hali yaratilmagan</p>
-                <p style={{ fontSize: 12, color: '#475569', margin: 0 }}>Chap tomondagi AI chatdan yozing yoki 📸 rasm yuboring</p>
+            /* HOLOGRAPHIC WEBSITE STUDIO HUB (When empty - Solves Screenshot 3) */
+            <div className="sb-empty-hub">
+              <div className="sb-hub-center">
+                <div className="sb-hub-icon-badge">
+                  <Globe size={38} />
+                </div>
+
+                <h2 className="sb-hub-title">Mazaika AI Veb-Sayt Studiyasi</h2>
+
+                <p className="sb-hub-subtitle">
+                  Chatda o'z saytingiz g'oyasini yozing yoki pastdagi tayyor shablonlardan birini tanlang. 
+                  DeepSeek-R1 1 daqiqada to'liq veb-sahifa, Tailwind dizayni va interaktiv kodni yaratadi.
+                </p>
+
+                {/* 4 1-Click Starter Cards */}
+                <div className="sb-starters-grid">
+                  {siteTemplates.map(tmpl => (
+                    <div 
+                      key={tmpl.id}
+                      className="sb-starter-card"
+                      onClick={() => handleApplyTemplate(tmpl)}
+                    >
+                      <div className="sb-card-header">
+                        <span className="sb-card-emoji">{tmpl.icon || '🚀'}</span>
+                        <span className={`sb-card-badge ${tmpl.id === 'saas-landing' ? '' : tmpl.id === 'agency' ? 'purple' : tmpl.id === 'portfolio' ? 'green' : 'amber'}`}>
+                          {tmpl.category}
+                        </span>
+                      </div>
+                      <div className="sb-card-title">{tmpl.name}</div>
+                      <p className="sb-card-desc">{tmpl.description}</p>
+                      <div className="sb-card-cta">
+                        <span>Bir klikda ochish</span>
+                        <ExternalLink size={13} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="sb-hub-tips">
+                  <div className="sb-tip-item"><Sparkles size={14} color="#00D9FF" /> 1 daqiqada tayyor sayt</div>
+                  <div className="sb-tip-item"><Laptop size={14} color="#00F5C4" /> Tailwind CSS & Responsiv dizayn</div>
+                  <div className="sb-tip-item"><Code size={14} color="#A78BFA" /> Monaco Editor & Erkin kod tahrirlash</div>
+                </div>
               </div>
             </div>
           ) : deviceMode === 'desktop' ? (
-            <iframe
-              key={`desktop_${updateCounter}`}
-              srcDoc={getSafeSourceCode(generateUnifiedHtml(config.files, config.source_code))}
-              style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
-              title="Live Site Preview"
-              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-            />
-          ) : (
-            <div style={{ width: 360, height: '92%', maxHeight: 720, borderRadius: 40, border: '12px solid #1e293b', background: '#000', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), inset 0 2px 4px rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <div style={{ height: 24, background: '#000', display: 'flex', justifyContent: 'space-between', padding: '4px 20px', fontSize: 10, color: '#94a3b8', zIndex: 10 }}>
-                <span>9:41</span>
-                <div style={{ width: 80, height: 12, background: '#1e293b', borderRadius: 10, marginTop: 2 }} />
-                <span>100%</span>
+            /* macOS Desktop Browser Frame */
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+              <div className="sb-browser-header">
+                <div className="sb-traffic-lights">
+                  <div className="sb-dot red" />
+                  <div className="sb-dot yellow" />
+                  <div className="sb-dot green" />
+                </div>
+                <div className="sb-browser-url-bar">
+                  <span className="lock">🔒</span>
+                  <span>https://mazaika.app/sites/{botId || 'preview'}</span>
+                </div>
+                <div className="sb-browser-actions">
+                  <button onClick={() => setUpdateCounter(c => c + 1)} title="Qayta yuklash" style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+                    <RefreshCw size={13} />
+                  </button>
+                </div>
               </div>
-              <iframe
-                key={`mobile_${updateCounter}`}
-                srcDoc={getSafeSourceCode(generateUnifiedHtml(config.files, config.source_code))}
-                style={{ width: '100%', flex: 1, border: 'none', background: '#fff' }}
-                title="Mobile Site Preview"
-                sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-              />
-              <div style={{ height: 20, background: '#000', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <div style={{ width: 120, height: 4, background: '#334155', borderRadius: 4 }} />
+              <div className="sb-preview-viewport">
+                <iframe
+                  key={`desktop_${updateCounter}`}
+                  srcDoc={getSafeSourceCode(generateUnifiedHtml(config.files, config.source_code))}
+                  className="sb-site-iframe"
+                  title="Live Site Preview"
+                  sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                />
+              </div>
+            </div>
+          ) : (
+            /* Mobile Device Frame */
+            <div className="sb-mobile-wrapper">
+              <div className="sb-mobile-phone">
+                <div className="sb-mobile-notch">
+                  <span>9:41</span>
+                  <span>📶 🔋</span>
+                </div>
+                <iframe
+                  key={`mobile_${updateCounter}`}
+                  srcDoc={getSafeSourceCode(generateUnifiedHtml(config.files, config.source_code))}
+                  style={{ width: '100%', flex: 1, border: 'none', background: '#FFF' }}
+                  title="Mobile Site Preview"
+                  sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                />
+                <div className="sb-mobile-home-bar">
+                  <div className="sb-mobile-home-bar-pill" />
+                </div>
               </div>
             </div>
           )}
@@ -746,41 +790,42 @@ export default function SiteBuilderPage() {
 
         {/* Settings Slide-over */}
         {isSettingsOpen && (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(2,6,23,0.85)', backdropFilter: 'blur(8px)', zIndex: 100, display: 'flex', justifyContent: 'flex-end' }}>
-            <div style={{ width: 320, height: '100%', background: '#0f172a', borderLeft: '1px solid rgba(255,255,255,0.1)', padding: 24, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div className="sb-settings-overlay" onClick={() => setIsSettingsOpen(false)}>
+            <div className="sb-settings-drawer" onClick={e => e.stopPropagation()}>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: '#fff' }}>
-                    <Sliders size={18} style={{ color: '#1e90ff' }} /> Sayt Sozlamalari
+                <div className="sb-settings-header">
+                  <h3>
+                    <Sliders size={18} style={{ color: '#00D9FF' }} />
+                    <span>Sayt Sozlamalari</span>
                   </h3>
-                  <button onClick={() => setIsSettingsOpen(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                  <button onClick={() => setIsSettingsOpen(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
                     <X size={20} />
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>Sayt Nomi</label>
-                    <input type="text" value={siteTitle} onChange={e => setSiteTitle(e.target.value)} style={{ width: '100%', background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, outline: 'none' }} />
+                <div className="sb-settings-fields">
+                  <div className="sb-form-group">
+                    <label>Sayt Nomi</label>
+                    <input type="text" value={siteTitle} onChange={e => setSiteTitle(e.target.value)} />
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>Domen / Slug</label>
-                    <input type="text" value={siteSlug} onChange={e => setSiteSlug(e.target.value)} style={{ width: '100%', background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, outline: 'none' }} />
+                  <div className="sb-form-group">
+                    <label>Domen / Slug</label>
+                    <input type="text" value={siteSlug} onChange={e => setSiteSlug(e.target.value)} placeholder="masalan: meningsaytim" />
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 6 }}>SEO Tavsifi</label>
-                    <textarea rows={4} value={siteDesc} onChange={e => setSiteDesc(e.target.value)} style={{ width: '100%', background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, outline: 'none', resize: 'none' }} />
+                  <div className="sb-form-group">
+                    <label>SEO Tavsifi</label>
+                    <textarea rows={4} value={siteDesc} onChange={e => setSiteDesc(e.target.value)} placeholder="Qidiruv tizimlari uchun tavsif..." />
                   </div>
                 </div>
               </div>
 
               <button
+                className="sb-settings-save-btn"
                 onClick={() => {
                   setConfig(prev => ({ ...prev, appName: siteTitle }))
                   handleSave()
                   setIsSettingsOpen(false)
                 }}
-                style={{ width: '100%', padding: '12px', background: '#1e90ff', color: '#fff', fontWeight: 600, borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 13 }}
               >
                 O'zgarishlarni Saqlash
               </button>

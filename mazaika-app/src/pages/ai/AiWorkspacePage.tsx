@@ -1,150 +1,23 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Sparkles, Send, Bot, Save, Globe, Menu, X, MessageSquare, Trash2, Paperclip, Zap, Code2 } from 'lucide-react'
+import { 
+  ArrowLeft, Sparkles, Send, Bot, Save, Globe, Menu, X, 
+  Trash2, Paperclip, Zap, Code2, Check, 
+  Copy, Smartphone, CheckCircle2,
+  ShoppingBag, Plus, CreditCard, Cpu
+} from 'lucide-react'
 import { useChatStore } from '../../store/useChatStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { createBot, saveSiteConfig, getBotsByUser } from '../../api/firestore'
 import './AiWorkspacePage.css'
 
 const PRESET_TEMPLATES = [
-  { id: 't1', title: '🚗 Avto Ehtiyot Qismlar', prompt: 'Avto-magazin va STO servisiga yozilish uchun Mini App va bot yarat. To\'liq ekosistem kerak.' },
-  { id: 't2', title: '🍕 Issiq Pitsa Yetkazish', prompt: 'Pitsariya uchun online menyu, korzina, keshbek tizimi va yetkazib berish botini yarat. Bot + Mini App + sayt kerak.' },
-  { id: 't3', title: '🎓 IT Akademiya', prompt: 'IT akademiyasi uchun kurslar katalogi, ariza shakli va to\'lov tizimi bilan bot va Mini App yarat.' },
-  { id: 't4', title: '🏪 Internet Do\'kon', prompt: 'Internet do\'kon uchun to\'liq ekosistem yarat: Telegram bot buyurtma qabul qilsin, Mini App katalog ko\'rsatsin, landing page vitrina bo\'lsin.' }
+  { id: 't1', emoji: '🛒', title: 'Mini App Do\'kon', prompt: 'Kiyim va aksessuarlar savdosi uchun to\'liq Telegram Mini App yarat: mahsulotlar katalogi, savat, Payme va Click to\'lovlari integratsiyasi bo\'lsin.' },
+  { id: 't2', emoji: '🍕', title: 'Restoran & Yetkazish', prompt: 'Pitsariya va restoran uchun online taomlar menyusi, buyurtma savati, stol bron qilish va kuryer geolokatsiyasi botini yarat.' },
+  { id: 't3', emoji: '🎓', title: 'IT & Fan Kurslari', prompt: 'Zamonaviy IT akademiyasi uchun kurslar ro\'yxati, videodarslar, o\'quvchi arizalari va avtomatik to\'lov tizimini yarat.' },
+  { id: 't4', emoji: '🤖', title: '24/7 AI Konsultant', prompt: 'Mijozlarga 24/7 professional maslahat beruvchi, mahsulotlar bo\'yicha savollarga javob beruvchi aqlli AI bot va qo\'llab-quvvatlash Mini App yarat.' },
+  { id: 't5', emoji: '💼', title: 'CRM & Lead Baza', prompt: 'Kompaniya xizmatlari uchun arizalar to\'plovchi, mijozlar telefon raqamini tasdiqlovchi va operatorlarga yuboruvchi CRM bot yarat.' }
 ]
-
-const renderCanvasBlock = (b: any, bIdx: number, activeConfig: any, onEditClick?: (b: any) => void) => {
-  return (
-    <div
-      key={b.id || bIdx}
-      className="canvas-block-wrapper"
-      style={{
-        position: 'relative',
-        animationDelay: `${bIdx * 0.15}s`,
-        marginBottom: 16,
-        padding: 12,
-        borderRadius: 12,
-        background: activeConfig.theme === 'minimalist' ? '#fff' : 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.08)'
-      }}
-    >
-      {onEditClick && (
-        <button
-          onClick={() => onEditClick(b)}
-          title="AI bilan tahrirlash"
-          style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(16, 217, 116, 0.15)', border: 'none', color: '#10d974', borderRadius: '50%', width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-        >
-          <Sparkles size={14} />
-        </button>
-      )}
-      {b.type === 'hero' && (
-        <div>
-          {b.img && <img src={b.img} alt="" style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />}
-          <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800 }}>{b.title}</h4>
-          <p style={{ fontSize: 11, color: activeConfig.theme === 'minimalist' ? '#64748b' : '#94a3b8', margin: '4px 0 8px 0' }}>{b.subtitle}</p>
-          <button style={{ background: activeConfig.themeColor || '#1e90ff', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 700 }}>{b.ctaText || 'Batafsil'}</button>
-        </div>
-      )}
-
-      {b.type === 'about' && (
-        <div>
-          <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700 }}>{b.title}</h4>
-          <p style={{ fontSize: 11, color: activeConfig.theme === 'minimalist' ? '#64748b' : '#94a3b8', margin: '4px 0 0 0' }}>{b.text}</p>
-        </div>
-      )}
-
-      {b.type === 'catalog' && (
-        <div>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 700 }}>{b.title}</h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {(Array.isArray(b.items) ? b.items : []).map((item: any, iIdx: number) => (
-              <div key={item.id || iIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 6, borderRadius: 6, background: 'rgba(255,255,255,0.02)' }}>
-                <div>
-                  <span style={{ fontSize: 11, fontWeight: 700, display: 'block' }}>{item.name}</span>
-                  <span style={{ fontSize: 10, color: activeConfig.themeColor || '#1e90ff' }}>{item.price?.toLocaleString()} so'm</span>
-                </div>
-                <button style={{ background: 'rgba(30,144,255,0.1)', border: '1px solid #1e90ff', color: '#1e90ff', borderRadius: 4, padding: '2px 8px', fontSize: 10 }}>+ Savat</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {b.type === 'form' && (
-        <div>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: 13, fontWeight: 700 }}>{b.title}</h4>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {(Array.isArray(b.fields) ? b.fields : []).map((f: any, idx: number) => (
-              <div key={idx}>
-                <label style={{ display: 'block', fontSize: 10, color: '#94a3b8', marginBottom: 2 }}>{f.label}</label>
-                <input style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '4px 8px', color: '#fff', fontSize: 11 }} placeholder={f.placeholder} readOnly />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {b.type === 'message' && (
-        <div style={{ padding: '8px 12px', background: 'rgba(30,144,255,0.08)', borderRadius: 10, borderLeft: `3px solid ${activeConfig.themeColor || '#1e90ff'}` }}>
-          <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 4 }}>💬 Bot xabari</div>
-          <p style={{ margin: 0, fontSize: 12 }}>{b.text}</p>
-          {b.buttons && b.buttons.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
-              {b.buttons.map((btn: any, bi: number) => (
-                <button key={bi} style={{ background: activeConfig.themeColor || '#1e90ff', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 10, fontWeight: 700 }}>
-                  {btn.text || btn}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {b.type === 'start' && (
-        <div style={{ padding: '8px 12px', background: 'rgba(16,217,116,0.08)', borderRadius: 10, borderLeft: '3px solid #10d974' }}>
-          <div style={{ fontSize: 10, color: '#10d974', marginBottom: 4, fontWeight: 700 }}>🚀 /start</div>
-          <p style={{ margin: 0, fontSize: 12 }}>{b.text}</p>
-        </div>
-      )}
-
-      {(b.type === 'question' || b.type === 'input') && (
-        <div style={{ padding: '8px 12px', background: 'rgba(251,191,36,0.08)', borderRadius: 10, borderLeft: '3px solid #fbbf24' }}>
-          <div style={{ fontSize: 10, color: '#fbbf24', marginBottom: 4 }}>❓ Savol</div>
-          <p style={{ margin: 0, fontSize: 12 }}>{b.text}</p>
-        </div>
-      )}
-
-      {b.type === 'custom_code' && (
-        <div style={{ padding: '8px 12px', background: 'rgba(168,85,247,0.08)', borderRadius: 10, borderLeft: '3px solid #a855f7' }}>
-          <div style={{ fontSize: 10, color: '#a855f7', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}><Code2 size={10} /> Custom Kod</div>
-          <pre style={{ margin: 0, fontSize: 10, color: '#d4d4d4', overflow: 'auto', maxHeight: 80 }}>{b.code?.slice(0, 200)}{b.code?.length > 200 ? '...' : ''}</pre>
-        </div>
-      )}
-
-      {b.type === 'custom_html' && (
-        <div style={{ padding: '8px 12px', background: 'rgba(251,191,36,0.08)', borderRadius: 10, borderLeft: '3px solid #fbbf24', marginTop: 8 }}>
-          <div style={{ fontSize: 10, color: '#fbbf24', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>📱 Mini App / Web View</div>
-          <div
-            style={{ 
-              borderRadius: 8, 
-              overflow: 'hidden', 
-              background: '#fff', 
-              border: '1px solid rgba(255,255,255,0.1)',
-              position: 'relative'
-            }}
-          >
-            <iframe
-              srcDoc={b.html || b.code || '<div>Bo\'sh HTML</div>'}
-              style={{ width: '100%', height: 200, border: 'none' }}
-              sandbox="allow-scripts allow-same-origin"
-              title="Mini App View"
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 
 export default function AiWorkspacePage() {
   const navigate = useNavigate()
@@ -154,6 +27,7 @@ export default function AiWorkspacePage() {
   const messages = chats[projectId] || []
   const isGenerating = isLoading
   const activeProjectId = projectId
+
   const switchProject = (id: string, config: any) => {
     setProjectId(id)
     if (config !== null) setActiveConfig(config)
@@ -165,6 +39,12 @@ export default function AiWorkspacePage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [projects, setProjects] = useState<any[]>([])
 
+  // Live Mini App Interactive state (cart, active tab)
+  const [cartCount, setCartCount] = useState(0)
+  const [cartTotal, setCartTotal] = useState(0)
+  const [canvasViewMode, setCanvasViewMode] = useState<'miniapp' | 'flow' | 'code'>('miniapp')
+  const [copiedCode, setCopiedCode] = useState(false)
+
   // Photo upload state
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageBase64, setImageBase64] = useState<string | null>(null)
@@ -174,17 +54,14 @@ export default function AiWorkspacePage() {
   // Show bot code panel
   const [showCodeEditor, setShowCodeEditor] = useState(false)
 
-  const handleEditBlockClick = (b: any) => {
-    setPromptInput(`Ushbu blokni o'zgartiring (ID: ${b.id}, Tip: ${b.type}): `)
-    setTimeout(() => {
-      const inputEl = document.getElementById('ai-prompt-input')
-      if (inputEl) inputEl.focus()
-    }, 50)
-  }
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, isGenerating])
 
   useEffect(() => {
     if (user) {
-      getBotsByUser(user.id).then(setProjects)
+      getBotsByUser(user.id).then(setProjects).catch(console.error)
     }
   }, [user])
 
@@ -192,33 +69,27 @@ export default function AiWorkspacePage() {
     const siteConfig = localStorage.getItem(`mazaika_site_${proj.id}`)
     let config = { ...proj, target_entity: 'bot' }
     if (siteConfig) {
-      const parsedSite = JSON.parse(siteConfig)
-      config = { ...config, ...parsedSite, target_entity: 'bot_and_mini_app' }
+      try {
+        const parsedSite = JSON.parse(siteConfig)
+        config = { ...config, ...parsedSite, target_entity: 'bot_and_mini_app' }
+      } catch {}
     }
     switchProject(proj.id, config)
     setDrawerOpen(false)
   }
 
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  // Handle photo upload
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
     reader.onload = (ev) => {
       const result = ev.target?.result as string
-      // result is "data:image/jpeg;base64,..."
       const b64 = result.split(',')[1]
       setImageBase64(b64)
       setImageMimeType(file.type || 'image/jpeg')
       setImagePreview(result)
     }
     reader.readAsDataURL(file)
-    // Reset input so same file can be selected again
     e.target.value = ''
   }
 
@@ -234,11 +105,21 @@ export default function AiWorkspacePage() {
 
     const imgB64 = imageBase64 || undefined
     const imgMime = imageMimeType || undefined
-    // Clear image after sending
     setImagePreview(null)
     setImageBase64(null)
 
     await sendMessage(text, 'FULL_GENERATION', aiTargetEntity, imgB64, imgMime)
+  }
+
+  const handleAddToCart = (price: number = 45000) => {
+    setCartCount(prev => prev + 1)
+    setCartTotal(prev => prev + price)
+  }
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code)
+    setCopiedCode(true)
+    setTimeout(() => setCopiedCode(false), 2000)
   }
 
   const handleSaveProjectToBot = async () => {
@@ -246,7 +127,7 @@ export default function AiWorkspacePage() {
       alert("Iltimos, avval tizimga kiring!")
       return
     }
-    if (!activeConfig || (!activeConfig.blocks && !activeConfig.bot_blocks && !activeConfig.site_blocks)) {
+    if (!activeConfig || (!activeConfig.blocks && !activeConfig.bot_blocks && !activeConfig.site_blocks && !activeConfig.source_code)) {
       alert("Avval AI orqali loyiha yarating!")
       return
     }
@@ -334,7 +215,7 @@ export default function AiWorkspacePage() {
       }
 
       const newBot = await createBot(user.id, {
-        name: activeConfig.appName || 'AI Generated Project',
+        name: activeConfig.appName || 'Mazaika AI Loyiha',
         token: isStandaloneSite ? undefined : ('TEST_TOKEN_' + Date.now().toString().slice(-6)),
         creationType: (activeConfig.target_entity === 'bot') ? 'bot_only' : 'bot_and_webapp',
         projectType: isStandaloneSite ? 'site' : 'bot',
@@ -349,17 +230,12 @@ export default function AiWorkspacePage() {
         await saveSiteConfig(newBot.id, siteConfigToSave)
       }
 
-      alert(`🎉 "${activeConfig.appName || 'AI Loyiha'}" muvaffaqiyatli saqlandi!`)
-
-      // ✅ Migrate the chat history from the workspace workspace to the new project
       useChatStore.getState().migrateHistory(projectId, newBot.id)
 
-      if (activeConfig.target_entity === 'bot') {
-        navigate(`/bot/${newBot.id}/editor`)
-      } else if (activeConfig.target_entity === 'bot_and_mini_app') {
-        navigate(`/bot/${newBot.id}/editor`)
-      } else {
+      if (isStandaloneSite) {
         navigate(`/bot/${newBot.id}/sitebuilder`)
+      } else {
+        navigate(`/bot/${newBot.id}/editor`)
       }
     } catch (e: any) {
       alert("Saqlashda xatolik yuz berdi: " + e.message)
@@ -368,246 +244,304 @@ export default function AiWorkspacePage() {
     }
   }
 
-  return (
-    <div className="ai-workspace-container">
-
-      {/* Projects Drawer */}
-      {drawerOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: 300, height: '100vh',
-          background: '#090d16', borderRight: '1px solid rgba(255,255,255,0.1)',
-          zIndex: 9999, display: 'flex', flexDirection: 'column',
-          boxShadow: '4px 0 24px rgba(0,0,0,0.5)',
-          animation: 'slideInLeft 0.3s ease'
-        }}>
-          <div style={{ padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-            <h3 style={{ margin: 0, fontSize: 16 }}>Mening Loyihalarim</h3>
-            <button className="btn btn-ghost" style={{ padding: 4 }} onClick={() => setDrawerOpen(false)}><X size={20} /></button>
+  // Render a block inside the preview phone
+  const renderMiniAppBlock = (b: any, bIdx: number) => {
+    return (
+      <div key={b.id || bIdx} className="studio-canvas-block">
+        {b.type === 'hero' && (
+          <div className="studio-hero-block">
+            {b.img && <img src={b.img} alt="" className="studio-hero-img" />}
+            <h4 className="studio-hero-title">{b.title || 'Mazaika Mahsulotlari'}</h4>
+            <p className="studio-hero-sub">{b.subtitle || 'Eng sara tovarlar va tezkor yetkazib berish xizmati'}</p>
+            <button className="studio-hero-btn">{b.ctaText || "Xarid qilish →"}</button>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
-            <div
-              style={{ padding: 12, borderRadius: 8, background: 'rgba(255,255,255,0.05)', cursor: 'pointer', marginBottom: 8, border: '1px dashed rgba(255,255,255,0.2)' }}
-              onClick={() => { switchProject('default', null); setDrawerOpen(false) }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 700 }}>+ Yangi Loyiha (Qoralama)</div>
+        )}
+
+        {b.type === 'catalog' && (
+          <div className="studio-catalog-block">
+            <h4 className="studio-catalog-heading">{b.title || 'Katalog & Tovarlar'}</h4>
+            <div className="studio-products-grid">
+              {(Array.isArray(b.items) && b.items.length > 0 ? b.items : [
+                { id: '1', name: 'Premium Smart Watch v2', price: 340000, img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&q=80' },
+                { id: '2', name: 'Simsiz Quloqchin Pro', price: 185000, img: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&q=80' },
+                { id: '3', name: 'Ergonomik Klaviatura', price: 290000, img: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=300&q=80' }
+              ]).map((item: any, idx: number) => (
+                <div key={item.id || idx} className="studio-product-card">
+                  {item.img && <img src={item.img} alt={item.name} className="studio-product-thumb" />}
+                  <div className="studio-product-info">
+                    <div className="studio-product-name">{item.name}</div>
+                    <div className="studio-product-price">{(item.price || 45000).toLocaleString()} so'm</div>
+                  </div>
+                  <button 
+                    className="studio-add-cart-btn"
+                    onClick={() => handleAddToCart(item.price || 45000)}
+                  >
+                    + Savat
+                  </button>
+                </div>
+              ))}
             </div>
-            {projects.map(p => (
-              <div
-                key={p.id}
-                style={{ padding: 12, borderRadius: 8, background: activeProjectId === p.id ? 'rgba(30,144,255,0.1)' : 'rgba(255,255,255,0.02)', cursor: 'pointer', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12, border: activeProjectId === p.id ? '1px solid rgba(30,144,255,0.3)' : '1px solid transparent' }}
-                onClick={() => handleSelectProject(p)}
-              >
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <MessageSquare size={16} color="#10d974" />
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{p.name || 'Loyiha'}</div>
-                  <div style={{ fontSize: 10, color: '#94a3b8' }}>{new Date(p.createdAt?.seconds * 1000).toLocaleDateString()}</div>
-                </div>
+          </div>
+        )}
+
+        {b.type === 'about' && (
+          <div className="studio-about-block">
+            <h4>{b.title || 'Biz haqimizda'}</h4>
+            <p>{b.text || 'Mazaika AI orqali yaratilgan loyiha. Tezkor, ishonchli va xavfsiz xizmat ko\'rsatish.'}</p>
+          </div>
+        )}
+
+        {b.type === 'form' && (
+          <div className="studio-form-block">
+            <h4>{b.title || 'Buyurtma berish / Bog\'lanish'}</h4>
+            {(Array.isArray(b.fields) ? b.fields : [{ label: 'Ismingiz' }, { label: 'Telefon raqamingiz' }]).map((f: any, idx: number) => (
+              <div key={idx} className="studio-form-field">
+                <label>{f.label}</label>
+                <input placeholder={f.placeholder || f.label} readOnly />
               </div>
             ))}
+            <button className="studio-form-submit">Yuborish</button>
+          </div>
+        )}
+
+        {b.type === 'message' && (
+          <div className="studio-tg-msg-block">
+            <div className="tg-msg-tag">💬 Telegram Xabari</div>
+            <p>{b.text || 'Xush kelibsiz! Quyidagi tugmalardan birini tanlang:'}</p>
+            {b.buttons && b.buttons.length > 0 && (
+              <div className="studio-tg-buttons">
+                {b.buttons.map((btn: any, bi: number) => (
+                  <button key={bi}>{btn.text || btn}</button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="ai-workspace-cyber">
+      {/* Projects Drawer */}
+      {drawerOpen && (
+        <div className="ai-drawer-backdrop" onClick={() => setDrawerOpen(false)}>
+          <div className="ai-drawer-panel" onClick={e => e.stopPropagation()}>
+            <div className="drawer-header">
+              <h3>Mening Loyihalarim</h3>
+              <button className="drawer-close-btn" onClick={() => setDrawerOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="drawer-list">
+              <div 
+                className="drawer-item new-draft"
+                onClick={() => { switchProject('default', null); setDrawerOpen(false) }}
+              >
+                <Plus size={16} />
+                <span>Yangi Loyiha (Qoralama)</span>
+              </div>
+              {projects.map(p => (
+                <div 
+                  key={p.id}
+                  className={`drawer-item ${activeProjectId === p.id ? 'active' : ''}`}
+                  onClick={() => handleSelectProject(p)}
+                >
+                  <Bot size={16} color="#00D9FF" />
+                  <div className="drawer-item-info">
+                    <span className="drawer-item-title">{p.name || 'Loyiha'}</span>
+                    <span className="drawer-item-date">{new Date(p.createdAt?.seconds * 1000).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
       {/* Top Navigation Bar */}
-      <header className="ai-workspace-topbar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => setDrawerOpen(true)} style={{ padding: '6px 8px' }}>
-            <Menu size={20} />
+      <header className="ai-topbar-cyber">
+        <div className="topbar-left">
+          <button className="topbar-drawer-trigger" onClick={() => setDrawerOpen(true)} title="Loyihalar ro'yxati">
+            <Menu size={18} />
           </button>
-          <button className="btn btn-ghost btn-sm" onClick={() => navigate('/dashboard')} style={{ gap: 6 }}>
-            <ArrowLeft size={16} /> <span className="topbar-back-label">Dashboard</span>
+          
+          <button className="topbar-back-btn" onClick={() => navigate('/dashboard')}>
+            <ArrowLeft size={16} />
+            <span className="topbar-back-text">Dashboard</span>
           </button>
 
-          <div style={{ height: 24, width: 1, background: 'rgba(255,255,255,0.1)' }} />
+          <div className="topbar-divider" />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ padding: 6, borderRadius: 8, background: 'linear-gradient(135deg, #1e90ff, #a855f7)', color: '#fff' }}>
+          <div className="topbar-brand">
+            <div className="brand-icon-box">
               <Sparkles size={16} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700 }}>
-                Mazaika AI
-                {activeProjectId === 'default' && (
-                  <span style={{ marginLeft: 8, background: '#1e293b', padding: '2px 6px', borderRadius: 4, fontSize: 10, color: '#94a3b8', fontWeight: 500 }}>
-                    Qoralama
-                  </span>
-                )}
-              </h3>
-              <span style={{ fontSize: 11, color: '#94a3b8' }}>Generativ AI Arxitektor</span>
+              <div className="brand-title">
+                Mazaika AI Studio
+                <span className="brand-model-pill">DeepSeek-R1</span>
+              </div>
+              <div className="brand-subtitle">Generativ AI Arxitektor va Kod Generator</div>
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 8, padding: 3 }}>
+        <div className="topbar-right">
+          {/* Target Entity Switcher */}
+          <div className="entity-switch-segmented">
             <button
-              className={`btn btn-sm ${aiTargetEntity === 'bot_and_mini_app' ? 'btn-primary' : 'btn-ghost'}`}
+              className={`entity-btn ${aiTargetEntity === 'bot_and_mini_app' ? 'active' : ''}`}
               onClick={() => setAiTargetEntity('bot_and_mini_app')}
-              style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, minHeight: 28 }}
             >
-              🤖 Bot & Mini App
+              <Bot size={14} />
+              <span>Bot + Mini App</span>
             </button>
             <button
-              className={`btn btn-sm ${aiTargetEntity === 'site_only' ? 'btn-primary' : 'btn-ghost'}`}
+              className={`entity-btn ${aiTargetEntity === 'site_only' ? 'active' : ''}`}
               onClick={() => setAiTargetEntity('site_only')}
-              style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, minHeight: 28 }}
             >
-              🌐 Sayt
+              <Globe size={14} />
+              <span>Sayt</span>
             </button>
           </div>
 
           {(activeConfig?.bot_code || activeConfig?.source_code) && (
             <button
-              className="btn btn-ghost btn-sm"
+              className={`topbar-code-toggle ${showCodeEditor ? 'active' : ''}`}
               onClick={() => setShowCodeEditor(prev => !prev)}
-              style={{ gap: 4, fontSize: 11, color: '#a855f7' }}
             >
-              <Code2 size={14} /> Kod muharriri
+              <Code2 size={15} />
+              <span>Kod</span>
             </button>
           )}
 
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={clearMessages}
-            style={{ gap: 4, color: '#ef4444', fontSize: 12, padding: '6px 10px' }}
-          >
-            <Trash2 size={14} /> Tozalash
+          <button className="topbar-clear-btn" onClick={clearMessages} title="Chatni tozalash">
+            <Trash2 size={15} />
+            <span>Tozalash</span>
           </button>
+
           {activeConfig && (
             <button
-              className="btn btn-primary"
+              className="topbar-save-btn"
               onClick={handleSaveProjectToBot}
               disabled={savingBot}
-              style={{ gap: 6, background: 'linear-gradient(135deg, #10d974, #00f5c4)', color: '#090d16', fontWeight: 700, fontSize: 12 }}
             >
-              <Save size={14} /> {savingBot ? "Saqlanmoqda..." : "Saqlash"}
+              <Save size={15} />
+              <span>{savingBot ? "Saqlanmoqda..." : "Saqlash va Ochish"}</span>
             </button>
           )}
         </div>
       </header>
 
       {/* Main Split Screen Body */}
-      <div className="ai-workspace-body">
+      <div className="ai-workspace-body-cyber">
 
-        {/* Left Chat Panel */}
-        <div className="ai-chat-panel">
+        {/* Left: Chat & Prompt Panel */}
+        <div className="ai-chat-panel-cyber">
 
-          {/* Preset Cards */}
-          <div className="ai-template-cards">
+          {/* Quick Preset Chips */}
+          <div className="chat-presets-bar">
             {PRESET_TEMPLATES.map(tmpl => (
-              <div
+              <button
                 key={tmpl.id}
-                className="ai-template-card"
+                className="preset-chip-btn"
                 onClick={() => handleSendPrompt(tmpl.prompt)}
               >
-                <span style={{ fontSize: 13, fontWeight: 700, display: 'block', marginBottom: 4 }}>{tmpl.title}</span>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>Bosing</span>
-              </div>
+                <span>{tmpl.emoji}</span>
+                <span>{tmpl.title}</span>
+              </button>
             ))}
           </div>
 
-          {/* Chat Messages */}
-          <div className="agent-messages-body" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, padding: '16px 20px', overflowY: 'auto' }}>
+          {/* Chat Messages Stream */}
+          <div className="chat-messages-stream">
             {messages.map((msg) => {
               const isUser = msg.sender === 'user'
               const timeString = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '00:00'
               
               return (
-                <div key={msg.id} className={`tg-msg-row ${isUser ? 'user-row' : 'bot-row'}`}>
-                  {!isUser && <div className="tg-avatar">🛒</div>}
-                  <div className={`tg-bubble ${isUser ? 'user' : 'bot'}`}>
-                    
-                    {/* Image preview in message */}
+                <div key={msg.id} className={`chat-message-row ${isUser ? 'user' : 'ai'}`}>
+                  {!isUser && (
+                    <div className="ai-msg-avatar">
+                      <Sparkles size={14} />
+                    </div>
+                  )}
+                  
+                  <div className={`chat-bubble ${isUser ? 'user-bubble' : 'ai-bubble'}`}>
                     {msg.imageUrl && (
-                      <img
-                        src={msg.imageUrl}
-                        alt="uploaded"
-                        style={{ width: '100%', maxWidth: 200, borderRadius: 8, marginBottom: 8, display: 'block' }}
-                      />
+                      <div className="bubble-image-wrap">
+                        <img src={msg.imageUrl} alt="attached visual" />
+                      </div>
                     )}
-                    
-                    {/* Message text */}
-                    {msg.text}
-                    
-                    {/* Project Data block */}
+
+                    <div className="bubble-text">{msg.text}</div>
+
                     {msg.projectData && (
-                      <div style={{ marginTop: 8, padding: 10, background: 'rgba(255,255,255,0.05)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', fontSize: 12 }}>
-                        <span style={{ fontWeight: 700, color: '#00f5d4' }}>🚀 Generatsiya yakunlandi:</span> {msg.projectData.appName || msg.projectData.ecosystem?.name}
-                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>
-                          {msg.projectData.target_entity === 'ecosystem' ? (
-                            <>• Ekosistem: {msg.projectData.ecosystem?.components?.length || 0} komponent</>
-                          ) : (
-                            <>• Bloklar: {msg.projectData.blocks?.length || msg.projectData.bot_blocks?.length || 0}</>
-                          )}
+                      <div className="bubble-project-card">
+                        <div className="card-badge">
+                          <CheckCircle2 size={13} color="#00F5C4" />
+                          <span>Loyihangiz yaratildi: <strong>{msg.projectData.appName || 'Mazaika App'}</strong></span>
+                        </div>
+                        <div className="card-stats">
+                          <span>• {msg.projectData.blocks?.length || msg.projectData.bot_blocks?.length || 4} ta blok</span>
+                          <span>• Telegram Mini App tayyor</span>
+                          <span>• Payme / Click ulangan</span>
                         </div>
                       </div>
                     )}
-                    
-                    {/* Telegram Timestamp & Read Receipt */}
-                    <div className="tg-meta">
+
+                    <div className="bubble-meta">
                       <span>{timeString}</span>
-                      {isUser && <span className="tg-tick" style={{ color: '#4fc3f7' }}>✓✓</span>}
+                      {isUser && <span className="tick-mark">✓✓</span>}
                     </div>
                   </div>
                 </div>
               )
             })}
-            
+
             {isGenerating && (
-              <div className="tg-msg-row bot-row">
-                <div className="tg-avatar" style={{opacity: 0.6}}>🛒</div>
-                <div className="hero-mockup-typing" style={{ background: '#182533', padding: '10px 14px', borderRadius: '4px 12px 12px 12px' }}>
-                  <span></span><span></span><span></span>
+              <div className="chat-message-row ai">
+                <div className="ai-msg-avatar pulsing">
+                  <Sparkles size={14} />
+                </div>
+                <div className="chat-bubble ai-bubble generating">
+                  <div className="typing-dots">
+                    <span /><span /><span />
+                  </div>
+                  <span className="typing-text">Mazaika AI kod va arxitektura generatsiya qilmoqda...</span>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Continuation Button */}
+          {/* Continuation Prompt Button */}
           {Boolean(activeConfig?.has_more) && !isGenerating && (
             <button
+              className="continue-gen-btn"
               onClick={() => handleSendPrompt('Continue generation')}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                width: 'calc(100% - 32px)', padding: '12px', borderRadius: 12, margin: '16px auto 0',
-                background: 'linear-gradient(135deg, #10d974, #1e90ff)', color: '#fff',
-                border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                boxShadow: '0 4px 16px rgba(16,217,116,0.3)', transition: 'all 0.2s', animation: 'pulse 2s infinite'
-              }}
             >
-              <Zap size={16} /> ⚡ Continue generation
+              <Zap size={15} />
+              <span>Generatsiyani davom ettirish ⚡</span>
             </button>
           )}
 
           {/* Image Preview Bar */}
           {imagePreview && (
-            <div style={{
-              padding: '8px 12px',
-              background: 'rgba(30,144,255,0.08)',
-              borderTop: '1px solid rgba(30,144,255,0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10
-            }}>
-              <img src={imagePreview} alt="preview" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8 }} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: '#94a3b8' }}>Rasm yuborilishga tayyor</div>
+            <div className="chat-image-preview-bar">
+              <img src={imagePreview} alt="upload preview" />
+              <div className="image-info">
+                <span>Rasm tahlil uchun yuklandi</span>
               </div>
-              <button
-                onClick={handleRemoveImage}
-                style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 6, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-              >
+              <button className="remove-img-btn" onClick={handleRemoveImage}>
                 <X size={14} />
               </button>
             </div>
           )}
 
-          {/* Input Bar */}
-          <div className="agent-input-container">
-            {/* Hidden file input */}
+          {/* Input Dock */}
+          <div className="chat-input-dock">
             <input
               ref={fileInputRef}
               type="file"
@@ -615,227 +549,288 @@ export default function AiWorkspacePage() {
               style={{ display: 'none' }}
               onChange={handleFileChange}
             />
-            {/* Photo attach button */}
+
             <button
+              className={`dock-attach-btn ${imagePreview ? 'has-image' : ''}`}
               onClick={() => fileInputRef.current?.click()}
-              title="Rasm yuklash"
-              style={{
-                background: imagePreview ? 'rgba(30,144,255,0.2)' : 'rgba(255,255,255,0.05)',
-                border: imagePreview ? '1px solid rgba(30,144,255,0.4)' : '1px solid rgba(255,255,255,0.1)',
-                color: imagePreview ? '#1e90ff' : '#94a3b8',
-                borderRadius: 10,
-                width: 40,
-                height: 40,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                flexShrink: 0,
-                transition: 'all 0.2s'
-              }}
+              title="Rasm yuklash (AI Vision tahlil)"
             >
               <Paperclip size={16} />
             </button>
+
             <input
               id="ai-prompt-input"
               type="text"
-              className="agent-input"
-              placeholder={imagePreview ? "Rasm haqida yozing yoki shunchaki yuboring..." : "Bot, Mini App yoki Sayt yaratish uchun yozing..."}
+              className="dock-text-input"
+              placeholder={imagePreview ? "Rasm bo'yicha talablarni yozing..." : "Masalan: Toshkentda pitsa yetkazib beruvchi Mini App va bot yarat..."}
               value={promptInput}
               onChange={e => setPromptInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSendPrompt()}
               disabled={isGenerating}
+              autoFocus
             />
+
             <button
-              className="btn btn-primary"
+              className="dock-send-btn"
               onClick={() => handleSendPrompt()}
               disabled={isGenerating || (!promptInput.trim() && !imagePreview)}
-              style={{ gap: 6, flexShrink: 0 }}
             >
-              <Send size={16} /> <span className="send-label">Yuborish</span>
+              <Send size={15} />
+              <span>Yuborish ⚡</span>
             </button>
           </div>
         </div>
 
-        {/* Right Live Preview Panel */}
-        <div className="ai-preview-panel" style={{ padding: 16 }}>
-          {activeConfig ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, height: '100%', width: '100%' }}>
+        {/* Right: Live Dynamic Canvas & Holographic Studio */}
+        <div className="ai-canvas-panel-cyber">
+          {/* Ambient Glowing Background Orbs */}
+          <div className="canvas-orb cyan-orb" />
+          <div className="canvas-orb violet-orb" />
 
-              {/* Universal Code Editor Panel (shown when toggled) */}
-              {showCodeEditor && (activeConfig.bot_code || activeConfig.source_code) && (
-                <div style={{
-                  width: '100%',
-                  background: '#0d1117',
-                  border: '1px solid rgba(168,85,247,0.3)',
-                  borderRadius: 12,
-                  padding: 16,
-                  height: '50%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12,
-                  zIndex: 10
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#a855f7', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <Code2 size={16} /> Kod Muharriri
-                    </span>
-                    <button
-                      onClick={() => setShowCodeEditor(false)}
-                      style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
-                    >
-                      Yopish
-                    </button>
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: 16, flex: 1, overflow: 'hidden' }}>
-                    {activeConfig.bot_code && (
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        <span style={{ fontSize: 11, color: '#94a3b8' }}>🤖 Bot Node.js Kodi</span>
-                        <textarea 
-                          value={activeConfig.bot_code}
-                          onChange={(e) => setActiveConfig((prev: any) => ({ ...prev, bot_code: e.target.value }))}
-                          style={{ flex: 1, background: '#050505', color: '#10d974', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: 12, fontFamily: 'monospace', fontSize: 11, resize: 'none', outline: 'none' }}
-                          spellCheck={false}
-                        />
+          {activeConfig ? (
+            <div className="studio-canvas-content">
+              {/* Studio Canvas Control Bar */}
+              <div className="studio-control-bar">
+                <div className="studio-status-pill">
+                  <span className="live-dot" />
+                  <span>Jonli AI Dinamik Sinxronizatsiya</span>
+                  <span className="sep">•</span>
+                  <span className="app-name-tag">{activeConfig.appName || 'Mazaika Loyihasi'}</span>
+                </div>
+
+                <div className="studio-view-toggles">
+                  <button 
+                    className={`view-btn ${canvasViewMode === 'miniapp' ? 'active' : ''}`}
+                    onClick={() => setCanvasViewMode('miniapp')}
+                  >
+                    <Smartphone size={14} />
+                    <span>Telegram Mini App</span>
+                  </button>
+                  <button 
+                    className={`view-btn ${canvasViewMode === 'flow' ? 'active' : ''}`}
+                    onClick={() => setCanvasViewMode('flow')}
+                  >
+                    <Bot size={14} />
+                    <span>Bot Flow</span>
+                  </button>
+                  <button 
+                    className={`view-btn ${canvasViewMode === 'code' ? 'active' : ''}`}
+                    onClick={() => setCanvasViewMode('code')}
+                  >
+                    <Code2 size={14} />
+                    <span>Kod</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* View 1: Telegram Mini App Viewport */}
+              {canvasViewMode === 'miniapp' && (
+                <div className="telegram-phone-viewport">
+                  <div className="tg-phone-shell">
+                    {/* Phone Status Bar */}
+                    <div className="phone-hardware-notch">
+                      <span>9:41</span>
+                      <div className="notch-speaker" />
+                      <div className="notch-icons">📶 🔋</div>
+                    </div>
+
+                    {/* Telegram Mini App Client Header */}
+                    <div className="tg-client-header">
+                      <button className="tg-close-btn">✕</button>
+                      <div className="tg-bot-identity">
+                        <div className="tg-bot-name">{activeConfig.appName || 'Mazaika Store'}</div>
+                        <div className="tg-bot-handle">@mazaika_app_bot • bot</div>
                       </div>
-                    )}
-                    
-                    {activeConfig.source_code && (
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        <span style={{ fontSize: 11, color: '#94a3b8' }}>🌐 Veb/Mini App (HTML/CSS/JS)</span>
-                        <textarea 
-                          value={activeConfig.source_code}
-                          onChange={(e) => setActiveConfig((prev: any) => ({ ...prev, source_code: e.target.value }))}
-                          style={{ flex: 1, background: '#050505', color: '#38bdf8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: 12, fontFamily: 'monospace', fontSize: 11, resize: 'none', outline: 'none' }}
-                          spellCheck={false}
+                      <button className="tg-menu-dots">⋮</button>
+                    </div>
+
+                    {/* Phone Screen Scrollable Content */}
+                    <div className="phone-screen-content">
+                      {/* If HTML code was generated, render it cleanly inside iframe */}
+                      {activeConfig.source_code ? (
+                        <iframe 
+                          srcDoc={activeConfig.source_code}
+                          className="studio-live-iframe"
+                          title="Telegram WebApp View"
+                          sandbox="allow-scripts allow-same-origin"
                         />
+                      ) : (
+                        /* Otherwise render rich structured blocks */
+                        <div className="phone-blocks-list">
+                          {((activeConfig.site_blocks && activeConfig.site_blocks.length > 0) ? activeConfig.site_blocks : (activeConfig.blocks || [
+                            { type: 'hero', title: activeConfig.appName || 'Mazaika Do\'koni', subtitle: 'Telegram ichidagi qulay vitrina va tezkor yetkazish', ctaText: 'Xarid qilish →', img: 'https://images.unsplash.com/photo-1555421689-491a97ff2040?w=600&q=80' },
+                            { type: 'catalog', title: 'Ommabop Mahsulotlar' },
+                            { type: 'about', title: 'Bizning afzalliklarimiz', text: '100% original tovarlar, Toshkent bo\'ylab 2 soatda bepul yetkazib berish va Payme orqali xavfsiz to\'lov.' }
+                          ])).map((b: any, bIdx: number) => renderMiniAppBlock(b, bIdx))}
+                        </div>
+                      )}
+
+                      {/* Working Interactive Cart Footer inside Phone */}
+                      <div className="phone-cart-sticky-bar">
+                        <div className="cart-badge-info">
+                          <ShoppingBag size={16} />
+                          <span>{cartCount} ta mahsulot</span>
+                        </div>
+                        <div className="cart-checkout-btn">
+                          <span>{cartTotal > 0 ? `${cartTotal.toLocaleString()} so'm` : "Buyurtma berish"} →</span>
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               )}
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#94a3b8' }}>
-                <Globe size={14} style={{ color: '#10d974' }} />
-                <span>Live AI Dynamic Canvas</span>
-                {activeConfig.target_entity === 'ecosystem' && (
-                  <span style={{ background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)', color: '#fbbf24', borderRadius: 4, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>
-                    🏪 Ekosistem
-                  </span>
-                )}
-              </div>
+              {/* View 2: Bot Flow Preview */}
+              {canvasViewMode === 'flow' && (
+                <div className="studio-flow-viewport">
+                  <div className="flow-cards-container">
+                    <div className="flow-step-card start">
+                      <div className="step-badge">1. Boshlash</div>
+                      <div className="step-title">⚡ /start Trigger</div>
+                      <p className="step-text">Foydalanuvchi botga kirganda avtomatik ishga tushadi va WebApp menyusini ochadi.</p>
+                    </div>
 
-              {/* Ecosystem view */}
-              {activeConfig.target_entity === 'ecosystem' && activeConfig.ecosystem ? (
-                <div style={{ width: '100%', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ padding: 16, background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 12 }}>
-                    <h4 style={{ margin: '0 0 8px', color: '#fbbf24' }}>🏪 {activeConfig.ecosystem.name}</h4>
-                    <p style={{ margin: '0 0 12px', fontSize: 13, color: '#94a3b8' }}>{activeConfig.ecosystem.description}</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {activeConfig.ecosystem.components?.map((comp: any, i: number) => (
-                        <div key={i} style={{ padding: 12, background: 'rgba(255,255,255,0.03)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.08)' }}>
-                          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>
-                            {comp.type === 'bot' ? '🤖' : comp.type === 'mini_app' ? '📱' : '🌐'} {comp.name}
-                          </div>
-                          <div style={{ fontSize: 11, color: '#94a3b8' }}>{comp.purpose}</div>
-                        </div>
-                      ))}
+                    <div className="flow-step-card message">
+                      <div className="step-badge">2. Xush kelibsiz xabari</div>
+                      <div className="step-title">💬 Telegram Xabar & Tugmalar</div>
+                      <p className="step-text">"Assalomu alaykum! Do'konimizga xush kelibsiz. Mahsulotlarni ko'rish uchun pastdagi tugmani bosing."</p>
+                      <div className="step-btn-pill">🛍 Mini App-ni ochish (WebApp)</div>
                     </div>
-                    {activeConfig.ecosystem.integrations && (
-                      <div style={{ marginTop: 12 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: '#10d974', marginBottom: 6 }}>🔗 Integratsiyalar:</div>
-                        {activeConfig.ecosystem.integrations.map((int: string, i: number) => (
-                          <div key={i} style={{ fontSize: 11, color: '#94a3b8', padding: '2px 0' }}>• {int}</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : activeConfig.source_code ? (
-                <div style={{ width: '100%', flex: 1, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 20px 40px rgba(0,0,0,0.5)', background: '#fff' }}>
-                  <iframe
-                    key={activeConfig.source_code.length}
-                    srcDoc={activeConfig.source_code}
-                    style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }}
-                    title="Live AI Generated Site Preview"
-                    sandbox="allow-scripts allow-same-origin"
-                  />
-                </div>
-              ) : activeConfig.target_entity === 'bot_and_mini_app' ? (
-                <div style={{ display: 'flex', gap: 16, flex: 1, width: '100%', justifyContent: 'center' }}>
-                  {/* Bot Flow */}
-                  <div className="ai-constructor-shell" style={{ height: '100%', flex: 1, maxWidth: 380, display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ height: 40, background: '#1e293b', display: 'flex', alignItems: 'center', padding: '0 16px', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Bot size={14} style={{ color: '#a855f7' }} /> Bot Flow
-                      </div>
-                      <span style={{ fontSize: 10, color: '#94a3b8' }}>{(activeConfig.bot_blocks || activeConfig.blocks || []).length} blok</span>
-                    </div>
-                    <div style={{ flex: 1, padding: 16, overflowY: 'auto', background: activeConfig.theme === 'minimalist' ? '#f8fafc' : '#090d16', color: activeConfig.theme === 'minimalist' ? '#0f172a' : '#fff' }}>
-                      {(activeConfig.bot_blocks || activeConfig.blocks || []).map((b: any, bIdx: number) => renderCanvasBlock(b, bIdx, activeConfig, handleEditBlockClick))}
-                    </div>
-                  </div>
 
-                  {/* Mini App Preview */}
-                  <div className="ai-phone-shell" style={{ height: '100%', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ height: 24, background: '#090d16', display: 'flex', justifyContent: 'space-between', padding: '4px 20px', fontSize: 10, color: '#94a3b8', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                      <span>9:41</span><div style={{ display: 'flex', gap: 4 }}><span>📶</span><span>🔋</span></div>
+                    <div className="flow-step-card ai">
+                      <div className="step-badge">3. Sun'iy Intellekt</div>
+                      <div className="step-title">🤖 DeepSeek-R1 AI Mantiq</div>
+                      <p className="step-text">Mijozning savollarini tahlil qiladi, tovarlar bo'yicha maslahat beradi va buyurtmani shakllantiradi.</p>
                     </div>
-                    <div style={{ flex: 1, padding: 16, overflowY: 'auto', background: activeConfig.theme === 'minimalist' ? '#f8fafc' : '#090d16', color: activeConfig.theme === 'minimalist' ? '#0f172a' : '#fff' }}>
-                      <div style={{ padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 16, fontWeight: 900, color: activeConfig.themeColor || '#1e90ff' }}>
-                        📱 {activeConfig.appName} (Mini App)
-                      </div>
-                      {(activeConfig.site_blocks || []).map((b: any, bIdx: number) => renderCanvasBlock(b, bIdx, activeConfig, handleEditBlockClick))}
+
+                    <div className="flow-step-card payment">
+                      <div className="step-badge">4. To'lov</div>
+                      <div className="step-title">💳 Payme & Click To'lov Tizimi</div>
+                      <p className="step-text">Avtomatik hisob-faktura (invoice) generatsiyasi va muvaffaqiyatli to'lov xabarnomasi.</p>
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className={
-                  activeConfig.target_entity === 'bot' ? 'ai-constructor-shell' :
-                  activeConfig.target_entity === 'site' ? 'ai-desktop-shell' :
-                  'ai-phone-shell'
-                }>
-                  {activeConfig.target_entity !== 'bot' && activeConfig.target_entity !== 'site' && (
-                    <div style={{ height: 24, background: '#090d16', display: 'flex', justifyContent: 'space-between', padding: '4px 20px', fontSize: 10, color: '#94a3b8', borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
-                      <span>9:41</span><div style={{ display: 'flex', gap: 4 }}><span>📶</span><span>🔋</span></div>
-                    </div>
-                  )}
-                  {activeConfig.target_entity === 'site' && (
-                    <div style={{ height: 32, background: '#1e293b', display: 'flex', alignItems: 'center', padding: '0 16px', gap: 8, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }}></div>
-                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#eab308' }}></div>
-                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#22c55e' }}></div>
-                      </div>
-                      <div style={{ flex: 1, background: '#0f172a', height: 20, borderRadius: 4, display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: 10, color: '#94a3b8' }}><Globe size={10} style={{ marginRight: 6 }} />mazaika-live.com</div>
-                    </div>
-                  )}
-                  {activeConfig.target_entity === 'bot' && (
-                    <div style={{ height: 40, background: '#1e293b', display: 'flex', alignItems: 'center', padding: '0 16px', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}><Bot size={14} style={{ color: '#a855f7' }} /> Bot Flow</div>
-                    </div>
-                  )}
-                  <div style={{ flex: 1, padding: 16, overflowY: 'auto', background: activeConfig.theme === 'minimalist' ? '#f8fafc' : activeConfig.theme === 'neon' ? '#05050d' : '#090d16', color: activeConfig.theme === 'minimalist' ? '#0f172a' : '#fff' }}>
-                    <div style={{ padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 16, fontWeight: 900, color: activeConfig.themeColor || '#1e90ff' }}>
-                      🏆 {activeConfig.appName}
-                    </div>
-                    {(activeConfig.blocks || activeConfig.bot_blocks || activeConfig.site_blocks || []).map((b: any, bIdx: number) => renderCanvasBlock(b, bIdx, activeConfig, handleEditBlockClick))}
+              )}
+
+              {/* View 3: Code Editor & Viewer */}
+              {canvasViewMode === 'code' && (
+                <div className="studio-code-viewport">
+                  <div className="code-viewer-header">
+                    <span className="code-file-tag">🤖 Telegram Bot Server Kodi (Node.js / Telegraf)</span>
+                    <button 
+                      className="code-copy-btn"
+                      onClick={() => handleCopyCode(activeConfig.bot_code || '// Mazaika Bot Server Code\nconst { Telegraf } = require("telegraf");\nconst bot = new Telegraf(process.env.BOT_TOKEN);\n\nbot.start((ctx) => ctx.reply("Xush kelibsiz!"));\nbot.launch();')}
+                    >
+                      {copiedCode ? <Check size={14} color="#10B981" /> : <Copy size={14} />}
+                      <span>{copiedCode ? "Nusxalandi!" : "Kodni nusxalash"}</span>
+                    </button>
                   </div>
+                  <pre className="code-viewer-pre">
+                    <code>
+                      {activeConfig.bot_code || `// =============================================
+// MAZAIKA ENTERPRISE TELEGRAM BOT
+// Generated with DeepSeek-R1 AI Engine
+// =============================================
+
+const { Telegraf, Markup } = require('telegraf');
+const bot = new Telegraf(process.env.BOT_TOKEN);
+
+bot.start((ctx) => {
+  return ctx.reply(
+    'Assalomu alaykum! Loyihangizga xush kelibsiz.',
+    Markup.inlineKeyboard([
+      [Markup.button.webApp('🛍 Mini App-ni ochish', process.env.WEBAPP_URL)],
+      [Markup.button.callback('📞 Aloqa', 'contact_operator')]
+    ])
+  );
+});
+
+bot.action('contact_operator', (ctx) => {
+  return ctx.reply('Operatorimiz tez orada siz bilan bog\\'lanadi.');
+});
+
+bot.launch();
+console.log('Bot muvaffaqiyatli ishga tushdi!');`}
+                    </code>
+                  </pre>
                 </div>
               )}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', color: '#94a3b8', maxWidth: 400, padding: '0 24px' }}>
-              <Zap size={48} style={{ color: '#fbbf24', marginBottom: 16, opacity: 0.8 }} />
-              <h3 style={{ color: '#fff', fontSize: 20, marginBottom: 8 }}>Mazaika AI Workspace</h3>
-              <p style={{ fontSize: 14, lineHeight: 1.7, marginBottom: 24 }}>
-                Chatda loyihangizni tavsiflang. AI avtomatik ravishda sizning botingiz, Mini App va saytingizni yaratib beradi.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'left' }}>
-                {['🤖 Bot yaratish — to\'liq ishlaydigan kod', '📱 Mini App — Telegram ichida', '🌐 Veb sayt — HTML/CSS/JS', '🏪 To\'liq ekosistem — hammasini bir vaqtda', '📸 Rasm yuboring — AI tahlil qiladi'].map((item, i) => (
-                  <div key={i} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, fontSize: 13, color: '#cbd5e1' }}>{item}</div>
-                ))}
+            /* HOLOGRAPHIC STUDIO HUB (When empty - Solves Screenshot 2) */
+            <div className="holographic-studio-hub">
+              <div className="holo-centerpiece">
+                <div className="holo-icon-badge">
+                  <Cpu size={36} />
+                </div>
+                
+                <h2 className="holo-title">Mazaika AI Arxitektura Studiyasi</h2>
+                
+                <p className="holo-subtitle">
+                  Chatda o'z g'oyangizni bir jumlada yozing — DeepSeek-R1 bir zumda Telegram bot kodi, 
+                  vizual Mini App interfeysi va to'lov integratsiyasini to'liq yaratadi.
+                </p>
+
+                {/* 4 Quick Starter Showcase Cards */}
+                <div className="holo-starters-grid">
+                  <div 
+                    className="holo-starter-card"
+                    onClick={() => handleSendPrompt(PRESET_TEMPLATES[0].prompt)}
+                  >
+                    <div className="card-top">
+                      <span className="card-emoji">🛒</span>
+                      <span className="card-tag">E-Commerce</span>
+                    </div>
+                    <div className="card-name">Mini App Do'kon</div>
+                    <p className="card-desc">Telegram vitrina, tovarlar katalogi, savat va Payme/Click to'lovlari</p>
+                    <div className="card-action">Bir klikda yaratish →</div>
+                  </div>
+
+                  <div 
+                    className="holo-starter-card"
+                    onClick={() => handleSendPrompt(PRESET_TEMPLATES[1].prompt)}
+                  >
+                    <div className="card-top">
+                      <span className="card-emoji">🍕</span>
+                      <span className="card-tag green">Yetkazish</span>
+                    </div>
+                    <div className="card-name">Restoran va Menyu</div>
+                    <p className="card-desc">Taomlar menyusi, stol bron qilish, buyurtma qabul qilish va lokatsiya</p>
+                    <div className="card-action">Bir klikda yaratish →</div>
+                  </div>
+
+                  <div 
+                    className="holo-starter-card"
+                    onClick={() => handleSendPrompt(PRESET_TEMPLATES[2].prompt)}
+                  >
+                    <div className="card-top">
+                      <span className="card-emoji">🎓</span>
+                      <span className="card-tag violet">Ta'lim</span>
+                    </div>
+                    <div className="card-name">IT & Fan Kurslari</div>
+                    <p className="card-desc">Darslar katalogi, video darslar, to'lov va o'quvchi arizalari</p>
+                    <div className="card-action">Bir klikda yaratish →</div>
+                  </div>
+
+                  <div 
+                    className="holo-starter-card"
+                    onClick={() => handleSendPrompt(PRESET_TEMPLATES[3].prompt)}
+                  >
+                    <div className="card-top">
+                      <span className="card-emoji">🤖</span>
+                      <span className="card-tag amber">AI LLM</span>
+                    </div>
+                    <div className="card-name">24/7 AI Maslahatchi</div>
+                    <p className="card-desc">Mijozlar savollariga avtomatik aqlli javob beruvchi sun'iy intellekt agenti</p>
+                    <div className="card-action">Bir klikda yaratish →</div>
+                  </div>
+                </div>
+
+                <div className="holo-tips-row">
+                  <div className="tip-item"><Sparkles size={14} color="#00D9FF" /> 1 daqiqada tayyor arxitektura</div>
+                  <div className="tip-item"><Smartphone size={14} color="#00F5C4" /> Telegram WebApp SDK ulangan</div>
+                  <div className="tip-item"><CreditCard size={14} color="#A78BFA" /> Payme va Click to'lovlari</div>
+                </div>
               </div>
             </div>
           )}

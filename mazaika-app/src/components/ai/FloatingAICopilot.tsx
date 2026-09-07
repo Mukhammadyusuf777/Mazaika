@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import {
   Sparkles, Send, X, Loader2, Bot, Minimize2, Maximize2,
   Trash2, RefreshCw, Copy, Check, ChevronRight, Zap, Globe,
@@ -73,6 +74,11 @@ const SITE_QUICK_PROMPTS = [
 ]
 
 export default function FloatingAICopilot({ projectType = 'bot' }: { projectType?: 'bot' | 'site' }) {
+  const location = useLocation()
+  if (location.pathname.includes('/ai-workspace') || location.pathname.includes('/sitebuilder')) {
+    return null
+  }
+
   const { isOpen, setIsOpen, chats, projectId, isLoading, sendMessage, clearMessages, activeConfig } = useChatStore()
   const messages = chats[projectId] || []
   const isGenerating = isLoading
