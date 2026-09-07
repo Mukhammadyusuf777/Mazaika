@@ -27,6 +27,7 @@ export class TimerSchedulerService implements OnModuleInit, OnModuleDestroy {
 
   async checkExpiredTimers() {
     try {
+      if (!this.firebaseService.db) return;
       const activeBots = Array.from(BotManagerService.activeBotsMap.keys());
       if (activeBots.length === 0) return;
 

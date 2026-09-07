@@ -18,14 +18,24 @@ export class BotManagerService implements OnModuleInit {
 
 
   async onModuleInit() {
-    this.logger.log('Initializing Bot Manager...');
-    // Load all active bots from DB and start them
-    const bots = await this.firebaseService.getActiveBots();
+    try {
+      this.logger.log('Initializing Bot Manager...');
+      // Load all active bots from DB and start them
+      const bots = await this.firebaseService.getActiveBots();
 
-    for (const bot of bots) {
-      if (bot.token) {
-        await this.startBot(bot.id, bot.token);
+      if (Array.isArray(bots)) {
+        for (const bot of bots) {
+          if (bot && bot.token) {
+            try {
+              await this.startBot(bot.id, bot.token);
+            } catch (err: any) {
+              this.logger.warn(`Could not start bot ${bot.id}: ${err?.message}`);
+            }
+          }
+        }
       }
+    } catch (err: any) {
+      this.logger.warn(`Bot Manager initialization notice: ${err?.message || err}`);
     }
   }
 

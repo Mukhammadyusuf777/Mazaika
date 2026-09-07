@@ -27,12 +27,24 @@ let BotManagerService = class BotManagerService {
         this.workflowService = workflowService;
     }
     async onModuleInit() {
-        this.logger.log('Initializing Bot Manager...');
-        const bots = await this.firebaseService.getActiveBots();
-        for (const bot of bots) {
-            if (bot.token) {
-                await this.startBot(bot.id, bot.token);
+        try {
+            this.logger.log('Initializing Bot Manager...');
+            const bots = await this.firebaseService.getActiveBots();
+            if (Array.isArray(bots)) {
+                for (const bot of bots) {
+                    if (bot && bot.token) {
+                        try {
+                            await this.startBot(bot.id, bot.token);
+                        }
+                        catch (err) {
+                            this.logger.warn(`Could not start bot ${bot.id}: ${err?.message}`);
+                        }
+                    }
+                }
             }
+        }
+        catch (err) {
+            this.logger.warn(`Bot Manager initialization notice: ${err?.message || err}`);
         }
     }
     async startBot(botId, token) {

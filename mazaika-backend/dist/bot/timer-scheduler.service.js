@@ -36,6 +36,8 @@ let TimerSchedulerService = TimerSchedulerService_1 = class TimerSchedulerServic
     }
     async checkExpiredTimers() {
         try {
+            if (!this.firebaseService.db)
+                return;
             const activeBots = Array.from(bot_manager_service_1.BotManagerService.activeBotsMap.keys());
             if (activeBots.length === 0)
                 return;

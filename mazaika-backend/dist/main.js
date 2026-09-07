@@ -37,8 +37,17 @@ const core_1 = require("@nestjs/core");
 const app_module_1 = require("./app.module");
 const common_1 = require("@nestjs/common");
 const express = __importStar(require("express"));
+process.on('unhandledRejection', (reason) => {
+    console.warn('⚠️ Unhandled Rejection:', reason?.message || reason);
+});
+process.on('uncaughtException', (err) => {
+    console.error('⚠️ Uncaught Exception:', err?.message || err);
+});
 async function bootstrap() {
     try {
+        if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgres://')) {
+            process.env.DATABASE_URL = process.env.DATABASE_URL.replace('postgres://', 'postgresql://');
+        }
         const app = await core_1.NestFactory.create(app_module_1.AppModule);
         app.use(express.json({ limit: '50mb' }));
         app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -57,7 +66,7 @@ async function bootstrap() {
         console.log(`🚀 Mazaika backend running on port ${port}`);
     }
     catch (err) {
-        console.error('❌ Failed to start application:', err);
+        console.error('❌ Failed to start application:', err?.stack || err?.message || err);
         process.exit(1);
     }
 }

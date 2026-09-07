@@ -3,8 +3,21 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import * as express from 'express';
 
+process.on('unhandledRejection', (reason: any) => {
+  console.warn('⚠️ Unhandled Rejection:', reason?.message || reason);
+});
+
+process.on('uncaughtException', (err: any) => {
+  console.error('⚠️ Uncaught Exception:', err?.message || err);
+});
+
 async function bootstrap() {
   try {
+    // Early normalization of Render PostgreSQL connection string
+    if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgres://')) {
+      process.env.DATABASE_URL = process.env.DATABASE_URL.replace('postgres://', 'postgresql://');
+    }
+
     const app = await NestFactory.create(AppModule);
     
     app.use(express.json({ limit: '50mb' }));
@@ -27,8 +40,8 @@ async function bootstrap() {
     const port = process.env.PORT || 3000;
     await app.listen(port, '0.0.0.0');
     console.log(`🚀 Mazaika backend running on port ${port}`);
-  } catch (err) {
-    console.error('❌ Failed to start application:', err);
+  } catch (err: any) {
+    console.error('❌ Failed to start application:', err?.stack || err?.message || err);
     process.exit(1);
   }
 }
