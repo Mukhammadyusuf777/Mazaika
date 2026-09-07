@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { User, CreditCard, Key, Shield, LogOut, ChevronLeft, Save, Check } from 'lucide-react'
+import { User, CreditCard, Key, Shield, LogOut, ChevronLeft, Save, Check, Heart, Sparkles } from 'lucide-react'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useChatStore } from '../../store/useChatStore'
 import { auth } from '../../api/firebase'
+import DonateModal from '../../components/modals/DonateModal'
 import './ProfilePage.css'
 
 export default function ProfilePage() {
@@ -11,6 +12,7 @@ export default function ProfilePage() {
   const { user } = useAuthStore()
   
   const [activeTab, setActiveTab] = useState<'info' | 'billing' | 'api'>('info')
+  const [showDonateModal, setShowDonateModal] = useState(false)
   
   // Form states
   const [name, setName] = useState(user?.name || '')
@@ -40,6 +42,20 @@ export default function ProfilePage() {
 
       <div className="profile-content">
         <div className="profile-sidebar">
+          {/* Developer Donation Card in Sidebar */}
+          <div className="profile-donate-card" onClick={() => setShowDonateModal(true)}>
+            <div className="donate-icon-glow">
+              <Heart size={18} fill="#FF4D6D" color="#FF4D6D" />
+            </div>
+            <div className="donate-meta">
+              <span className="donate-title">Dasturchini qo'llash</span>
+              <span className="donate-sub">Loyiha rivoji uchun do'nat</span>
+            </div>
+            <button type="button" className="btn-donate-sm">Do'nat</button>
+          </div>
+
+          <div className="sidebar-divider"></div>
+
           <button 
             className={`tab-btn ${activeTab === 'info' ? 'active' : ''}`}
             onClick={() => setActiveTab('info')}
@@ -67,6 +83,23 @@ export default function ProfilePage() {
         </div>
 
         <div className="profile-main">
+          {/* Top Developer Donation Banner Directly Above Profile */}
+          <div className="profile-top-donate-banner">
+            <div className="top-donate-content">
+              <div className="top-donate-icon">
+                <Heart size={26} fill="#FF4D6D" color="#FF4D6D" className="heart-pulse" />
+              </div>
+              <div className="top-donate-text">
+                <h4>Dasturchini qo'llab-quvvatlash ❤️</h4>
+                <p>Mazaika platformasi barcha foydalanuvchilar uchun hozircha 100% BEPUL taqdim etilmoqda. Agar loyiha sizga ma'qul kelsa, server va rivojlantirish xarajatlariga o'z hissangizni qo'shishingiz mumkin.</p>
+              </div>
+            </div>
+            <button className="btn-top-donate" onClick={() => setShowDonateModal(true)}>
+              <Heart size={16} fill="white" />
+              <span>Do'nat qilish</span>
+            </button>
+          </div>
+
           {activeTab === 'info' && (
             <div className="profile-card">
               <h3>Shaxsiy ma'lumotlar</h3>
@@ -107,24 +140,52 @@ export default function ProfilePage() {
               <h3>Tarif & To'lovlar</h3>
               <p className="subtitle">Joriy tarifingiz va xarajatlaringiz</p>
 
-              <div className="billing-banner bg-gradient-to-r from-indigo-500 to-purple-500">
+              <div className="billing-banner beta-pro">
                 <div className="plan-info">
-                  <span className="plan-name">Pro Tarif</span>
-                  <span className="plan-price">149 000 so'm / oy</span>
+                  <div className="plan-badge-beta">
+                    <Sparkles size={14} />
+                    <span>Beta Erta Foydalanish Aksiyasi</span>
+                  </div>
+                  <span className="plan-name">VIP Pro Tarif (Cheksiz)</span>
+                  <div className="plan-price-row">
+                    <span className="plan-price-free">0 so'm</span>
+                    <span className="plan-price-old">149 000 so'm / oy</span>
+                    <span className="plan-free-tag">100% Bepul</span>
+                  </div>
                 </div>
-                <button className="btn btn-white btn-sm" onClick={() => navigate('/#pricing')}>Tarifni o'zgartirish</button>
+                <button className="btn-donate-action" onClick={() => setShowDonateModal(true)}>
+                  <Heart size={16} fill="#FF4D6D" color="#FF4D6D" />
+                  <span>Dasturchiga do'nat</span>
+                </button>
               </div>
 
               <div className="usage-stats">
                 <div className="stat-card">
                   <h4>Botlar</h4>
-                  <div className="progress-bar"><div className="fill" style={{width: '60%'}}></div></div>
-                  <span>3 / 5 bot</span>
+                  <div className="progress-bar"><div className="fill" style={{width: '100%'}}></div></div>
+                  <span>Cheksiz (Beta Aksiyasi)</span>
                 </div>
                 <div className="stat-card">
-                  <h4>Saytlar</h4>
-                  <div className="progress-bar"><div className="fill" style={{width: '20%'}}></div></div>
-                  <span>1 / 5 sayt</span>
+                  <h4>Mini App & Saytlar</h4>
+                  <div className="progress-bar"><div className="fill" style={{width: '100%'}}></div></div>
+                  <span>Cheksiz (Beta Aksiyasi)</span>
+                </div>
+              </div>
+
+              <div className="developer-support-box">
+                <div className="dev-box-header">
+                  <Heart size={18} fill="#FF4D6D" color="#FF4D6D" />
+                  <h4>Loyiha Rivojiga Hissa Qo'shing</h4>
+                </div>
+                <p>
+                  Mazaika jamoasi serverlar, Cloudflare CDN va DeepSeek-R1 AI modellarini uzluksiz ushlab turish uchun ishlamoqda. 
+                  Karta orqali yoki to'g'ridan-to'g'ri o'tkazma bilan loyihani qo'llab-quvvatlashingiz mumkin.
+                </p>
+                <div className="dev-box-actions">
+                  <button className="btn-dev-donate" onClick={() => setShowDonateModal(true)}>
+                    <Heart size={16} fill="white" />
+                    <span>Karta orqali do'nat qilish</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -150,6 +211,12 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+
+      {/* Developer Donation Modal */}
+      <DonateModal 
+        isOpen={showDonateModal} 
+        onClose={() => setShowDonateModal(false)} 
+      />
     </div>
   )
 }

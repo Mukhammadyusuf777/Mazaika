@@ -257,6 +257,7 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
     async callCloudflareAI(accountId, apiToken, systemInstruction, userPrompt) {
         const models = [
             '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
+            '@cf/qwen/qwen2.5-coder-32b-instruct',
             '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
             '@cf/meta/llama-3.1-70b-instruct',
             '@cf/meta/llama-3.2-11b-vision-instruct',

@@ -269,6 +269,81 @@
   box-shadow: 0 0 12px rgba(0, 217, 255, 0.15);
 }
 
+/* Developer Donation Banner above User Card in Sidebar */
+.dash-donate-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.dash-donate-banner:hover {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+  box-shadow: 0 4px 18px rgba(239, 68, 68, 0.25);
+  transform: translateY(-1px);
+}
+
+.dash-donate-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.dash-donate-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-donate-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #FFF;
+  line-height: 1.2;
+}
+
+.dash-donate-sub {
+  font-size: 9.5px;
+  color: #94A3B8;
+  line-height: 1.2;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-donate-btn {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #EF4444;
+  color: #FFF;
+  font-size: 10px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.dash-donate-banner:hover .dash-donate-btn {
+  background: #DC2626;
+  transform: scale(1.05);
+}
+
 /* User Card in Sidebar */
 .dash-user-card {
   display: flex;

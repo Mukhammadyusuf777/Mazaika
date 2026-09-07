@@ -24,7 +24,7 @@ export { backendApi, getLiveSiteUrl }
 // ============================================================
 // USERS
 // ============================================================
-export async function createOrUpdateUser(uid: string, data: { name: string; email?: string | null; phone?: string | null }) {
+export async function createOrUpdateUser(uid: string, data: { name?: string; email?: string | null; phone?: string | null; termsAccepted?: boolean; termsAcceptedAt?: string; [key: string]: any }) {
   await setDoc(doc(db, 'users', uid), {
     ...data,
     updatedAt: serverTimestamp(),

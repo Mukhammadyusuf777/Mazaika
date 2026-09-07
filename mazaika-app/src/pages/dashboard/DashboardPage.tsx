@@ -14,6 +14,8 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { getBotsByUser, createBot, deleteBot, createOrUpdateUser } from '../../api/firestore'
 import { useTranslation } from '../../hooks/useTranslation'
 import type { Language } from '../../i18n/translations'
+import DonateModal from '../../components/modals/DonateModal'
+import TermsModal from '../../components/modals/TermsModal'
 import './DashboardPage.css'
 
 interface TemplateItem {
@@ -72,6 +74,32 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all')
   const [copiedTokenId, setCopiedTokenId] = useState<string | null>(null)
+  
+  // Modals state
+  const [showDonateModal, setShowDonateModal] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
+
+  // Check if terms are accepted on account entry
+  useEffect(() => {
+    if (user?.id) {
+      const accepted = localStorage.getItem(`mazaika_terms_accepted_${user.id}`) === 'true' || (user as any).termsAccepted
+      if (!accepted) {
+        setShowTermsModal(true)
+      }
+    }
+  }, [user?.id])
+
+  const handleAcceptTerms = async () => {
+    if (user?.id) {
+      localStorage.setItem(`mazaika_terms_accepted_${user.id}`, 'true')
+      try {
+        await createOrUpdateUser(user.id, { termsAccepted: true, termsAcceptedAt: new Date().toISOString() })
+      } catch (err) {
+        console.warn('Terms accept sync warning:', err)
+      }
+    }
+    setShowTermsModal(false)
+  }
 
   const fetchBots = async (userId?: string) => {
     const uid = userId || user?.id
@@ -285,6 +313,18 @@ export default function DashboardPage() {
           ))}
         </div>
 
+        {/* Developer Donation Widget ABOVE User Profile */}
+        <div className="dash-donate-banner" onClick={() => setShowDonateModal(true)}>
+          <div className="dash-donate-icon">❤️</div>
+          <div className="dash-donate-info">
+            <div className="dash-donate-title">Dasturchini qo'llash</div>
+            <div className="dash-donate-sub">Loyiha rivoji uchun do'nat</div>
+          </div>
+          <button className="dash-donate-btn" type="button">
+            Do'nat
+          </button>
+        </div>
+
         {/* User profile footer */}
         <div className="dash-user-card">
           <div className="dash-user-avatar" onClick={() => navigate('/dashboard/profile')}>
@@ -293,7 +333,9 @@ export default function DashboardPage() {
           <div className="dash-user-meta" onClick={() => navigate('/dashboard/profile')}>
             <div className="dash-user-name" title={userDisplayName}>{userDisplayName}</div>
             <div className="dash-user-plan-badge">
-              <span className="plan-pill">⚡ Pro Ekosistema</span>
+              <span className="plan-pill" style={{ background: 'rgba(16,185,129,0.15)', color: '#10B981', border: '1px solid rgba(16,185,129,0.3)' }}>
+                ⚡ VIP Pro (Bepul)
+              </span>
             </div>
           </div>
           <button className="dash-user-logout" onClick={handleLogout} title="Chiqish">
@@ -1101,6 +1143,18 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Developer Donation Modal */}
+      <DonateModal 
+        isOpen={showDonateModal} 
+        onClose={() => setShowDonateModal(false)} 
+      />
+
+      {/* Mandatory First-Time Terms of Service Modal (Scroll to bottom required) */}
+      <TermsModal 
+        isOpen={showTermsModal} 
+        onAccept={handleAcceptTerms} 
+      />
     </div>
   )
 }

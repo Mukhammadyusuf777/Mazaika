@@ -319,6 +319,7 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
     // DeepSeek-R1-32b is the primary "Mazaika AI" brain — best reasoning and code generation
     const models = [
       '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',        // PRIMARY: best reasoning + code
+      '@cf/qwen/qwen2.5-coder-32b-instruct',                 // CODER SPECIALIST: elite code output
       '@cf/meta/llama-3.3-70b-instruct-fp8-fast',             // FAST FALLBACK: 70B fast
       '@cf/meta/llama-3.1-70b-instruct',                      // FALLBACK: 70B standard
       '@cf/meta/llama-3.2-11b-vision-instruct',               // LITE FALLBACK

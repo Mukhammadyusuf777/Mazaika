@@ -1181,6 +1181,24 @@ const PizzaBotFlow = {
             </h2>
             <p>{t.pricingDesc}</p>
 
+            {/* Beta 100% Free Special Announcement Banner */}
+            <div className="pricing-beta-banner reveal">
+              <div className="beta-banner-pill">
+                <Sparkles size={14} />
+                <span>BETA ERTA FOYDALANISH AKSIYASI</span>
+              </div>
+              <div className="beta-banner-body">
+                <h3>Barcha Tariflar Vaqtincha 100% BEPUL! (0 so'm)</h3>
+                <p>
+                  Mazaika platformasining rasmiy beta davrida barcha Pro va Biznes imkoniyatlaridan,
+                  cheksiz botlar va Mini App yaratishdan <strong>0 so'm</strong>ga mutlaqo bepul foydalanishingiz mumkin.
+                </p>
+              </div>
+              <button className="btn-beta-claim" onClick={() => navigate('/register')}>
+                Hoziroq Bepul Ishlatish ⚡
+              </button>
+            </div>
+
             {/* Monthly / Yearly Toggle */}
             <div className="pricing-toggle-wrap">
               <span className={!isYearly ? 'active' : ''}>{t.monthly}</span>
@@ -1222,42 +1240,42 @@ const PizzaBotFlow = {
             {/* Pro Tier (Popular) */}
             <div className="price-card popular reveal" style={{ transitionDelay: '100ms' }}>
               <div className="popular-tag">Eng Ommabop Tanlov ⭐</div>
+              <div className="beta-free-badge">⚡ Vaqtincha Bepul (Beta)</div>
               <h3 className="plan-name">Pro</h3>
               <p className="plan-desc">O'sayotgan biznes va do'konlar uchun</p>
               <div className="plan-price">
-                <span className="amount">
-                  {isYearly ? '119 000' : '149 000'}
-                </span>
+                <span className="amount">0</span>
                 <span className="period"> so'm / oy</span>
+                <span className="strikethrough-price">{isYearly ? '119 000' : '149 000'} so'm</span>
               </div>
               <div className="plan-divider"></div>
               <ul className="plan-features">
-                <li><span className="check">✓</span> 5 ta professional bot</li>
+                <li><span className="check">✓</span> <strong>Cheksiz</strong> professional botlar</li>
                 <li><span className="check">✓</span> 5 000 ta kontaktlar</li>
                 <li><span className="check">✓</span> Barcha 22+ blok turlari</li>
                 <li><span className="check">✓</span> <strong>Payme & Click to'lovlari</strong></li>
                 <li><span className="check">✓</span> <strong>Telegram Mini App (Do'kon)</strong></li>
-                <li><span className="check">✓</span> Mazaika AI (DeepSeek)</li>
+                <li><span className="check">✓</span> Mazaika AI (DeepSeek-R1)</li>
                 <li><span className="check">✓</span> Google Sheets va Webhook</li>
               </ul>
               <button className="btn-primary-neon" onClick={() => navigate('/register')}>
-                Pro tarifini tanlash →
+                Pro Bepul Ulanish (0 so'm) →
               </button>
             </div>
 
             {/* Business Tier */}
             <div className="price-card reveal" style={{ transitionDelay: '200ms' }}>
+              <div className="beta-free-badge">⚡ Vaqtincha Bepul (Beta)</div>
               <h3 className="plan-name">Biznes</h3>
               <p className="plan-desc">Yirik korxonalar va tarmoqlar uchun</p>
               <div className="plan-price">
-                <span className="amount">
-                  {isYearly ? '199 000' : '249 000'}
-                </span>
+                <span className="amount">0</span>
                 <span className="period"> so'm / oy</span>
+                <span className="strikethrough-price">{isYearly ? '199 000' : '249 000'} so'm</span>
               </div>
               <div className="plan-divider"></div>
               <ul className="plan-features">
-                <li><span className="check">✓</span> 20 ta bot va cheksiz Mini App</li>
+                <li><span className="check">✓</span> <strong>Cheksiz</strong> bot va Mini App</li>
                 <li><span className="check">✓</span> 50 000 ta kontaktlar</li>
                 <li><span className="check">✓</span> White-label (brendingizsiz)</li>
                 <li><span className="check">✓</span> Ko'p operatorli jonli CRM chatlar</li>
@@ -1265,7 +1283,7 @@ const PizzaBotFlow = {
                 <li><span className="check">✓</span> Maxsus server va 24/7 VIP qo'llab-quvvatlash</li>
               </ul>
               <button className="btn-secondary-glass" onClick={() => navigate('/register')}>
-                Biznes tarifini tanlash →
+                Biznes Bepul Ulanish (0 so'm) →
               </button>
             </div>
           </div>
