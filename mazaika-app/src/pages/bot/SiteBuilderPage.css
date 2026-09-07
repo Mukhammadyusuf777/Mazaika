@@ -575,6 +575,35 @@
   cursor: not-allowed;
 }
 
+.sb-action-btn.cloudflare-btn {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(234, 88, 12, 0.25));
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  color: #FB923C;
+  position: relative;
+}
+
+.sb-action-btn.cloudflare-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.25), rgba(234, 88, 12, 0.35));
+  border-color: #F97316;
+  color: #FFF;
+  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+}
+
+.sb-action-btn.cloudflare-btn.deploying {
+  opacity: 0.8;
+  cursor: wait;
+}
+
+.edge-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
+  display: inline-block;
+  margin-left: 2px;
+}
+
 /* --------------------------------------------------------------------------
    Canvas Main Frame (macOS Browser Shell or Monaco)
    -------------------------------------------------------------------------- */

@@ -9,6 +9,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BotModule = void 0;
 const common_1 = require("@nestjs/common");
 const bot_controller_1 = require("./bot.controller");
+const bot_service_1 = require("./bot.service");
+const site_controller_1 = require("./site.controller");
+const site_service_1 = require("./site.service");
 const workflow_service_1 = require("./workflow.service");
 const workflow_controller_1 = require("./workflow.controller");
 const bot_manager_service_1 = require("./bot-manager.service");
@@ -21,9 +24,15 @@ exports.BotModule = BotModule;
 exports.BotModule = BotModule = __decorate([
     (0, common_1.Module)({
         imports: [cloud_module_1.CloudModule, (0, common_1.forwardRef)(() => firebase_module_1.FirebaseModule)],
-        controllers: [bot_controller_1.BotController, workflow_controller_1.WorkflowController],
-        providers: [workflow_service_1.WorkflowService, bot_manager_service_1.BotManagerService, timer_scheduler_service_1.TimerSchedulerService],
-        exports: [bot_manager_service_1.BotManagerService]
+        controllers: [bot_controller_1.BotController, workflow_controller_1.WorkflowController, site_controller_1.SiteController],
+        providers: [
+            bot_service_1.BotService,
+            site_service_1.SiteService,
+            workflow_service_1.WorkflowService,
+            bot_manager_service_1.BotManagerService,
+            timer_scheduler_service_1.TimerSchedulerService,
+        ],
+        exports: [bot_manager_service_1.BotManagerService, bot_service_1.BotService, site_service_1.SiteService],
     })
 ], BotModule);
 //# sourceMappingURL=bot.module.js.map

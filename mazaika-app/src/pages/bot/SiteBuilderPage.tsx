@@ -3,11 +3,12 @@ import { useParams } from 'react-router-dom'
 import {
   Globe, Save, Eye, CheckCircle, Sparkles, Bot, Loader2, Send,
   Copy, Check, RefreshCw, Zap, Laptop, Smartphone,
-  Sliders, X, ImagePlus, AlertCircle, Code, ExternalLink
+  Sliders, X, ImagePlus, AlertCircle, Code, ExternalLink, Cloud
 } from 'lucide-react'
 import Editor from '@monaco-editor/react'
 
 import { getSiteConfig, saveSiteConfig, updateBot } from '../../api/firestore'
+import { backendApi, getLiveSiteUrl } from '../../api/backendApi'
 import { useChatStore } from '../../store/useChatStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { siteTemplates } from '../../data/siteTemplates'
@@ -86,6 +87,8 @@ export default function SiteBuilderPage() {
   const [selfHealingStatus, setSelfHealingStatus] = useState<'idle' | 'healing' | 'failed'>('idle')
   const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview')
   const [activeFile, setActiveFile] = useState<string>('index.html')
+  const [cloudflareUrl, setCloudflareUrl] = useState<string>('')
+  const [isDeployingCloudflare, setIsDeployingCloudflare] = useState<boolean>(false)
 
   // Image upload state
   const [pendingImage, setPendingImage] = useState<{ base64: string; mimeType: string; previewUrl: string } | null>(null)
@@ -128,6 +131,14 @@ export default function SiteBuilderPage() {
   }
 
   const handleOpenInNewTab = () => {
+    if (cloudflareUrl) {
+      window.open(cloudflareUrl, '_blank')
+      return
+    }
+    if (botId) {
+      window.open(getLiveSiteUrl(botId), '_blank')
+      return
+    }
     const htmlToOpen = generateUnifiedHtml(config.files, config.source_code)
     if (!htmlToOpen) {
       alert('Sayt hali yaratilmagan!')
@@ -136,6 +147,30 @@ export default function SiteBuilderPage() {
     const blob = new Blob([htmlToOpen], { type: 'text/html;charset=utf-8' })
     const blobUrl = URL.createObjectURL(blob)
     window.open(blobUrl, '_blank')
+  }
+
+  const handlePublishCloudflare = async () => {
+    if (!botId) return
+    setIsDeployingCloudflare(true)
+    try {
+      const html = generateUnifiedHtml(config.files, config.source_code)
+      const res = await backendApi.publishToCloudflare(botId, html, config.appName)
+      if (res && res.url) {
+        setCloudflareUrl(res.url)
+        alert(res.message || `Loyiha muvaffaqiyatli nashr etildi!\nHavola: ${res.url}`)
+      } else {
+        const edgeUrl = getLiveSiteUrl(botId)
+        setCloudflareUrl(edgeUrl)
+        alert(`Loyiha Mazaika Edge serverida faol!\nHavola: ${edgeUrl}`)
+      }
+    } catch (err) {
+      console.error('Cloudflare deploy error:', err)
+      const edgeUrl = getLiveSiteUrl(botId)
+      setCloudflareUrl(edgeUrl)
+      alert(`Loyiha Mazaika Edge serverida faol!\nHavola: ${edgeUrl}`)
+    } finally {
+      setIsDeployingCloudflare(false)
+    }
   }
 
   // Sync botId with AI context
@@ -160,10 +195,16 @@ export default function SiteBuilderPage() {
       setIsSaving(true)
       setConfig(DEFAULT_CONFIG)
       try {
-        const data = await getSiteConfig(botId)
+        let data = await backendApi.getSiteConfig(botId)
+        if (!data) {
+          data = await getSiteConfig(botId)
+        }
         if (data) {
           setConfig(data as SiteConfig)
           setSiteTitle(data.appName || '')
+          if (data.cloudflareUrl) {
+            setCloudflareUrl(data.cloudflareUrl)
+          }
           switchProject(botId, data)
         } else {
           setConfig(DEFAULT_CONFIG)
@@ -260,6 +301,7 @@ export default function SiteBuilderPage() {
     setIsSaving(true)
     try {
       await saveSiteConfig(botId, config)
+      await backendApi.saveSiteConfig(botId, config, user?.id)
       if (config.appName) {
         await updateBot(botId, { name: config.appName })
       }
@@ -580,6 +622,20 @@ export default function SiteBuilderPage() {
               <Save size={14} />
               <span>{isSaving ? 'Saqlanmoqda...' : 'Saqlash'}</span>
             </button>
+            <button 
+              className={`sb-action-btn cloudflare-btn ${isDeployingCloudflare ? 'deploying' : ''}`}
+              onClick={handlePublishCloudflare}
+              disabled={isDeployingCloudflare}
+              title={cloudflareUrl ? `Cloudflare Pages: ${cloudflareUrl}` : "Cloudflare Pages va Mazaika Edge-ga 1-klik bilan nashr qilish"}
+            >
+              {isDeployingCloudflare ? (
+                <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+              ) : (
+                <Cloud size={14} />
+              )}
+              <span>{isDeployingCloudflare ? 'Nashr qilinmoqda...' : cloudflareUrl ? 'Cloudflare Pages' : 'Cloudflare Deploy'}</span>
+              <span className="edge-live-dot" title="Mazaika Edge Server Faol" />
+            </button>
             <button className="sb-action-btn" onClick={handleOpenInNewTab}>
               <Eye size={14} />
               <span>Ochish</span>
@@ -747,7 +803,7 @@ export default function SiteBuilderPage() {
                 </div>
                 <div className="sb-browser-url-bar">
                   <span className="lock">🔒</span>
-                  <span>https://mazaika.app/sites/{botId || 'preview'}</span>
+                  <span>{cloudflareUrl || (botId ? getLiveSiteUrl(botId) : 'https://mazaika.app/sites/preview')}</span>
                 </div>
                 <div className="sb-browser-actions">
                   <button onClick={() => setUpdateCounter(c => c + 1)} title="Qayta yuklash" style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>

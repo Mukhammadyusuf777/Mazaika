@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -17,22 +16,45 @@ model User {
   googleId    String?  @unique
   firebaseUid String?  @unique
   bots        Bot[]
+  sites       Site[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Bot {
-  id        String     @id @default(uuid())
-  name      String
-  token     String     @unique
-  status    String     @default("active")
-  userId    String
-  user      User       @relation(fields: [userId], references: [id])
-  workflows Workflow[]
-  contacts  Contact[]
-  webhooks  Webhook[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id          String     @id @default(uuid())
+  name        String
+  token       String?    @unique
+  status      String     @default("active")
+  projectType String     @default("bot")
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workflows   Workflow[]
+  contacts    Contact[]
+  webhooks    Webhook[]
+  site        Site?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Site {
+  id            String   @id @default(uuid())
+  botId         String?  @unique
+  bot           Bot?     @relation(fields: [botId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug          String   @unique
+  appName       String
+  theme         String   @default("glassmorphism")
+  themeColor    String   @default("#00D9FF")
+  sourceCode    String   // Full combined index.html
+  files         String   // JSON stringified VFS files ({ 'index.html': ..., 'style.css': ... })
+  blocks        String?  // JSON stringified blocks
+  isPublished   Boolean  @default(true)
+  cloudflareUrl String?
+  views         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Workflow {
@@ -40,10 +62,10 @@ model Workflow {
   name        String
   description String?
   isMain      Boolean  @default(false)
-  nodes       String   // Changed from Json to String for SQLite compatibility
-  edges       String   // Changed from Json to String for SQLite compatibility
+  nodes       String   // Stringified JSON for SQLite compatibility
+  edges       String   // Stringified JSON for SQLite compatibility
   botId       String
-  bot         Bot      @relation(fields: [botId], references: [id])
+  bot         Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -55,9 +77,9 @@ model Contact {
   lastName     String?
   username     String?
   languageCode String?
-  state        String?   // Changed from Json to String for SQLite compatibility
+  state        String?   // Stringified JSON for SQLite compatibility
   botId        String
-  bot          Bot       @relation(fields: [botId], references: [id])
+  bot          Bot       @relation(fields: [botId], references: [id], onDelete: Cascade)
   messages     Message[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -70,7 +92,7 @@ model Message {
   text      String?
   direction String
   contactId String
-  contact   Contact  @relation(fields: [contactId], references: [id])
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 }
 
@@ -81,7 +103,7 @@ model Webhook {
   method    String   @default("POST")
   active    Boolean  @default(true)
   botId     String
-  bot       Bot      @relation(fields: [botId], references: [id])
+  bot       Bot      @relation(fields: [botId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

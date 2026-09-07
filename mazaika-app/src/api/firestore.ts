@@ -18,6 +18,8 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 import { db } from './firebase'
+import { backendApi, getLiveSiteUrl } from './backendApi'
+export { backendApi, getLiveSiteUrl }
 
 // ============================================================
 // USERS
@@ -39,20 +41,37 @@ export async function getUser(uid: string): Promise<any> {
 // BOTS
 // ============================================================
 export async function getBotsByUser(userId: string): Promise<any[]> {
-  const q = query(collection(db, 'bots'), where('userId', '==', userId))
-  const snap = await getDocs(q)
-  const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any))
-  return list.sort((a, b) => {
-    const t1 = a.createdAt?.seconds || 0
-    const t2 = b.createdAt?.seconds || 0
-    return t2 - t1
-  })
+  try {
+    const backendBots = await backendApi.getBotsByUser(userId)
+    if (backendBots && backendBots.length > 0) {
+      return backendBots
+    }
+  } catch {}
+
+  try {
+    const q = query(collection(db, 'bots'), where('userId', '==', userId))
+    const snap = await getDocs(q)
+    const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as any))
+    return list.sort((a, b) => {
+      const t1 = a.createdAt?.seconds || 0
+      const t2 = b.createdAt?.seconds || 0
+      return t2 - t1
+    })
+  } catch {
+    return []
+  }
 }
 
-
 export async function getBotById(botId: string): Promise<any> {
-  const snap = await getDoc(doc(db, 'bots', botId))
-  if (snap.exists()) return { id: snap.id, ...snap.data() } as any
+  try {
+    const backendBot = await backendApi.getBotById(botId)
+    if (backendBot) return backendBot
+  } catch {}
+
+  try {
+    const snap = await getDoc(doc(db, 'bots', botId))
+    if (snap.exists()) return { id: snap.id, ...snap.data() } as any
+  } catch {}
   return null
 }
 
@@ -700,16 +719,49 @@ export async function deleteMiniApp(botId: string, appId: string) {
 // SITE CONFIG (No-Code Website Builder)
 // ============================================================
 export async function getSiteConfig(botId: string): Promise<any> {
-  const snap = await getDoc(doc(db, 'bots', botId, 'site', 'config'))
-  if (snap.exists()) return snap.data()
+  // 1. Query backend database first
+  try {
+    const backendSite = await backendApi.getSiteConfig(botId)
+    if (backendSite && (backendSite.source_code || backendSite.sourceCode || (backendSite.blocks && backendSite.blocks.length > 0))) {
+      return backendSite
+    }
+  } catch {}
+
+  // 2. Query Firestore fallback
+  try {
+    const snap = await getDoc(doc(db, 'bots', botId, 'site', 'config'))
+    if (snap.exists()) return snap.data()
+  } catch {}
+
+  // 3. Query localStorage fallback
+  const local = localStorage.getItem(`mazaika_site_${botId}`)
+  if (local) {
+    try { return JSON.parse(local) } catch {}
+  }
+
   return null
 }
 
 export async function saveSiteConfig(botId: string, config: any): Promise<void> {
-  await setDoc(doc(db, 'bots', botId, 'site', 'config'), {
-    ...config,
-    updatedAt: serverTimestamp(),
-  }, { merge: true })
+  // 1. Save to backend database & edge cache
+  try {
+    await backendApi.saveSiteConfig(botId, config)
+  } catch (err) {
+    console.warn('Backend saveSiteConfig fallback:', err)
+  }
+
+  // 2. Dual-save to Firestore
+  try {
+    await setDoc(doc(db, 'bots', botId, 'site', 'config'), {
+      ...config,
+      updatedAt: serverTimestamp(),
+    }, { merge: true })
+  } catch {}
+
+  // 3. Save to localStorage
+  try {
+    localStorage.setItem(`mazaika_site_${botId}`, JSON.stringify(config))
+  } catch {}
 
   // Bidirectional Synchronization: Sync Site Config blocks back to Mini Apps!
   try {

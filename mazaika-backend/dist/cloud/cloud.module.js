@@ -11,14 +11,15 @@ const common_1 = require("@nestjs/common");
 const mazaika_db_service_1 = require("./mazaika-db.service");
 const mazaika_engine_service_1 = require("./mazaika-engine.service");
 const mazaika_hosting_controller_1 = require("./mazaika-hosting.controller");
+const cloudflare_service_1 = require("./cloudflare.service");
 let CloudModule = class CloudModule {
 };
 exports.CloudModule = CloudModule;
 exports.CloudModule = CloudModule = __decorate([
     (0, common_1.Module)({
         controllers: [mazaika_hosting_controller_1.MazaikaHostingController],
-        providers: [mazaika_db_service_1.MazaikaDbService, mazaika_engine_service_1.MazaikaEngineService],
-        exports: [mazaika_db_service_1.MazaikaDbService, mazaika_engine_service_1.MazaikaEngineService]
+        providers: [mazaika_db_service_1.MazaikaDbService, mazaika_engine_service_1.MazaikaEngineService, cloudflare_service_1.CloudflareService],
+        exports: [mazaika_db_service_1.MazaikaDbService, mazaika_engine_service_1.MazaikaEngineService, cloudflare_service_1.CloudflareService],
     })
 ], CloudModule);
 //# sourceMappingURL=cloud.module.js.map

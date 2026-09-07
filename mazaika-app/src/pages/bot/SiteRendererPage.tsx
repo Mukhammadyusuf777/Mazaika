@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { Globe, ArrowRight, ShoppingCart, MessageCircle, Phone, Award } from 'lucide-react'
 import { doc, getDoc, collection, query, where, getDocs, runTransaction } from 'firebase/firestore'
 import { db } from '../../api/firebase'
+import { backendApi } from '../../api/backendApi'
 
 declare global {
   interface Window {
@@ -63,13 +64,26 @@ export default function SiteRendererPage() {
     const fetchConfig = async () => {
       if (!botId) return
       try {
-        // Fetch Bot Name
+        // 1. Try Backend Site first (no Firestore quota limits)
+        try {
+          const backendSite = await backendApi.getSiteConfig(botId)
+          if (backendSite) {
+            setConfig(backendSite as SiteConfig)
+            setBotName(backendSite.appName || '')
+            document.title = backendSite.appName || 'Mini App'
+            setLoading(false)
+            return
+          }
+        } catch (beErr) {
+          console.warn('Backend getSiteConfig fallback to Firestore', beErr)
+        }
+
+        // 2. Fetch from Firestore
         const botSnap = await getDoc(doc(db, 'bots', botId))
         if (botSnap.exists()) {
           setBotName(botSnap.data().name || '')
         }
 
-        // Fetch Site Config
         const docRef = doc(db, 'bots', botId, 'site', 'config')
         const snap = await getDoc(docRef)
         if (snap.exists()) {
@@ -78,9 +92,27 @@ export default function SiteRendererPage() {
           if (data.appName || botSnap.data()?.name) {
             document.title = data.appName || botSnap.data()?.name || 'Mini App'
           }
+        } else {
+          // 3. Check localStorage fallback
+          const cached = localStorage.getItem(`mazaika_site_${botId}`)
+          if (cached) {
+            const parsed = JSON.parse(cached)
+            setConfig(parsed)
+            setBotName(parsed.appName || '')
+            document.title = parsed.appName || 'Mini App'
+          }
         }
       } catch (e) {
         console.error(e)
+        const cached = localStorage.getItem(`mazaika_site_${botId}`)
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached)
+            setConfig(parsed)
+            setBotName(parsed.appName || '')
+            document.title = parsed.appName || 'Mini App'
+          } catch (_) {}
+        }
       } finally {
         setLoading(false)
       }

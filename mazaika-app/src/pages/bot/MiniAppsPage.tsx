@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Copy, Eye, Save, Check, RefreshCw, Sparkles } from 'lucide-react'
+import { Copy, Eye, Save, Check, RefreshCw, Sparkles, Cloud, Loader2 } from 'lucide-react'
 import { getBotById, updateBot, getSiteConfig, saveSiteConfig } from '../../api/firestore'
+import { backendApi, getLiveSiteUrl } from '../../api/backendApi'
 import { useChatStore } from '../../store/useChatStore'
 
 export default function MiniAppsPage() {
@@ -29,6 +30,10 @@ export default function MiniAppsPage() {
   const [theme, setTheme] = useState('glassmorphism')
   const [themeColor, setThemeColor] = useState('#1e90ff')
 
+  // Cloudflare & Edge State
+  const [cloudflareUrl, setCloudflareUrl] = useState<string>('')
+  const [isDeployingCloudflare, setIsDeployingCloudflare] = useState<boolean>(false)
+
   // Simulator State Key to force reload iframe
   const [simKey, setSimKey] = useState(0)
 
@@ -37,8 +42,11 @@ export default function MiniAppsPage() {
       if (!botId) return
       setLoading(true)
       try {
-        const botData = await getBotById(botId)
-        const siteData = await getSiteConfig(botId)
+        let botData = await backendApi.getBotById(botId)
+        if (!botData) botData = await getBotById(botId)
+
+        let siteData = await backendApi.getSiteConfig(botId)
+        if (!siteData) siteData = await getSiteConfig(botId)
 
         if (botData) {
           setMenuButtonEnabled(botData.menuButtonEnabled || false)
@@ -48,6 +56,9 @@ export default function MiniAppsPage() {
         if (siteData) {
           setTheme(siteData.theme || 'glassmorphism')
           setThemeColor(siteData.themeColor || '#1e90ff')
+          if (siteData.cloudflareUrl) {
+            setCloudflareUrl(siteData.cloudflareUrl)
+          }
         }
 
         setAppName(siteData?.appName || botData?.name || 'Mini App')
@@ -61,27 +72,62 @@ export default function MiniAppsPage() {
   }, [botId])
 
   const handleCopyLink = () => {
-    const url = `https://mazaika.pages.dev/site/${botId}`
+    const url = cloudflareUrl || getLiveSiteUrl(botId || '')
     navigator.clipboard.writeText(url)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const handlePublishCloudflare = async () => {
+    if (!botId) return
+    setIsDeployingCloudflare(true)
+    try {
+      const siteData = await backendApi.getSiteConfig(botId) || await getSiteConfig(botId)
+      const html = siteData?.source_code || siteData?.sourceCode || ''
+      const res = await backendApi.publishToCloudflare(botId, html, appName)
+      if (res && res.url) {
+        setCloudflareUrl(res.url)
+        alert(res.message || `Loyiha muvaffaqiyatli nashr etildi!\nHavola: ${res.url}`)
+      } else {
+        const edgeUrl = getLiveSiteUrl(botId)
+        setCloudflareUrl(edgeUrl)
+        alert(`Loyiha Mazaika Edge serverida faol!\nHavola: ${edgeUrl}`)
+      }
+      setSimKey(prev => prev + 1)
+    } catch (err) {
+      console.error('Cloudflare deploy error:', err)
+      const edgeUrl = getLiveSiteUrl(botId)
+      setCloudflareUrl(edgeUrl)
+      alert(`Loyiha Mazaika Edge serverida faol!\nHavola: ${edgeUrl}`)
+    } finally {
+      setIsDeployingCloudflare(false)
+    }
+  }
+
   const handleSaveTelegram = async () => {
     if (!botId) return
     setSavingBot(true)
+    const targetUrl = cloudflareUrl || getLiveSiteUrl(botId)
     try {
       await updateBot(botId, {
         name: appName,
         menuButtonEnabled,
         menuButtonText,
-        menuButtonUrl: `https://mazaika.pages.dev/site/${botId}`
+        menuButtonUrl: targetUrl
+      })
+      await backendApi.updateBot(botId, {
+        name: appName,
+        menuButtonEnabled,
+        menuButtonText,
+        menuButtonUrl: targetUrl
       })
       const currentConfig = await getSiteConfig(botId) || { blocks: [] }
-      await saveSiteConfig(botId, {
+      const newConfig = {
         ...currentConfig,
         appName
-      })
+      }
+      await saveSiteConfig(botId, newConfig)
+      await backendApi.saveSiteConfig(botId, newConfig)
       setSimKey(prev => prev + 1)
       alert("Telegram va Mini App ma'lumotlari muvaffaqiyatli saqlandi!")
     } catch (e) {
@@ -96,13 +142,18 @@ export default function MiniAppsPage() {
     setSavingDesign(true)
     try {
       const currentConfig = await getSiteConfig(botId) || { blocks: [] }
-      await saveSiteConfig(botId, {
+      const newConfig = {
         ...currentConfig,
         appName,
         theme,
         themeColor
-      })
+      }
+      await saveSiteConfig(botId, newConfig)
+      await backendApi.saveSiteConfig(botId, newConfig)
       await updateBot(botId, {
+        name: appName
+      })
+      await backendApi.updateBot(botId, {
         name: appName
       })
       // Force reload simulator iframe
@@ -123,7 +174,7 @@ export default function MiniAppsPage() {
     )
   }
 
-  const appLink = `https://mazaika.pages.dev/site/${botId}`
+  const appLink = cloudflareUrl || (botId ? getLiveSiteUrl(botId) : '')
 
   return (
     <div className="miniapps-container" style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: 'var(--space-8)', height: '100%', overflow: 'hidden' }}>
@@ -156,7 +207,7 @@ export default function MiniAppsPage() {
           <div style={{ flex: 1, position: 'relative' }}>
             <iframe 
               key={simKey}
-              src={`/site/${botId}`} 
+              src={botId ? getLiveSiteUrl(botId) : ''} 
               title="Mini App Live Preview" 
               style={{ width: '100%', height: '100%', border: 'none', background: '#090d16' }}
             />
@@ -208,20 +259,52 @@ export default function MiniAppsPage() {
 
         {/* Card 1: Shareable Link */}
         <div style={{ background: 'var(--bg-card)', padding: 'var(--space-6)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)' }}>
-          <h3 style={{ fontWeight: 700, fontSize: 15, marginBottom: 'var(--space-3)' }}>Mini Ilova va Sayt manzili</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 'var(--space-4)' }}>Ushbu havola yordamida Mini ilovani istalgan joyda ulashish yoki bot ichidagi tugmalarga bog'lash mumkin.</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
+            <h3 style={{ fontWeight: 700, fontSize: 15, margin: 0 }}>Mini Ilova va Sayt manzili</h3>
+            <span style={{ 
+              fontSize: 11, 
+              fontWeight: 600, 
+              color: '#10b981', 
+              background: 'rgba(16,185,129,0.1)', 
+              border: '1px solid rgba(16,185,129,0.25)', 
+              padding: '3px 10px', 
+              borderRadius: 20, 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 6 
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981' }} />
+              {cloudflareUrl ? 'Cloudflare Pages Faol' : 'Mazaika Edge Server Faol'}
+            </span>
+          </div>
+          <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 'var(--space-4)' }}>Ushbu havola yordamida Mini ilovani istalgan joyda ulashish yoki bot ichidagi tugmalarga bog'lash mumkin. Serverlarimiz cheklovlarsiz (no-limit) xizmat ko'rsatadi.</p>
           
-          <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
             <input 
               type="text" 
               className="input" 
               value={appLink} 
               readOnly 
-              style={{ flex: 1, background: 'var(--bg-secondary)', color: 'var(--text-muted)' }} 
+              style={{ flex: 1, minWidth: 240, background: 'var(--bg-secondary)', color: 'var(--text-muted)' }} 
             />
             <button className="btn btn-ghost" onClick={handleCopyLink} style={{ gap: 6, minWidth: 100, justifyContent: 'center' }}>
               {copied ? <Check size={14} style={{ color: 'var(--accent-green)' }} /> : <Copy size={14} />}
               {copied ? 'Nusxalandi' : 'Nusxalash'}
+            </button>
+            <button 
+              className="btn btn-ghost"
+              onClick={handlePublishCloudflare}
+              disabled={isDeployingCloudflare}
+              style={{ 
+                gap: 6, 
+                color: '#f97316', 
+                borderColor: 'rgba(249,115,22,0.3)', 
+                background: 'rgba(249,115,22,0.08)' 
+              }}
+              title="Cloudflare Pages tarmog'iga nashr qilish"
+            >
+              {isDeployingCloudflare ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Cloud size={14} />}
+              {isDeployingCloudflare ? 'Nashr qilinmoqda...' : 'Cloudflare Deploy'}
             </button>
             <a href={appLink} target="_blank" rel="noreferrer" className="btn btn-ghost btn-icon" title="Brauzerda ochish">
               <Eye size={16} />

@@ -1,0 +1,74 @@
+import { SiteService, SaveSiteDto } from './site.service';
+export declare class SiteController {
+    private readonly siteService;
+    constructor(siteService: SiteService);
+    getUserSites(userId: string): Promise<{
+        files: {};
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        botId: string | null;
+        slug: string;
+        appName: string;
+        theme: string;
+        themeColor: string;
+        sourceCode: string;
+        blocks: string | null;
+        isPublished: boolean;
+        cloudflareUrl: string | null;
+        views: number;
+    }[]>;
+    getSite(identifier: string): Promise<{
+        files: {};
+        blocks: any;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        botId: string | null;
+        slug: string;
+        appName: string;
+        theme: string;
+        themeColor: string;
+        sourceCode: string;
+        isPublished: boolean;
+        cloudflareUrl: string | null;
+        views: number;
+    } | null>;
+    saveSite(data: SaveSiteDto): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        botId: string | null;
+        slug: string;
+        appName: string;
+        theme: string;
+        themeColor: string;
+        sourceCode: string;
+        files: string;
+        blocks: string | null;
+        isPublished: boolean;
+        cloudflareUrl: string | null;
+        views: number;
+    }>;
+    deleteSite(id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        botId: string | null;
+        slug: string;
+        appName: string;
+        theme: string;
+        themeColor: string;
+        sourceCode: string;
+        files: string;
+        blocks: string | null;
+        isPublished: boolean;
+        cloudflareUrl: string | null;
+        views: number;
+    }>;
+    publishSite(id: string, req: any): Promise<import("../cloud/cloudflare.service").CloudflareDeployResult>;
+}

@@ -1,0 +1,90 @@
+import { PrismaService } from '../prisma/prisma.service';
+import { MazaikaDbService } from '../cloud/mazaika-db.service';
+import { CloudflareService } from '../cloud/cloudflare.service';
+export declare class SaveSiteDto {
+    botId?: string;
+    userId: string;
+    appName: string;
+    slug?: string;
+    theme?: string;
+    themeColor?: string;
+    sourceCode: string;
+    files?: Record<string, string> | string;
+    blocks?: any[] | string;
+}
+export declare class SiteService {
+    private readonly prisma;
+    private readonly mazaikaDb;
+    private readonly cloudflare;
+    private readonly logger;
+    constructor(prisma: PrismaService, mazaikaDb: MazaikaDbService, cloudflare: CloudflareService);
+    getSiteByIdOrSlug(identifier: string): Promise<{
+        files: {};
+        blocks: any;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        botId: string | null;
+        slug: string;
+        appName: string;
+        theme: string;
+        themeColor: string;
+        sourceCode: string;
+        isPublished: boolean;
+        cloudflareUrl: string | null;
+        views: number;
+    } | null>;
+    getUserSites(userId: string): Promise<{
+        files: {};
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        botId: string | null;
+        slug: string;
+        appName: string;
+        theme: string;
+        themeColor: string;
+        sourceCode: string;
+        blocks: string | null;
+        isPublished: boolean;
+        cloudflareUrl: string | null;
+        views: number;
+    }[]>;
+    saveSite(data: SaveSiteDto): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        botId: string | null;
+        slug: string;
+        appName: string;
+        theme: string;
+        themeColor: string;
+        sourceCode: string;
+        files: string;
+        blocks: string | null;
+        isPublished: boolean;
+        cloudflareUrl: string | null;
+        views: number;
+    }>;
+    deleteSite(id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        botId: string | null;
+        slug: string;
+        appName: string;
+        theme: string;
+        themeColor: string;
+        sourceCode: string;
+        files: string;
+        blocks: string | null;
+        isPublished: boolean;
+        cloudflareUrl: string | null;
+        views: number;
+    }>;
+    publishToCloudflare(id: string, host?: string): Promise<import("../cloud/cloudflare.service").CloudflareDeployResult>;
+}
