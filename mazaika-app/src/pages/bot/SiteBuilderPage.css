@@ -1558,3 +1558,68 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
   z-index: 100;
 }
+
+
+/* Color Palettes Dropdown */
+.sb-palettes-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 220px;
+  background: rgba(13, 17, 26, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.sb-palettes-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 6px 8px;
+}
+
+.sb-palette-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: #F1F5F9;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.sb-palette-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sb-palette-colors {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sb-palette-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sb-palette-name {
+  font-size: 12px;
+  font-weight: 500;
+}

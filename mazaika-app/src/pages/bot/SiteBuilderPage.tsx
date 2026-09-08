@@ -4,7 +4,7 @@ import {
   Globe, Save, Eye, CheckCircle, Sparkles, Bot, Loader2, Send,
   Copy, Check, RefreshCw, Zap, Laptop, Smartphone, Tablet, RotateCcw,
   Sliders, X, ImagePlus, AlertCircle, Code, ExternalLink, Cloud,
-  Mic, MicOff, Target, Download, Trash2, Edit3
+  Mic, MicOff, Target, Download, Trash2, Edit3, Palette, Share2, QrCode
 } from 'lucide-react'
 import Editor from '@monaco-editor/react'
 
@@ -15,6 +15,8 @@ import { useAuthStore } from '../../store/useAuthStore'
 import { siteTemplates } from '../../data/siteTemplates'
 import { exportProjectToZip } from '../../utils/zipExport'
 import ConnectBotModal from '../../components/modals/ConnectBotModal'
+import SeoPreviewModal from '../../components/modals/SeoPreviewModal'
+import QrCodeModal from '../../components/modals/QrCodeModal'
 import './SiteBuilderPage.css'
 
 export interface Block {
@@ -161,6 +163,16 @@ const getSafeSourceCode = (html: string | undefined, isInspectorActive = false) 
   return html + scriptToInject
 }
 
+
+const COLOR_PALETTES = [
+  { id: 'neon-cyber', name: 'Cyber Neon', primary: '#00F5C4', secondary: '#1E90FF', bg: '#030712', text: '#F8FAFC', accent: '#A855F7' },
+  { id: 'luxury-gold', name: 'Royal Gold', primary: '#F59E0B', secondary: '#D97706', bg: '#0B0F19', text: '#FDFBF7', accent: '#FCD34D' },
+  { id: 'clean-slate', name: 'Clean Modern', primary: '#2563EB', secondary: '#38BDF8', bg: '#0F172A', text: '#FFFFFF', accent: '#60A5FA' },
+  { id: 'emerald-mint', name: 'Emerald Mint', primary: '#10B981', secondary: '#059669', bg: '#061A14', text: '#ECFDF5', accent: '#34D399' },
+  { id: 'crimson-dark', name: 'Crimson Night', primary: '#EF4444', secondary: '#B91C1C', bg: '#18070B', text: '#FFF1F2', accent: '#F87171' },
+  { id: 'purple-dream', name: 'Cosmic Purple', primary: '#8B5CF6', secondary: '#C084FC', bg: '#0D081E', text: '#FAF5FF', accent: '#E879F9' }
+]
+
 export default function SiteBuilderPage() {
   const { botId } = useParams<{ botId: string }>()
   const { user } = useAuthStore()
@@ -182,6 +194,10 @@ export default function SiteBuilderPage() {
   const [isDeployingCloudflare, setIsDeployingCloudflare] = useState<boolean>(false)
   const [isConnectBotOpen, setIsConnectBotOpen] = useState<boolean>(false)
   const [isExportingZip, setIsExportingZip] = useState<boolean>(false)
+  const [isSeoOpen, setIsSeoOpen] = useState(false)
+  const [isQrOpen, setIsQrOpen] = useState(false)
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false)
+
 
   // AI Visual Inspector State
   const [isInspectorActive, setIsInspectorActive] = useState<boolean>(false)
@@ -208,6 +224,68 @@ export default function SiteBuilderPage() {
   const messages = chats[projectId] || []
   const isGenerating = isLoading
   const activeProjectId = projectId
+
+  
+  const handleApplyPalette = (palette: typeof COLOR_PALETTES[0]) => {
+    const cssVars = `
+<style id="mz-theme-vars">
+  :root {
+    --primary: ${palette.primary} !important;
+    --primary-color: ${palette.primary} !important;
+    --secondary: ${palette.secondary} !important;
+    --accent: ${palette.accent} !important;
+    --bg-color: ${palette.bg} !important;
+    --text-color: ${palette.text} !important;
+  }
+  body {
+    background-color: ${palette.bg} !important;
+    color: ${palette.text} !important;
+  }
+  .btn-primary, button.primary, [class*="btn-primary"] {
+    background: ${palette.primary} !important;
+    border-color: ${palette.primary} !important;
+    color: ${palette.bg} !important;
+  }
+</style>`
+
+    setConfig(prev => {
+      let nextFiles = prev.files ? { ...prev.files } : {}
+      let nextSourceCode = prev.source_code || ''
+
+      if (nextFiles['index.html']) {
+        let html = nextFiles['index.html']
+        if (html.includes('<style id="mz-theme-vars">')) {
+          html = html.replace(/<style id="mz-theme-vars">[\s\S]*?<\/style>/, cssVars.trim())
+        } else if (html.includes('</head>')) {
+          html = html.replace('</head>', `${cssVars}\n</head>`)
+        } else {
+          html = cssVars + '\n' + html
+        }
+        nextFiles['index.html'] = html
+      }
+
+      if (nextSourceCode) {
+        if (nextSourceCode.includes('<style id="mz-theme-vars">')) {
+          nextSourceCode = nextSourceCode.replace(/<style id="mz-theme-vars">[\s\S]*?<\/style>/, cssVars.trim())
+        } else if (nextSourceCode.includes('</head>')) {
+          nextSourceCode = nextSourceCode.replace('</head>', `${cssVars}\n</head>`)
+        } else {
+          nextSourceCode = cssVars + '\n' + nextSourceCode
+        }
+      }
+
+      return {
+        ...prev,
+        themeColor: palette.primary,
+        source_code: nextSourceCode,
+        files: nextFiles
+      }
+    })
+
+    setToast({ message: `Палитра «${palette.name}» успешно применена!`, type: 'success' })
+    setTimeout(() => setToast(null), 3000)
+    setIsPaletteOpen(false)
+  }
 
   const switchProject = (id: string, conf: any) => {
     setProjectId(id)
@@ -957,6 +1035,53 @@ export default function SiteBuilderPage() {
               <span>{isExportingZip ? 'Сборка...' : 'Экспорт ZIP'}</span>
             </button>
 
+            {/* 1-Click AI Color Palettes */}
+            <div style={{ position: 'relative' }}>
+              <button 
+                className={`sb-action-btn ${isPaletteOpen ? 'active' : ''}`}
+                onClick={() => setIsPaletteOpen(!isPaletteOpen)}
+                title="Мгновенно изменить цветовую гамму сайта в 1 клик"
+              >
+                <Palette size={14} />
+                <span>Палитры</span>
+              </button>
+              {isPaletteOpen && (
+                <div className="sb-palettes-dropdown">
+                  <div className="sb-palettes-header">Цветовые палитры</div>
+                  {COLOR_PALETTES.map(p => (
+                    <button key={p.id} className="sb-palette-item" onClick={() => handleApplyPalette(p)}>
+                      <div className="sb-palette-colors">
+                        <span className="sb-palette-dot" style={{ background: p.primary }} />
+                        <span className="sb-palette-dot" style={{ background: p.secondary }} />
+                        <span className="sb-palette-dot" style={{ background: p.bg }} />
+                      </div>
+                      <span className="sb-palette-name">{p.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* SEO & Social Share Preview */}
+            <button 
+              className="sb-action-btn"
+              onClick={() => setIsSeoOpen(true)}
+              title="Предпросмотр в Telegram, WhatsApp и Google + Генератор мета-тегов"
+            >
+              <Share2 size={14} />
+              <span>SEO Превью</span>
+            </button>
+
+            {/* Designer QR Code Modal */}
+            <button 
+              className="sb-action-btn"
+              onClick={() => setIsQrOpen(true)}
+              title="Дизайнерский QR-код для визиток, меню и рекламных баннеров"
+            >
+              <QrCode size={14} />
+              <span>QR-Код</span>
+            </button>
+
             <button className="sb-action-btn" onClick={() => setIsSettingsOpen(true)}>
               <Sliders size={14} />
               <span>Настройки</span>
@@ -1423,6 +1548,40 @@ export default function SiteBuilderPage() {
             </div>
           </div>
         )}
+
+        
+        {/* SEO Preview Modal */}
+        <SeoPreviewModal
+          isOpen={isSeoOpen}
+          onClose={() => setIsSeoOpen(false)}
+          siteTitle={siteTitle || config.appName || 'Мой Веб-сайт'}
+          siteDesc={siteDesc || ''}
+          siteUrl={cloudflareUrl || (botId ? getLiveSiteUrl(botId) : 'https://mazaika.app')}
+          currentHtml={config.files?.['index.html'] || config.source_code || ''}
+          onApplySeo={(updatedHtml, newTitle, newDesc) => {
+            setSiteTitle(newTitle)
+            setSiteDesc(newDesc)
+            setConfig(prev => {
+              const nextFiles = prev.files ? { ...prev.files, 'index.html': updatedHtml } : { 'index.html': updatedHtml }
+              return {
+                ...prev,
+                appName: newTitle,
+                source_code: updatedHtml,
+                files: nextFiles
+              }
+            })
+            setToast({ message: 'SEO мета-теги успешно внедрены в сайт!', type: 'success' })
+            setTimeout(() => setToast(null), 3000)
+          }}
+        />
+
+        {/* QR Code Modal */}
+        <QrCodeModal
+          isOpen={isQrOpen}
+          onClose={() => setIsQrOpen(false)}
+          url={cloudflareUrl || (botId ? getLiveSiteUrl(botId) : 'https://mazaika.app')}
+          title={siteTitle || config.appName || 'Telegram Бот / Mini App'}
+        />
 
         {/* Connect Bot Modal */}
         <ConnectBotModal

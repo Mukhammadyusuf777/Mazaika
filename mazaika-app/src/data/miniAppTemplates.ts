@@ -362,6 +362,477 @@ export const miniAppTemplates = [
     }
   </script>
 </body>
+</html>`  },
+  {
+    id: "spin-wheel",
+    name: "Колесо Фортуны (Spin & Win)",
+    html: `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Колесо Фортуны — Mazaika Lucky Wheel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      background: radial-gradient(circle at top, #1e1b4b 0%, #030712 100%);
+      color: #fff;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+    .wheel-container {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      margin: 0 auto;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 25px rgba(245, 158, 11, 0.4));
+    }
+    .pointer {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 16px solid transparent;
+      border-right: 16px solid transparent;
+      border-top: 28px solid #F59E0B;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+      z-index: 20;
+    }
+    .spin-center-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #F59E0B, #B45309);
+      border: 3px solid #FEF3C7;
+      color: #000;
+      font-weight: 900;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.8), inset 0 2px 4px rgba(255,255,255,0.6);
+      z-index: 30;
+      transition: transform 0.15s;
+    }
+    .spin-center-btn:active {
+      transform: translate(-50%, -50%) scale(0.92);
+    }
+    .glow-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 24px;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(0, 245, 196, 0.4); }
+      50% { box-shadow: 0 0 35px rgba(0, 245, 196, 0.8); }
+    }
+    .winning-banner {
+      animation: pulse-glow 2s infinite;
+    }
+  </style>
+</head>
+<body class="p-4">
+  <div class="w-full max-w-sm text-center flex flex-col items-center">
+    <div class="mb-4">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold uppercase tracking-wider mb-2">
+        🎰 Розыгрыш подарков
+      </div>
+      <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-400 to-yellow-200">
+        Колесо Фортуны
+      </h1>
+      <p class="text-xs text-gray-400 mt-1">Крутите колесо и заберите свой приз!</p>
+    </div>
+
+    <!-- Wheel Element -->
+    <div class="wheel-container my-2">
+      <div class="pointer"></div>
+      <canvas id="wheelCanvas" width="640" height="640"></canvas>
+      <button id="spinBtn" class="spin-center-btn" onclick="spinWheel()">КРУТИТЬ</button>
+    </div>
+
+    <!-- Prize Result Container -->
+    <div id="resultModal" class="hidden w-full mt-4 p-5 glow-card winning-banner text-center">
+      <div class="text-3xl mb-1">🎉</div>
+      <h2 class="text-lg font-bold text-amber-400">Поздравляем!</h2>
+      <p id="prizeText" class="text-xl font-black text-white mt-1 mb-2"></p>
+      <p class="text-xs text-gray-300 mb-3">Ваш секретный промокод: <span id="promoCode" class="font-mono bg-white/10 px-2 py-1 rounded text-cyan-300 font-bold"></span></p>
+      <button onclick="claimPrize()" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-black font-extrabold text-sm shadow-lg shadow-emerald-500/30 active:scale-95 transition">
+        Забрать подарок в боте
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.expand();
+      tg.ready();
+    }
+
+    const segments = [
+      { text: '-20% Скидка', color: '#EF4444', code: 'SALE20' },
+      { text: 'Кофе в подарок', color: '#3B82F6', code: 'FREECOFFEE' },
+      { text: '-10% Скидка', color: '#10B981', code: 'SALE10' },
+      { text: 'Десерт бесплатно', color: '#8B5CF6', code: 'SWEET' },
+      { text: 'Джекпот -50%', color: '#F59E0B', code: 'JACKPOT50' },
+      { text: 'Бесплатная доставка', color: '#06B6D4', code: 'FREESHIP' }
+    ];
+
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    const totalSegments = segments.length;
+    const arc = (2 * Math.PI) / totalSegments;
+    let currentAngle = 0;
+    let isSpinning = false;
+
+    function drawWheel() {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = canvas.width / 2 - 20;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < totalSegments; i++) {
+        const angle = currentAngle + i * arc;
+
+        // Draw slice
+        ctx.beginPath();
+        ctx.fillStyle = segments[i].color;
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, angle, angle + arc);
+        ctx.lineTo(centerX, centerY);
+        ctx.fill();
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Draw text
+        ctx.save();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 24px -apple-system, sans-serif';
+        ctx.translate(centerX, centerY);
+        ctx.rotate(angle + arc / 2);
+        ctx.textAlign = 'right';
+        ctx.fillText(segments[i].text, radius - 40, 8);
+        ctx.restore();
+      }
+    }
+
+    drawWheel();
+
+    let wonPrize = null;
+
+    function spinWheel() {
+      if (isSpinning) return;
+      isSpinning = true;
+      document.getElementById('resultModal').classList.add('hidden');
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+
+      const winningIndex = Math.floor(Math.random() * totalSegments);
+      wonPrize = segments[winningIndex];
+
+      // Calculate target rotation (stop segment at top: 3*PI/2)
+      const extraSpins = (5 + Math.floor(Math.random() * 3)) * 2 * Math.PI;
+      const targetAngle = (3 * Math.PI / 2) - (winningIndex * arc + arc / 2);
+      const finalAngle = currentAngle + extraSpins + ((targetAngle - (currentAngle % (2 * Math.PI)) + 4 * Math.PI) % (2 * Math.PI));
+
+      const startTime = performance.now();
+      const spinDuration = 4500;
+      const initialAngle = currentAngle;
+
+      function animate(time) {
+        const elapsed = time - startTime;
+        const progress = Math.min(elapsed / spinDuration, 1);
+        // Ease out cubic
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        currentAngle = initialAngle + (finalAngle - initialAngle) * easeOut;
+        drawWheel();
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          isSpinning = false;
+          if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+          showResult(wonPrize);
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function showResult(prize) {
+      document.getElementById('prizeText').textContent = prize.text;
+      document.getElementById('promoCode').textContent = prize.code;
+      document.getElementById('resultModal').classList.remove('hidden');
+    }
+
+    function claimPrize() {
+      if (!wonPrize) return;
+      if (tg?.sendData) {
+        tg.sendData(JSON.stringify({
+          action: 'lucky_wheel_prize',
+          prize: wonPrize.text,
+          promoCode: wonPrize.code
+        }));
+      } else {
+        alert('Поздравляем! Ваш промокод ' + wonPrize.code + ' скопирован в буфер обмена.');
+        navigator.clipboard?.writeText(wonPrize.code);
+      }
+    }
+  </script>
+</body>
+</html>`
+  },
+  {
+    id: "scratch-card",
+    name: "Скретч-карта со скидкой",
+    html: `<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Скретч-карта со скидкой</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      background: radial-gradient(circle at top, #0f172a 0%, #020617 100%);
+      color: #fff;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      touch-action: none;
+    }
+    .card-wrap {
+      position: relative;
+      width: 320px;
+      height: 200px;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.1);
+    }
+    .prize-layer {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 16px;
+      user-select: none;
+    }
+    canvas {
+      position: absolute;
+      inset: 0;
+      cursor: crosshair;
+      z-index: 10;
+    }
+    .glow-badge {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+  </style>
+</head>
+<body class="p-4">
+  <div class="w-full max-w-sm text-center flex flex-col items-center">
+    <div class="mb-4">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-bold uppercase tracking-wider mb-2">
+        🎫 Моментальная лотерея
+      </div>
+      <h1 class="text-2xl font-black text-white">Сотри и выиграй!</h1>
+      <p class="text-xs text-gray-400 mt-1">Проведите пальцем по карте, чтобы стереть защитный слой</p>
+    </div>
+
+    <!-- Scratch Ticket Card -->
+    <div class="card-wrap my-3">
+      <!-- Hidden Prize Layer -->
+      <div class="prize-layer">
+        <div class="text-3xl mb-1">🎁</div>
+        <div class="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-orange-400 to-yellow-200">
+          Скидка 25% НА ВСЁ!
+        </div>
+        <div class="text-xs text-gray-300 mt-1">Промокод на заказ:</div>
+        <div class="text-lg font-mono font-black text-cyan-300 mt-1 bg-black/40 px-4 py-1 rounded-lg border border-cyan-500/40">
+          MAZAIKA25
+        </div>
+      </div>
+
+      <!-- Scratch Surface Canvas -->
+      <canvas id="scratchCanvas" width="320" height="200"></canvas>
+    </div>
+
+    <!-- Progress & Action -->
+    <div class="w-full mt-3">
+      <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
+        <span>Прогресс стирания:</span>
+        <span id="percentText" class="font-bold text-cyan-400">0%</span>
+      </div>
+      <div class="w-full bg-gray-800 rounded-full h-2 overflow-hidden mb-4 border border-white/5">
+        <div id="progressBar" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full transition-all duration-200" style="width: 0%"></div>
+      </div>
+
+      <button id="claimBtn" onclick="claimScratchReward()" disabled class="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-600 text-black font-extrabold text-sm opacity-50 cursor-not-allowed transition duration-200 shadow-lg shadow-cyan-500/20">
+        Сотрите карту для активации
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.expand();
+      tg.ready();
+    }
+
+    const canvas = document.getElementById('scratchCanvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    let scratchedPixels = 0;
+    let totalPixels = canvas.width * canvas.height;
+    let isRevealed = false;
+
+    // Draw scratchable metallic surface
+    function initCanvas() {
+      const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      grad.addColorStop(0, '#94A3B8');
+      grad.addColorStop(0.5, '#CBD5E1');
+      grad.addColorStop(1, '#64748B');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Add silver texture & pattern
+      ctx.fillStyle = '#475569';
+      ctx.font = 'bold 15px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('✨ СОТРИТЕ ЗДЕСЬ ✨', canvas.width / 2, canvas.height / 2 + 5);
+    }
+
+    initCanvas();
+
+    function scratch(x, y) {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.arc(x, y, 22, 0, 2 * Math.PI);
+      ctx.fill();
+
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+
+      checkScratchPercentage();
+    }
+
+    function checkScratchPercentage() {
+      if (isRevealed) return;
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      let transparentCount = 0;
+      const total = imageData.data.length / 4;
+
+      // Sample every 16th pixel for high performance
+      for (let i = 3; i < imageData.data.length; i += 64) {
+        if (imageData.data[i] === 0) transparentCount++;
+      }
+
+      const percent = Math.min(100, Math.round((transparentCount / (total / 16)) * 100));
+      document.getElementById('percentText').textContent = percent + '%';
+      document.getElementById('progressBar').style.width = percent + '%';
+
+      if (percent >= 45 && !isRevealed) {
+        revealAll();
+      }
+    }
+
+    function revealAll() {
+      isRevealed = true;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      document.getElementById('percentText').textContent = '100%';
+      document.getElementById('progressBar').style.width = '100%';
+      const btn = document.getElementById('claimBtn');
+      btn.disabled = false;
+      btn.classList.remove('opacity-50', 'cursor-not-allowed');
+      btn.classList.add('active:scale-95', 'cursor-pointer');
+      btn.textContent = '🎁 Использовать промокод MAZAIKA25';
+
+      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    }
+
+    function getCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      isDrawing = true;
+      const { x, y } = getCoords(e);
+      scratch(x, y);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDrawing) return;
+      const { x, y } = getCoords(e);
+      scratch(x, y);
+    });
+
+    window.addEventListener('mouseup', () => { isDrawing = false; });
+
+    canvas.addEventListener('touchstart', (e) => {
+      isDrawing = true;
+      const { x, y } = getCoords(e);
+      scratch(x, y);
+    }, { passive: true });
+
+    canvas.addEventListener('touchmove', (e) => {
+      if (!isDrawing) return;
+      const { x, y } = getCoords(e);
+      scratch(x, y);
+    }, { passive: true });
+
+    canvas.addEventListener('touchend', () => { isDrawing = false; });
+
+    function claimScratchReward() {
+      if (tg?.sendData) {
+        tg.sendData(JSON.stringify({
+          action: 'scratch_card_claimed',
+          promoCode: 'MAZAIKA25',
+          discount: '25%'
+        }));
+      } else {
+        alert('Промокод MAZAIKA25 скопирован в буфер обмена!');
+        navigator.clipboard?.writeText('MAZAIKA25');
+      }
+    }
+  </script>
+</body>
 </html>`
   }
 ];

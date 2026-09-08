@@ -1,0 +1,267 @@
+/* ==========================================================================
+   AI BOT FLOW GENERATOR MODAL
+   ========================================================================== */
+
+.flow-gen-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 6, 12, 0.8);
+  backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: flowGenFadeIn 0.2s ease-out;
+}
+
+@keyframes flowGenFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.flow-gen-modal {
+  width: 620px;
+  max-width: 95vw;
+  background: #0B0F19;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 217, 255, 0.25);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 217, 255, 0.15);
+  overflow: hidden;
+  animation: flowGenScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes flowGenScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.flow-gen-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.flow-gen-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.flow-gen-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.25), rgba(124, 58, 237, 0.35));
+  border: 1px solid rgba(0, 217, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00D9FF;
+  box-shadow: 0 0 15px rgba(0, 217, 255, 0.2);
+}
+
+.flow-gen-header h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #FFF;
+  margin: 0 0 2px 0;
+}
+
+.flow-gen-header p {
+  font-size: 12px;
+  color: #94A3B8;
+  margin: 0;
+}
+
+.flow-gen-close {
+  background: none;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.flow-gen-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFF;
+}
+
+.flow-gen-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.flow-gen-presets-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.flow-gen-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 540px) {
+  .flow-gen-presets-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.flow-gen-preset-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.flow-gen-preset-card:hover:not(:disabled) {
+  background: rgba(0, 217, 255, 0.08);
+  border-color: rgba(0, 217, 255, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.flow-gen-preset-emoji {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.flow-gen-preset-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #FFF;
+  margin-bottom: 3px;
+}
+
+.flow-gen-preset-desc {
+  font-size: 11.5px;
+  color: #94A3B8;
+  line-height: 1.35;
+}
+
+.flow-gen-prompt-section label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #CBD5E1;
+  margin-bottom: 8px;
+}
+
+.flow-gen-input-box {
+  background: #060911;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.2s;
+}
+
+.flow-gen-input-box:focus-within {
+  border-color: #00D9FF;
+  box-shadow: 0 0 16px rgba(0, 217, 255, 0.2);
+}
+
+.flow-gen-input-box textarea {
+  background: transparent;
+  border: none;
+  color: #FFF;
+  font-size: 13.5px;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.flow-gen-input-box textarea::placeholder {
+  color: #64748B;
+}
+
+.flow-gen-input-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
+}
+
+.flow-gen-mic-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94A3B8;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.flow-gen-mic-btn:hover {
+  background: rgba(0, 245, 196, 0.15);
+  border-color: rgba(0, 245, 196, 0.4);
+  color: #00F5C4;
+}
+
+.flow-gen-mic-btn.listening {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #EF4444;
+  color: #EF4444;
+  animation: pulse 1.5s infinite;
+}
+
+.flow-gen-submit-btn {
+  background: linear-gradient(135deg, #00D9FF 0%, #7C3AED 100%);
+  border: none;
+  color: #FFF;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(0, 217, 255, 0.3);
+}
+
+.flow-gen-submit-btn:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.flow-gen-submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

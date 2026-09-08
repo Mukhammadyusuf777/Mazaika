@@ -11,12 +11,14 @@ import { PropertiesPanel } from '../../components/editor/PropertiesPanel'
 import { nodeTypes } from '../../components/editor/nodes'
 import ButtonEdge from '../../components/editor/ButtonEdge'
 import { useEditorStore, type FlowNode } from '../../store/useEditorStore'
-import { Plus, Save } from 'lucide-react'
+import { Plus, Save, Sparkles, Smartphone } from 'lucide-react'
 import { apiClient } from '../../api/apiClient'
 import { useParams } from 'react-router-dom'
 import { useChatStore } from '../../store/useChatStore'
 import { saveSiteConfig, getSiteConfig } from '../../api/firestore'
 import TokenInputModal from '../../components/modals/TokenInputModal'
+import BotSimulatorModal from '../../components/modals/BotSimulatorModal'
+import AIFlowGeneratorModal from '../../components/modals/AIFlowGeneratorModal'
 
 const edgeTypes = {
   buttonEdge: ButtonEdge,
@@ -41,6 +43,8 @@ export default function EditorPage() {
   const [isRunning, setIsRunning] = useState(false)
   const [showTokenModal, setShowTokenModal] = useState(false)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [showSimulatorModal, setShowSimulatorModal] = useState(false)
+  const [showFlowGenModal, setShowFlowGenModal] = useState(false)
 
   const { activeConfig, setProjectId, setActiveConfig } = useChatStore()
   const switchProject = (id: string, config: any) => {
@@ -225,7 +229,33 @@ export default function EditorPage() {
 
           <Panel position="top-right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <button className="btn btn-ghost btn-sm" onClick={() => setSidebarOpen(!sidebarOpen)}>
-              <Plus size={14} /> Bloklar
+              <Plus size={14} /> Блоки
+            </button>
+            <button
+              className="btn btn-sm"
+              onClick={() => setShowFlowGenModal(true)}
+              style={{
+                background: 'linear-gradient(135deg, rgba(0,217,255,0.18) 0%, rgba(124,58,237,0.22) 100%)',
+                border: '1px solid rgba(0,217,255,0.4)',
+                color: '#00D9FF',
+                fontWeight: 600
+              }}
+              title="Сгенерировать воронку бота с помощью ИИ за 2 секунды ($0.00)"
+            >
+              <Sparkles size={14} /> AI Воронка
+            </button>
+            <button
+              className="btn btn-sm"
+              onClick={() => setShowSimulatorModal(true)}
+              style={{
+                background: 'rgba(30,144,255,0.15)',
+                border: '1px solid rgba(30,144,255,0.4)',
+                color: '#60A5FA',
+                fontWeight: 600
+              }}
+              title="Протестировать логику бота в интерактивном Telegram окне прямо в браузере (без токена, $0.00)"
+            >
+              <Smartphone size={14} /> Тестировать бота
             </button>
             <button
               className={`btn btn-sm ${saved ? 'btn-success' : 'btn-primary'}`}
@@ -269,6 +299,26 @@ export default function EditorPage() {
         onClose={() => setShowTokenModal(false)}
         onSubmit={handleTokenSubmit}
         botName="Telegram Бот"
+      />
+
+      <BotSimulatorModal
+        isOpen={showSimulatorModal}
+        onClose={() => setShowSimulatorModal(false)}
+        nodes={nodes}
+        edges={edges}
+        botName="Telegram Бот"
+      />
+
+      <AIFlowGeneratorModal
+        isOpen={showFlowGenModal}
+        onClose={() => setShowFlowGenModal(false)}
+        onApplyFlow={(newNodes, newEdges) => {
+          setNodes(newNodes)
+          setEdges(newEdges)
+          handleSave()
+          setToastMessage('✨ Воронка бота успешно создана и добавлена на холст!')
+          setTimeout(() => setToastMessage(null), 3500)
+        }}
       />
 
       {toastMessage && (

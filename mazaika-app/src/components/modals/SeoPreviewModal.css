@@ -1,0 +1,421 @@
+/* ==========================================================================
+   SEO & SOCIAL MEDIA SHARE PREVIEWER MODAL
+   ========================================================================== */
+
+.seo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 6, 12, 0.8);
+  backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: seoFadeIn 0.2s ease-out;
+}
+
+@keyframes seoFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.seo-modal-window {
+  width: 680px;
+  max-width: 95vw;
+  background: #0B0F19;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 217, 255, 0.25);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.85), 0 0 35px rgba(0, 217, 255, 0.12);
+  overflow: hidden;
+  animation: seoScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes seoScaleUp {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.seo-modal-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.seo-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.seo-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(16, 185, 129, 0.25));
+  border: 1px solid rgba(0, 217, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00D9FF;
+}
+
+.seo-modal-header h3 {
+  font-size: 16.5px;
+  font-weight: 700;
+  color: #FFF;
+  margin: 0 0 2px 0;
+}
+
+.seo-modal-header p {
+  font-size: 12px;
+  color: #94A3B8;
+  margin: 0;
+}
+
+.seo-modal-close {
+  background: none;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.seo-modal-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFF;
+}
+
+.seo-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Tabs */
+.seo-tabs-row {
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.seo-tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #94A3B8;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all 0.15s;
+}
+
+.seo-tab-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFF;
+}
+
+.seo-tab-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.seo-tab-dot.blue { background: #38BDF8; }
+.seo-tab-dot.green { background: #34D399; }
+.seo-tab-dot.emerald { background: #10B981; }
+
+/* Preview Screen */
+.seo-preview-screen {
+  background: #060911;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Telegram Card Preview */
+.seo-tg-card {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.seo-tg-link-bubble {
+  align-self: flex-start;
+  background: #182533;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border-bottom-left-radius: 4px;
+  font-size: 13px;
+  color: #64B5F6;
+  word-break: break-all;
+}
+
+.seo-tg-rich-card {
+  background: #182533;
+  border-left: 3px solid #1E90FF;
+  border-radius: 4px 12px 12px 4px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.seo-tg-image-wrap img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+}
+
+.seo-tg-content {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.seo-tg-domain {
+  font-size: 11px;
+  color: #64B5F6;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.seo-tg-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #FFF;
+}
+
+.seo-tg-desc {
+  font-size: 12px;
+  color: #8E9BA8;
+  line-height: 1.35;
+}
+
+/* Google SERP Card Preview */
+.seo-google-card {
+  width: 100%;
+  max-width: 520px;
+  background: #1F1F1F;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.seo-google-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.seo-google-favicon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #303134;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9AA0A6;
+}
+
+.seo-google-site-name {
+  font-size: 12px;
+  color: #BDC1C6;
+  font-weight: 500;
+}
+
+.seo-google-breadcrumb {
+  font-size: 10.5px;
+  color: #9AA0A6;
+}
+
+.seo-google-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #8AB4F8;
+  cursor: pointer;
+}
+
+.seo-google-desc {
+  font-size: 12.5px;
+  color: #BDC1C6;
+  line-height: 1.4;
+}
+
+/* WhatsApp Card Preview */
+.seo-wa-card {
+  width: 100%;
+  max-width: 440px;
+}
+
+.seo-wa-bubble {
+  background: #005C4B;
+  border-radius: 12px;
+  border-bottom-left-radius: 4px;
+  padding: 8px;
+  color: #FFF;
+}
+
+.seo-wa-inner {
+  background: #025144;
+  border-radius: 8px;
+  display: flex;
+  overflow: hidden;
+  gap: 10px;
+  padding: 8px;
+}
+
+.seo-wa-thumb {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.seo-wa-text-box {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+}
+
+.seo-wa-title {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.seo-wa-desc {
+  font-size: 11px;
+  color: #A3D9C9;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.seo-wa-domain {
+  font-size: 10px;
+  color: #80C8B5;
+}
+
+.seo-wa-link {
+  font-size: 12.5px;
+  color: #25D366;
+  padding: 6px 4px 2px;
+}
+
+/* Form Fields */
+.seo-form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.seo-field label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #94A3B8;
+  margin-bottom: 5px;
+}
+
+.seo-field input,
+.seo-field textarea {
+  width: 100%;
+  background: #060911;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: #FFF;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.seo-field input:focus,
+.seo-field textarea:focus {
+  border-color: #00D9FF;
+}
+
+/* Footer Actions */
+.seo-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.seo-ai-gen-btn {
+  background: rgba(0, 217, 255, 0.12);
+  border: 1px solid rgba(0, 217, 255, 0.35);
+  color: #00D9FF;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.seo-ai-gen-btn:hover {
+  background: rgba(0, 217, 255, 0.22);
+}
+
+.seo-apply-btn {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  border: none;
+  color: #FFF;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.seo-apply-btn:hover {
+  opacity: 0.94;
+  transform: translateY(-1px);
+}
