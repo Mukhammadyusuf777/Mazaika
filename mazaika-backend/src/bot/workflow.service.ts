@@ -35,6 +35,76 @@ export class WorkflowService {
       });
     }
 
+    // --- TELEGRAM OPERATOR REPLY BRIDGE ($0.00) ---
+    // If admin replies to a forwarded client message with #client_<telegramId>
+    if (ctx.message?.reply_to_message) {
+      const repliedText = ctx.message.reply_to_message.text || ctx.message.reply_to_message.caption || '';
+      const clientMatch = repliedText.match(/#client_(\d+)/);
+      if (clientMatch) {
+        const targetClientId = clientMatch[1];
+        try {
+          await ctx.telegram.sendMessage(
+            targetClientId,
+            `👨‍💼 Ответ оператора службы поддержки:\n\n${text}`
+          );
+          await ctx.reply('✅ Ваше сообщение успешно доставлено клиенту!');
+          const targetContact = await this.firebaseService.getContact(botId, targetClientId);
+          if (targetContact) {
+            await this.firebaseService.addMessage(botId, targetContact.id, text, 'outbound');
+          }
+          return;
+        } catch (forwardErr: any) {
+          this.logger.error(`Operator reply forward error: ${forwardErr.message}`);
+          await ctx.reply(`❌ Не удалось доставить сообщение клиенту (${forwardErr.message}).`);
+          return;
+        }
+      }
+    }
+
+    // Check if client is in operator mode or calling for operator
+    const isOperatorTrigger = /(^\/operator|оператор|поддержк|связаться с оператором|живой человек|operator|yordamchi|operatorga ulanish)/i.test(text);
+    let checkState = contact.state ? JSON.parse(contact.state) : { variables: {}, waitingFor: null };
+
+    if (checkState.waitingFor === 'operator' || (isOperatorTrigger && !text.startsWith('/start'))) {
+      if (/^(стоп|выход|stop|chiqish|bekor|\/start)/i.test(text.trim())) {
+        checkState.waitingFor = null;
+        await this.firebaseService.db.collection('bots').doc(botId).collection('contacts').doc(contact.id).update({
+          state: JSON.stringify(checkState),
+          updatedAt: new Date()
+        });
+        await ctx.reply('👋 Диалог с оператором завершен. Для возврата в меню отправьте /start');
+        return;
+      }
+
+      if (checkState.waitingFor !== 'operator') {
+        checkState.waitingFor = 'operator';
+        await this.firebaseService.db.collection('bots').doc(botId).collection('contacts').doc(contact.id).update({
+          state: JSON.stringify(checkState),
+          updatedAt: new Date()
+        });
+        await ctx.reply('👨‍💼 Вы переведены на оператора поддержки!\n\nНапишите ваш вопрос, и специалист ответит вам прямо сюда.\n(Для выхода отправьте "Стоп").');
+      } else {
+        await ctx.reply('⏳ Сообщение передано оператору. Ожидайте ответа.');
+      }
+
+      await this.firebaseService.addMessage(botId, contact.id, text, 'inbound');
+
+      const adminChat = bot.adminChatId || bot.notificationsChatId || bot.adminTelegramId;
+      if (adminChat) {
+        try {
+          const clientName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || 'Клиент';
+          const usernameStr = contact.username ? `@${contact.username}` : 'без @username';
+          await ctx.telegram.sendMessage(
+            adminChat,
+            `📩 Новое обращение в поддержку!\n\n👤 От: ${clientName} (${usernameStr})\n🆔 Тег: #client_${telegramId}\n💬 Вопрос:\n"${text}"\n\n👉 Ответьте (Reply) на это сообщение, чтобы послать ответ клиенту.`
+          );
+        } catch (adminErr: any) {
+          this.logger.warn(`Could not notify admin ${adminChat}: ${adminErr.message}`);
+        }
+      }
+      return;
+    }
+
     // Intercept WebApp submissions
     if (text.startsWith('webapp:')) {
       const payloadStr = text.substring(7);
