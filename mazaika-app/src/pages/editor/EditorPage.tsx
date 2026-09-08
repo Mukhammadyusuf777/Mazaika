@@ -16,6 +16,7 @@ import { apiClient } from '../../api/apiClient'
 import { useParams } from 'react-router-dom'
 import { useChatStore } from '../../store/useChatStore'
 import { saveSiteConfig, getSiteConfig } from '../../api/firestore'
+import TokenInputModal from '../../components/modals/TokenInputModal'
 
 const edgeTypes = {
   buttonEdge: ButtonEdge,
@@ -38,6 +39,8 @@ export default function EditorPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [saved, setSaved] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
+  const [showTokenModal, setShowTokenModal] = useState(false)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const { activeConfig, setProjectId, setActiveConfig } = useChatStore()
   const switchProject = (id: string, config: any) => {
@@ -94,45 +97,38 @@ export default function EditorPage() {
     if (!botId) return
     try {
       await handleSave()
-      
-      // We first check if the bot has a valid token by fetching it, or we rely on the backend's error message.
-      // But it's easier to just call start, and if it fails due to token, prompt.
-      let res = await apiClient.post(`/bots/${botId}/start`)
-      
+      const res = await apiClient.post(`/bots/${botId}/start`)
       if (res.data?.error === 'Bot token is empty' || res.data?.error === 'Invalid token format') {
-        const token = prompt("Bot hali ishga tushmadi! Iltimos, BotFather'dan olingan haqiqiy Telegram Bot Tokenni kiriting:");
-        if (token && token.trim() !== '' && token.trim() !== 'TEST_TOKEN') {
-          await apiClient.patch(`/bots/${botId}`, { token: token.trim() })
-          res = await apiClient.post(`/bots/${botId}/start`)
-          if (res.data?.error) {
-             alert(res.data.error)
-             return
-          }
-        } else {
-          return
-        }
+        setShowTokenModal(true)
+        return
       } else if (res.data?.error) {
-        alert(res.data.error)
+        setToastMessage(res.data.error)
+        setTimeout(() => setToastMessage(null), 4000)
         return
       }
-      
       setIsRunning(true)
+      setToastMessage('✅ Бот успешно запущен и работает в Telegram!')
+      setTimeout(() => setToastMessage(null), 3000)
     } catch (e: any) {
       if (e.response?.data?.error === 'Bot token is empty') {
-        const token = prompt("Bot hali ishga tushmadi! Iltimos, BotFather'dan olingan haqiqiy Telegram Bot Tokenni kiriting:");
-        if (token && token.trim() !== '' && token.trim() !== 'TEST_TOKEN') {
-          await apiClient.patch(`/bots/${botId}`, { token: token.trim() })
-          try {
-            await apiClient.post(`/bots/${botId}/start`)
-            setIsRunning(true)
-          } catch (err) {
-            alert("Token xato yoki bot ishga tushmadi!")
-          }
-        }
-        return;
+        setShowTokenModal(true)
+        return
       }
-      alert("Botni ishga tushirishda xatolik!")
+      setToastMessage('Ошибка при запуске бота. Проверьте токен!')
+      setTimeout(() => setToastMessage(null), 4000)
     }
+  }
+
+  const handleTokenSubmit = async (token: string) => {
+    if (!botId) return
+    await apiClient.patch(`/bots/${botId}`, { token: token.trim() })
+    const res = await apiClient.post(`/bots/${botId}/start`)
+    if (res.data?.error) {
+      throw new Error(res.data.error)
+    }
+    setIsRunning(true)
+    setToastMessage('✅ Бот успешно активирован и запущен в Telegram!')
+    setTimeout(() => setToastMessage(null), 3500)
   }
 
   const stopBot = async () => {
@@ -140,8 +136,11 @@ export default function EditorPage() {
     try {
       await apiClient.post(`/bots/${botId}/stop`)
       setIsRunning(false)
+      setToastMessage('Бот остановлен')
+      setTimeout(() => setToastMessage(null), 3000)
     } catch (e) {
-      alert("Botni to'xtatishda xatolik!")
+      setToastMessage('Ошибка при остановке бота')
+      setTimeout(() => setToastMessage(null), 3000)
     }
   }
 
@@ -233,15 +232,15 @@ export default function EditorPage() {
               onClick={handleSave}
               disabled={isLoading}
             >
-              <Save size={14} /> {saved ? 'Saqlandi! ✓' : 'Saqlash'}
+              <Save size={14} /> {saved ? 'Сохранено! ✓' : 'Сохранить'}
             </button>
             {isRunning ? (
               <button className="btn btn-error btn-sm" onClick={stopBot} disabled={isLoading}>
-                To'xtatish
+                ⏹ Остановить бота
               </button>
             ) : (
               <button className="btn btn-success btn-sm" onClick={startBot} disabled={isLoading}>
-                ▶ Ishga tushirish
+                ▶ Запустить бота
               </button>
             )}
           </Panel>
@@ -264,6 +263,33 @@ export default function EditorPage() {
           />
         )
       })()}
+
+      <TokenInputModal
+        isOpen={showTokenModal}
+        onClose={() => setShowTokenModal(false)}
+        onSubmit={handleTokenSubmit}
+        botName="Telegram Бот"
+      />
+
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          top: 24,
+          right: 24,
+          zIndex: 99999,
+          background: 'rgba(11,15,25,0.95)',
+          border: '1px solid rgba(0,217,255,0.3)',
+          color: '#FFF',
+          padding: '12px 20px',
+          borderRadius: 16,
+          boxShadow: '0 10px 35px rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(20px)',
+          fontSize: 13,
+          fontWeight: 600
+        }}>
+          {toastMessage}
+        </div>
+      )}
     </div>
   )
 }

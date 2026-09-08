@@ -31,30 +31,30 @@ interface TemplateItem {
 }
 
 const TEMPLATES: TemplateItem[] = [
-  { id: 'shop', name: "Internet do'kon", emoji: '🛒', color: '#00D9FF', desc: "Telegram Mini App vitrina, savat va Payme/Click to'lov tizimi", category: 'ecommerce', tag: 'Top Tanlov' },
-  { id: 'delivery', name: 'Yetkazib berish', emoji: '🚚', color: '#00F5C4', desc: "Buyurtmalarni qabul qilish, geolokatsiya va kuryer bildirishnomalari", category: 'service', tag: 'Tezkor' },
-  { id: 'restaurant', name: 'Restoran & Kafe', emoji: '🍕', color: '#F59E0B', desc: "Vizual menyu, stol bron qilish va avtomatik hisob-kitob", category: 'food', tag: 'Ommabop' },
-  { id: 'ai-faq', name: 'Mazaika AI Konsultant', emoji: '🤖', color: '#7C3AED', desc: "Mijozlar savollariga 24/7 aqlli javob beruvchi LLM bot", category: 'ai', tag: 'DeepSeek-R1' },
-  { id: 'courses', name: 'IT & Fan Kurslari', emoji: '🎓', color: '#EC4899', desc: "Darslar katalogi, videolavhalar va to'lov integratsiyasi", category: 'education', tag: 'Avtomatika' },
-  { id: 'referral', name: 'Referal & Keshbek', emoji: '🤝', color: '#10B981', desc: "Ko'p bosqichli referal tizimi, ballar va bonuslar", category: 'service', tag: "Virusli o'sish" },
+  { id: 'shop', name: "Интернет-магазин", emoji: '🛒', color: '#00D9FF', desc: "Витрина Telegram Mini App, корзина и прием оплат Payme/Click/ЮKassa", category: 'ecommerce', tag: 'Топ Выбор' },
+  { id: 'delivery', name: 'Служба доставки', emoji: '🚚', color: '#00F5C4', desc: "Прием заказов, геолокация и оповещения курьеров", category: 'service', tag: 'Быстрый' },
+  { id: 'restaurant', name: 'Ресторан & Кафе', emoji: '🍕', color: '#F59E0B', desc: "Интерактивное меню, бронь столов и авто-расчет чека", category: 'food', tag: 'Популярный' },
+  { id: 'ai-faq', name: 'Mazaika AI Консультант', emoji: '🤖', color: '#7C3AED', desc: "Умный LLM-бот 24/7 с ответами на вопросы клиентов", category: 'ai', tag: 'DeepSeek-R1' },
+  { id: 'courses', name: 'Онлайн-школа & Курсы', emoji: '🎓', color: '#EC4899', desc: "Каталог уроков, видеоматериалы и прием платежей", category: 'education', tag: 'Автоматика' },
+  { id: 'referral', name: 'Рефералы & Кэшбэк', emoji: '🤝', color: '#10B981', desc: "Многоуровневая реферальная система, баллы и бонусы", category: 'service', tag: "Вирусный рост" },
 ]
 
 const QUICK_PROMPT_PILLS = [
-  { text: "🛒 Internet do'kon Mini App", prompt: "Kiyim va aksessuarlar do'koni uchun Telegram Mini App va buyurtma qabul qiluvchi bot yarat" },
-  { text: '🍕 Pitsa & Fastfood yetkazish', prompt: 'Pitsariya uchun online menyu, savat va yetkazib berish koordinatalarini oluvchi bot yarat' },
-  { text: "🎓 IT Kurslar va To'lov", prompt: "Dasturlash akademiyasi uchun kurslar ro'yxati, ariza formasi va Payme to'lovi bo'lgan bot yarat" },
-  { text: '🤖 24/7 AI Konsultant', prompt: "Kompaniyamiz mijozlariga mahsulotlar bo'yicha maslahat beruvchi aqlli AI yordamchi bot yarat" },
-  { text: '💼 CRM & Mijozlar bazasi', prompt: "Mijozlar kontaktlarini to'plovchi va operatorlarga yuboruvchi qulay lead-generation bot yarat" }
+  { text: "🛒 Интернет-магазин Mini App", prompt: "Создай стильный магазин одежды и аксессуаров в виде Telegram Mini App с корзиной и чекаутом" },
+  { text: '🍕 Доставка пиццы & FastFood', prompt: 'Создай бота пиццерии с интерактивным меню, корзиной, выбором соусов и геолокацией' },
+  { text: "🎓 IT Курсы и онлайн-оплата", prompt: "Создай бота для академии программирования с каталогом курсов, записью на пробный урок и оплатой" },
+  { text: '🤖 24/7 AI Консультант', prompt: "Создай умного AI-ассистента для поддержки клиентов компании, который отвечает на любые вопросы о сервисе" },
+  { text: '💼 CRM & Сбор лидов', prompt: "Создай удобного бота для сбора заявок, квалификации клиентов и мгновенной отправки лидов операторам" }
 ]
 
 const MOCK_ANALYTICS_DATA = [
-  { name: 'Dush', users: 420, msgs: 1200 },
-  { name: 'Sesh', users: 510, msgs: 1450 },
-  { name: 'Chor', users: 680, msgs: 2100 },
-  { name: 'Pay', users: 720, msgs: 1980 },
-  { name: 'Juma', users: 900, msgs: 2600 },
-  { name: 'Shan', users: 1100, msgs: 3100 },
-  { name: 'Yak', users: 1250, msgs: 2890 },
+  { name: 'Пн', users: 420, msgs: 1200 },
+  { name: 'Вт', users: 510, msgs: 1450 },
+  { name: 'Ср', users: 680, msgs: 2100 },
+  { name: 'Чт', users: 720, msgs: 1980 },
+  { name: 'Пт', users: 900, msgs: 2600 },
+  { name: 'Сб', users: 1100, msgs: 3100 },
+  { name: 'Вс', users: 1250, msgs: 2890 },
 ]
 
 export default function DashboardPage() {
@@ -121,7 +121,7 @@ export default function DashboardPage() {
       if (firebaseUser && !user) {
         const fbUser = {
           id: firebaseUser.uid,
-          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || firebaseUser.phoneNumber || 'Foydalanuvchi',
+          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || firebaseUser.phoneNumber || 'Пользователь',
           email: firebaseUser.email || '',
           phone: firebaseUser.phoneNumber || '',
         }
@@ -159,12 +159,12 @@ export default function DashboardPage() {
         navigate(`/bot/${bot.id}/editor`)
       }
     } catch (e: any) {
-      alert('Loyihani yaratishda xatolik: ' + e.message)
+      alert('Ошибка при создании проекта: ' + e.message)
     }
   }
 
   const handleDeleteBot = async (botId: string, botName: string) => {
-    if (!window.confirm(`Haqiqatan ham "${botName}" loyihasini o'chirmoqchimisiz? Ushbu amal qaytarilmaydi.`)) return
+    if (!window.confirm(`Вы действительно хотите удалить проект "${botName}"? Это действие необратимо.`)) return
     try {
       await deleteBot(botId)
       localStorage.removeItem('mazaika_ai_messages_' + botId)
@@ -173,13 +173,13 @@ export default function DashboardPage() {
       fetchBots()
     } catch (e) {
       console.error(e)
-      alert("Botni o'chirishda xatolik yuz berdi.")
+      alert("Произошла ошибка при удалении проекта.")
     }
   }
 
   const handleTemplateClick = (templateName: string) => {
     setSelectedTemplate(templateName)
-    setNewBotName(templateName + ' Boti')
+    setNewBotName(templateName + ' (Бот)')
     setNewBotToken('')
     setCreationType('bot_and_webapp')
     setModalType('bot')
@@ -226,7 +226,7 @@ export default function DashboardPage() {
   const totalMessages = useMemo(() => bots.reduce((a, b) => a + (b.messages || 0), 0), [bots])
   const activeBots = useMemo(() => botProjects.filter(b => b.status === 'active').length, [botProjects])
 
-  const userDisplayName = user?.name || 'Foydalanuvchi'
+  const userDisplayName = user?.name || 'Пользователь'
   const userInitials = userDisplayName.substring(0, 2).toUpperCase()
 
   return (
@@ -243,7 +243,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="dash-nav-section-label">ASOSIY MENYU</div>
+        <div className="dash-nav-section-label">ГЛАВНОЕ МЕНЮ</div>
 
         <nav className="dash-nav">
           <button 
@@ -260,7 +260,7 @@ export default function DashboardPage() {
             onClick={() => setActiveTab('sites')}
           >
             <Globe size={18} />
-            <span className="nav-label">Mini App & Saytlar</span>
+            <span className="nav-label">Mini App & Сайты</span>
             {siteProjects.length > 0 && <span className="nav-count">{siteProjects.length}</span>}
           </button>
           
@@ -269,7 +269,7 @@ export default function DashboardPage() {
             onClick={() => setActiveTab('analytics')}
           >
             <BarChart2 size={18} />
-            <span className="nav-label">Analitika</span>
+            <span className="nav-label">Аналитика</span>
             <span className="nav-live-dot" />
           </button>
           
@@ -278,7 +278,7 @@ export default function DashboardPage() {
             onClick={() => setActiveTab('templates')}
           >
             <Zap size={18} />
-            <span className="nav-label">Shablonlar</span>
+            <span className="nav-label">Шаблоны</span>
             <span className="nav-tag-hot">HOT</span>
           </button>
 
@@ -287,7 +287,7 @@ export default function DashboardPage() {
             onClick={() => navigate('/dashboard/profile')}
           >
             <Settings size={18} />
-            <span className="nav-label">Sozlamalar</span>
+            <span className="nav-label">Настройки</span>
           </button>
         </nav>
 
@@ -298,7 +298,7 @@ export default function DashboardPage() {
           </div>
           <div className="dash-sidebar-ai-info">
             <div className="dash-sidebar-ai-title">Mazaika AI Studio</div>
-            <div className="dash-sidebar-ai-sub">DeepSeek-R1 quvvati</div>
+            <div className="dash-sidebar-ai-sub">На базе DeepSeek AI</div>
           </div>
           <ArrowRight size={14} className="dash-sidebar-ai-arrow" />
         </div>
@@ -320,11 +320,11 @@ export default function DashboardPage() {
         <div className="dash-donate-banner" onClick={() => setShowDonateModal(true)}>
           <div className="dash-donate-icon">❤️</div>
           <div className="dash-donate-info">
-            <div className="dash-donate-title">Dasturchini qo'llash</div>
-            <div className="dash-donate-sub">Loyiha rivoji uchun do'nat</div>
+            <div className="dash-donate-title">Поддержать автора</div>
+            <div className="dash-donate-sub">Донат на развитие проекта</div>
           </div>
           <button className="dash-donate-btn" type="button">
-            Do'nat
+            Донат
           </button>
         </div>
 
@@ -337,11 +337,11 @@ export default function DashboardPage() {
             <div className="dash-user-name" title={userDisplayName}>{userDisplayName}</div>
             <div className="dash-user-plan-badge">
               <span className="plan-pill" style={{ background: 'rgba(16,185,129,0.15)', color: '#10B981', border: '1px solid rgba(16,185,129,0.3)' }}>
-                ⚡ VIP Pro (Bepul)
+                ⚡ VIP Pro (Бесплатно)
               </span>
             </div>
           </div>
-          <button className="dash-user-logout" onClick={handleLogout} title="Chiqish">
+          <button className="dash-user-logout" onClick={handleLogout} title="Выйти">
             <LogOut size={16} />
           </button>
         </div>
@@ -357,7 +357,7 @@ export default function DashboardPage() {
               <div className="dash-header-left">
                 <div className="dash-status-pill">
                   <span className="pulse-indicator" />
-                  <span>Barcha tizimlar faol (99.98% SLA)</span>
+                  <span>Все системы работают в штатном режиме (99.98% SLA)</span>
                   <span className="sep">•</span>
                   <span className="ai-model-tag">DeepSeek-R1</span>
                 </div>
@@ -391,7 +391,7 @@ export default function DashboardPage() {
                   }}
                 >
                   <Plus size={16} />
-                  <span>Yangi Bot Yaratish</span>
+                  <span>Создать нового бота</span>
                 </button>
               </div>
             </div>
@@ -418,13 +418,13 @@ export default function DashboardPage() {
                 <input 
                   type="text" 
                   className="launchpad-input" 
-                  placeholder="Masalan: Toshkentda pitsa yetkazib berish boti va Payme orqali to'lov..."
+                  placeholder="Например: Доставка цветов с каталогом букетов, корзиной и онлайн-оплатой..."
                   value={aiPrompt}
                   onChange={e => setAiPrompt(e.target.value)}
                 />
                 <button type="submit" className="launchpad-submit-btn">
                   <Cpu size={15} />
-                  <span>AI bilan yaratish ⚡</span>
+                  <span>Создать с помощью AI ⚡</span>
                 </button>
               </form>
 
@@ -474,7 +474,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="metric-value">{totalUsers.toLocaleString()}</div>
                 <div className="metric-title">{t('dashboard_total_users')}</div>
-                <div className="metric-foot">Jonli foydalanuvchilar bazasi</div>
+                <div className="metric-foot">Активная аудитория ботов</div>
               </motion.div>
 
               <motion.div 
@@ -503,7 +503,7 @@ export default function DashboardPage() {
                   <span className="metric-badge">DeepSeek-R1</span>
                 </div>
                 <div className="metric-value">99.8%</div>
-                <div className="metric-title">Mazaika AI Quvvati</div>
+                <div className="metric-title">Mazaika AI Мощность</div>
                 <div className="metric-foot">0.4s o'rtacha javob tezligi</div>
               </motion.div>
             </div>
@@ -513,7 +513,7 @@ export default function DashboardPage() {
               <div className="hub-topbar">
                 <div className="hub-title-group">
                   <h2 className="hub-title">Loyiha Markazi</h2>
-                  <span className="hub-badge">{botProjects.length} ta faol bot</span>
+                  <span className="hub-badge">{botProjects.length} активных проектов</span>
                 </div>
 
                 <div className="hub-controls">
@@ -532,19 +532,19 @@ export default function DashboardPage() {
                       className={`filter-btn ${filterStatus === 'all' ? 'active' : ''}`}
                       onClick={() => setFilterStatus('all')}
                     >
-                      Barchasi
+                      Все
                     </button>
                     <button 
                       className={`filter-btn ${filterStatus === 'active' ? 'active' : ''}`}
                       onClick={() => setFilterStatus('active')}
                     >
-                      Faol ({activeBots})
+                      Активные ({activeBots})
                     </button>
                     <button 
                       className={`filter-btn ${filterStatus === 'inactive' ? 'active' : ''}`}
                       onClick={() => setFilterStatus('inactive')}
                     >
-                      Nofaol
+                      Остановленные
                     </button>
                   </div>
                 </div>
@@ -565,9 +565,9 @@ export default function DashboardPage() {
                     <div className="starter-hub-icon">
                       <Bot size={36} />
                     </div>
-                    <h3 className="starter-hub-title">Birinchi Telegram Botingizni Yarating</h3>
+                    <h3 className="starter-hub-title">Создайте свой первый Telegram-бот</h3>
                     <p className="starter-hub-desc">
-                      Sizda hali yaratilgan botlar yo'q. Quyidagi tayyor shablonlardan birini tanlang yoki Mazaika AI orqali 1 daqiqada ishga tushiring.
+                      У вас пока нет созданных ботов. Выберите готовый шаблон ниже или опишите задачу нашему AI — проект будет готов за 1 минуту.
                     </p>
                   </div>
 
@@ -612,7 +612,7 @@ export default function DashboardPage() {
                       onClick={() => handleLaunchAiWithPrompt()}
                     >
                       <Sparkles size={16} />
-                      <span>Mazaika AI orqali yaratish</span>
+                      <span>Создать через Mazaika AI</span>
                     </button>
 
                     <button 
@@ -626,7 +626,7 @@ export default function DashboardPage() {
                       }}
                     >
                       <Plus size={16} />
-                      <span>Bo'sh bot yaratish (Token bilan)</span>
+                      <span>Создать чистый бот (по токену)</span>
                     </button>
                   </div>
                 </motion.div>
@@ -675,7 +675,7 @@ export default function DashboardPage() {
 
                             <div className="bot-status-pill">
                               <span className={`status-dot ${bot.status === 'active' ? 'active' : ''}`} />
-                              <span>{bot.status === 'active' ? 'Faol' : 'Nofaol'}</span>
+                              <span>{bot.status === 'active' ? 'Активен' : 'Остановлен'}</span>
                             </div>
 
                             <button 
@@ -744,7 +744,7 @@ export default function DashboardPage() {
             <div className="dash-templates-showcase">
               <div className="section-header-row">
                 <div>
-                  <h2 className="section-heading">Tayyor Shablonlar</h2>
+                  <h2 className="section-heading">Готовые шаблоны</h2>
                   <p className="section-subheading">O'zbekiston bozori uchun optimallashtirilgan professional Telegram yechimlari</p>
                 </div>
               </div>
@@ -801,7 +801,7 @@ export default function DashboardPage() {
                   }}
                 >
                   <Sparkles size={16} />
-                  <span>AI Sayt Yaratish</span>
+                  <span>Создать сайт через AI</span>
                 </button>
 
                 <button 
@@ -901,7 +901,7 @@ export default function DashboardPage() {
                           </button>
                           <button 
                             className="bot-open-btn"
-                            title="Telegram botga Mini App sifatida ulash ($0 bepul)"
+                            title="Подключить к Telegram боту как Mini App ($0 бесплатно)"
                             style={{ 
                               background: 'linear-gradient(135deg, rgba(0,245,196,0.18) 0%, rgba(30,144,255,0.18) 100%)', 
                               borderColor: 'rgba(0,245,196,0.4)', 
@@ -960,7 +960,7 @@ export default function DashboardPage() {
                 <div className="chart-header">
                   <div>
                     <h3 className="chart-title">Haftalik Auditoriya Dinamikasi</h3>
-                    <p className="chart-subtitle">Telegram botlari orqali jalb qilingan faol foydalanuvchilar</p>
+                    <p className="chart-subtitle">Динамика аудитории и сообщений в Telegram ботах</p>
                   </div>
                   <span className="chart-pill">+28.4% o'sish</span>
                 </div>
@@ -1003,7 +1003,7 @@ export default function DashboardPage() {
                   <div className="mini-card-icon violet"><Cpu size={20} /></div>
                   <div className="mini-card-label">Server Barqarorligi</div>
                   <div className="mini-card-val">99.98%</div>
-                  <div className="mini-card-sub">Yuqori yuklamalarga chidamli arxitektura</div>
+                  <div className="mini-card-sub">Высоконагруженная облачная архитектура</div>
                 </div>
               </div>
             </div>
@@ -1017,18 +1017,18 @@ export default function DashboardPage() {
               <div className="dash-header-left">
                 <div className="dash-status-pill">
                   <Zap size={13} />
-                  <span>Tayyor Shablonlar Katalogi</span>
+                  <span>Каталог готовых решений</span>
                 </div>
-                <h1 className="dash-welcome-title">Shablonlar va Yechimlar</h1>
+                <h1 className="dash-welcome-title">Шаблоны и готовые решения</h1>
                 <p className="dash-welcome-subtitle">
-                  Loyihangizni tezroq boshlash uchun saralangan biznes shablonlaridan foydalaning
+                  Запустите проект мгновенно: выберите отраслевой шаблон и настройте под свой бренд
                 </p>
               </div>
             </div>
 
             <div className="templates-categories-row">
               {[
-                { name: 'Bot Shablonlari', icon: <Bot size={28} />, color: '#00D9FF', desc: "Telegram botlari uchun to'liq ssenariylar" },
+                { name: 'Шаблоны ботов', icon: <Bot size={28} />, color: '#00D9FF', desc: "Готовые сценарии и воронки для Telegram ботов" },
                 { name: 'Mini App Dizaynlari', icon: <AppWindow size={28} />, color: '#00F5C4', desc: "Telegram WebApp ilovasi uchun vizual interfeyslar" },
                 { name: 'Veb-Saytlar', icon: <Globe size={28} />, color: '#F59E0B', desc: "Landing page va kompaniya sahifalari" },
                 { name: 'Mazaika AI Agentlar', icon: <Sparkles size={28} />, color: '#7C3AED', desc: "Sun'iy intellekt asosidagi avtomatik yordamchilar" },
@@ -1045,7 +1045,7 @@ export default function DashboardPage() {
               ))}
             </div>
 
-            <h3 className="section-heading" style={{ marginTop: 40, marginBottom: 20 }}>Barcha Shablonlar</h3>
+            <h3 className="section-heading" style={{ marginTop: 40, marginBottom: 20 }}>Все шаблоны</h3>
             <div className="templates-cyber-grid">
               {TEMPLATES.map((tItem) => (
                 <div 
@@ -1081,7 +1081,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h2 className="modal-cyber-title">
-                    {modalType === 'site' ? 'Yangi Sayt Yaratish' : 'Yangi Telegram Bot'}
+                    {modalType === 'site' ? 'Создание нового сайта' : 'Новый Telegram-бот'}
                   </h2>
                   {selectedTemplate && <span className="modal-template-tag">{selectedTemplate}</span>}
                 </div>
@@ -1116,7 +1116,7 @@ export default function DashboardPage() {
                   <input 
                     type="text" 
                     className="cyber-input" 
-                    placeholder={modalType === 'site' ? "Mening Saytim" : "Masalan: Express Pitsa Boti"} 
+                    placeholder={modalType === 'site' ? "Мой лендинг" : "Например: Express Доставка"} 
                     value={newBotName} 
                     onChange={e => setNewBotName(e.target.value)} 
                     required 

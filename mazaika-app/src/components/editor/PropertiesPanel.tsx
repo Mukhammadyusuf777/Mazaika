@@ -24,7 +24,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
       <div className="properties-header">
         <div className="properties-header-title">
           <div style={{ width: 12, height: 12, borderRadius: '50%', background: color }} />
-          {data.label || 'Blok'} sozlamalari
+          {data.label || 'Блок'} — Настройки
         </div>
         <button className="btn btn-ghost btn-icon" onClick={onClose}><X size={16} /></button>
       </div>
@@ -35,11 +35,11 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'start' && (
           <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <p style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.5 }}>
-              Bu blok foydalanuvchi botni ilk bor ishga tushirganda (<strong>/start</strong> buyrug'ini yuborganda) faollashadi.
+              Этот блок активируется, когда пользователь впервые запускает бота (отправляет команду <strong>/start</strong>).
             </p>
             <div style={{ background: 'rgba(30,144,255,0.06)', borderLeft: '3px solid #1e90ff', padding: '10px 12px', borderRadius: 6, fontSize: 12, color: 'var(--text-secondary)' }}>
-              💡 <strong>Referal havola / Kampaniyalar:</strong><br />
-              Agar foydalanuvchi botga referal havola orqali kirgan bo'lsa, havola parametri avtomatik ravishda <code>{"{start_payload}"}</code> o'zgaruvchisiga yoziladi. Uni boshqa bloklarda ishlatishingiz mumkin!
+              💡 <strong>Реферальная ссылка / Источники:</strong><br />
+              Если пользователь перешел по реферальной ссылке, параметр ссылки автоматически сохранится в переменную <code>{"{start_payload}"}</code>. Её можно использовать в других блоках!
             </div>
           </div>
         )}
@@ -49,18 +49,18 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'message' && (
           <>
             <div className="form-group">
-              <label className="form-label">Xabar matni</label>
+              <label className="form-label">Текст сообщения</label>
               <textarea
                 className="input"
                 rows={5}
                 value={data.text || ''}
                 onChange={(e) => onUpdate({ text: e.target.value })}
-                placeholder="Foydalanuvchiga yuboriladigan xabar..."
+                placeholder="Текст сообщения для отправки пользователю..."
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Rasm yoki Video URL (ixtiyoriy)</label>
+              <label className="form-label">URL фото или видео (необязательно)</label>
               <input
                 type="text"
                 className="input"
@@ -69,12 +69,12 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                 placeholder="Masalan: https://site.com/photo.jpg"
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                Rasm (.jpg, .png) yoki video (.mp4) havolasi. Agar qo'shilsa, xabar matni taglavha (caption) bo'lib yuboriladi.
+                Прямая ссылка на фото (.jpg, .png) или видео (.mp4). Текст сообщения будет отправлен как подпись к медиа.
               </span>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Tugmalar (Inline Buttons)</label>
+              <label className="form-label">Кнопки (Inline кнопки)</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {(data.buttons || []).map((btn: string, i: number) => (
                   <div key={i} style={{ display: 'flex', gap: '8px' }}>
@@ -87,7 +87,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                         newBtns[i] = e.target.value
                         onUpdate({ buttons: newBtns })
                       }}
-                      placeholder="Tugma nomi yoki Nomi|havola"
+                      placeholder="Название кнопки или Текст|ссылка"
                     />
                     <button
                       className="btn btn-ghost btn-icon"
@@ -103,15 +103,15 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                 <button
                   className="btn btn-ghost btn-sm"
                   style={{ alignSelf: 'flex-start' }}
-                  onClick={() => onUpdate({ buttons: [...(data.buttons || []), 'Yangi tugma'] })}
+                  onClick={() => onUpdate({ buttons: [...(data.buttons || []), 'Новая кнопка'] })}
                 >
-                  <Plus size={14} /> Tugma qo'shish
+                  <Plus size={14} /> Добавить кнопку
                 </button>
                 <div style={{ background: 'rgba(255,255,255,0.02)', padding: 10, borderRadius: 6, fontSize: 11, color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <span>🔗 <strong>Tugma formatlari:</strong></span>
-                  <span>- Oddiy tugma: <code>Katalog</code> (ssenariy bo'yicha o'tish)</span>
-                  <span>- Sayt havolasi: <code>Sayt|https://site.com</code> (saytga o'tish)</span>
-                  <span>- Telegram Mini App: <code>Do'kon|webapp:https://site.com</code> (Mini App ochish)</span>
+                  <span>🔗 <strong>Форматы кнопок:</strong></span>
+                  <span>- Обычная кнопка: <code>Каталог</code> (переход по сценарию)</span>
+                  <span>- Ссылка на сайт: <code>Сайт|https://site.com</code> (открытие URL)</span>
+                  <span>- Telegram Mini App: <code>Магазин|webapp:https://site.com</code> (открытие Mini App)</span>
                 </div>
               </div>
             </div>
@@ -122,13 +122,13 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {/* === CHAIN NODE === */}
         {node.type === 'chain' && (
           <div className="form-group">
-            <label className="form-label">O'tish kerak bo'lgan Blok</label>
+            <label className="form-label">Целевой блок для перехода</label>
             <select
               className="input"
               value={data.targetNodeId || ''}
               onChange={(e) => onUpdate({ targetNodeId: e.target.value })}
             >
-              <option value="">-- Blokni tanlang --</option>
+              <option value="">-- Выберите блок --</option>
               {nodes
                 .filter((n) => n.id !== node.id)
                 .map((n) => {
@@ -145,7 +145,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                 })}
             </select>
             <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-              Tanlangan blok ssenariy bajarilganda foydalanuvchiga hech qanday xabarsiz va kutishlarsiz uzatiladi (Jump / Goto).
+              Сценарий мгновенно перейдет к выбранному блоку без дополнительных сообщений и задержек (Jump / Goto).
             </span>
           </div>
         )}
@@ -154,7 +154,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {/* === TIMER (DELAY) NODE === */}
         {node.type === 'timer' && (
           <div className="form-group">
-            <label className="form-label">Kutish vaqti</label>
+            <label className="form-label">Время ожидания (Задержка)</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="number"
@@ -168,14 +168,14 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                 value={data.delayUnit || 'seconds'}
                 onChange={(e) => onUpdate({ delayUnit: e.target.value })}
               >
-                <option value="seconds">Soniya</option>
-                <option value="minutes">Daqiqa</option>
-                <option value="hours">Soat</option>
-                <option value="days">Kun</option>
+                <option value="seconds">Секунды</option>
+                <option value="minutes">Минуты</option>
+                <option value="hours">Часы</option>
+                <option value="days">Дни</option>
               </select>
             </div>
             <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-              Belgilangan vaqt o'tgandan so'ng bot avtomatik ravishda keyingi blokka o'tadi.
+              По истечении указанного времени бот автоматически перейдет к следующему шагу сценария.
             </span>
           </div>
         )}
@@ -185,18 +185,18 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'question' && (
           <>
             <div className="form-group">
-              <label className="form-label">Savol matni (Mijozga yuboriladigan xabar)</label>
+              <label className="form-label">Текст вопроса (Сообщение клиенту)</label>
               <textarea
                 className="input"
                 rows={4}
                 value={data.text || ''}
                 onChange={(e) => onUpdate({ text: e.target.value })}
-                placeholder="Mijozga yuboriladigan savol matnini bu yerga yozing..."
+                placeholder="Введите текст вопроса, который получит клиент..."
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Rasm yoki video havolasi (Majburiy emas)</label>
+              <label className="form-label">Ссылка на фото или видео (необязательно)</label>
               <input
                 type="text"
                 className="input"
@@ -207,22 +207,22 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
             </div>
 
             <div className="form-group">
-              <label className="form-label">Javobni eslab qolish uchun nom (O'zgaruvchi)</label>
+              <label className="form-label">Имя переменной для сохранения ответа</label>
               <input
                 type="text"
                 className="input"
                 value={data.variable || ''}
                 onChange={(e) => onUpdate({ variable: e.target.value })}
-                placeholder="Masalan: ism, yosh, shahar"
+                placeholder="Например: name, age, city"
                 required
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                Mijoz yozgan javob ushbu nom ostida saqlanadi va uni keyingi xabarlarda ishlatish mumkin.
+                Ответ пользователя запишется в эту переменную, и её можно использовать в следующих сообщениях.
               </span>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Tayyor javob tugmalari (Mijoz tanlashi uchun - ixtiyoriy)</label>
+              <label className="form-label">Кнопки с готовыми ответами (опционально)</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {(data.buttons || []).map((btn: string, i: number) => (
                   <div key={i} style={{ display: 'flex', gap: '8px' }}>
@@ -235,7 +235,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                         newBtns[i] = e.target.value
                         onUpdate({ buttons: newBtns })
                       }}
-                      placeholder="Masalan: Ha"
+                      placeholder="Например: Да"
                     />
                     <button
                       className="btn btn-ghost btn-icon"
@@ -253,10 +253,10 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                   style={{ alignSelf: 'flex-start' }}
                   onClick={() => onUpdate({ buttons: [...(data.buttons || []), ''] })}
                 >
-                  <Plus size={14} /> Variant tugma qo'shish
+                  <Plus size={14} /> Добавить вариант ответа
                 </button>
                 <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                  Tugmalar qo'shsangiz, mijoz javobni qo'lda yozib o'tirmasdan, tugmani bosib osongina javob berishi mumkin.
+                  Если добавить кнопки, клиент сможет выбрать готовый ответ в один клик вместо ручного ввода.
                 </span>
               </div>
             </div>
@@ -267,33 +267,33 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'phone' && (
           <>
             <div className="form-group">
-              <label className="form-label">Telefon so'rash matni</label>
+              <label className="form-label">Текст запроса номера телефона</label>
               <textarea
                 className="input"
                 rows={3}
                 value={data.text || ''}
                 onChange={(e) => onUpdate({ text: e.target.value })}
-                placeholder="Masalan: Iltimos, telefon raqamingizni yuboring:"
+                placeholder="Например: Пожалуйста, отправьте ваш номер телефона:"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Tugma ustidagi yozuv (ixtiyoriy)</label>
+              <label className="form-label">Текст на кнопке (необязательно)</label>
               <input
                 type="text"
                 className="input"
                 value={data.buttonText || ''}
                 onChange={(e) => onUpdate({ buttonText: e.target.value })}
-                placeholder="📞 Raqamni yuborish"
+                placeholder="📞 Отправить номер телефона"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Raqamni eslab qolish uchun nom (O'zgaruvchi)</label>
+              <label className="form-label">Имя переменной для номера телефона</label>
               <input
                 type="text"
                 className="input"
                 value={data.variable || ''}
                 onChange={(e) => onUpdate({ variable: e.target.value })}
-                placeholder="Masalan: telefon"
+                placeholder="Например: phone"
               />
             </div>
           </>
@@ -303,23 +303,23 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'email' && (
           <>
             <div className="form-group">
-              <label className="form-label">Email so'rash matni</label>
+              <label className="form-label">Текст запроса Email</label>
               <textarea
                 className="input"
                 rows={3}
                 value={data.text || ''}
                 onChange={(e) => onUpdate({ text: e.target.value })}
-                placeholder="Masalan: Iltimos, email manzilingizni kiriting:"
+                placeholder="Например: Пожалуйста, введите ваш email:"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Emailni eslab qolish uchun nom (O'zgaruvchi)</label>
+              <label className="form-label">Имя переменной для Email</label>
               <input
                 type="text"
                 className="input"
                 value={data.variable || ''}
                 onChange={(e) => onUpdate({ variable: e.target.value })}
-                placeholder="Masalan: email"
+                placeholder="Например: email"
               />
             </div>
           </>
@@ -329,33 +329,33 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'location' && (
           <>
             <div className="form-group">
-              <label className="form-label">Joylashuvni (lokatsiyani) so'rash matni</label>
+              <label className="form-label">Текст запроса геолокации</label>
               <textarea
                 className="input"
                 rows={3}
                 value={data.text || ''}
                 onChange={(e) => onUpdate({ text: e.target.value })}
-                placeholder="Masalan: Buyurtmani yetkazish uchun turgan joyingizni (lokatsiyani) jo'nating:"
+                placeholder="Например: Отправьте геолокацию для точной доставки:"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Tugma ustidagi yozuv (ixtiyoriy)</label>
+              <label className="form-label">Текст на кнопке (необязательно)</label>
               <input
                 type="text"
                 className="input"
                 value={data.buttonText || ''}
                 onChange={(e) => onUpdate({ buttonText: e.target.value })}
-                placeholder="📍 Lokatsiyani yuborish"
+                placeholder="📍 Отправить локацию"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Joylashuvni eslab qolish uchun nom (O'zgaruvchi)</label>
+              <label className="form-label">Имя переменной для геолокации</label>
               <input
                 type="text"
                 className="input"
                 value={data.variable || ''}
                 onChange={(e) => onUpdate({ variable: e.target.value })}
-                placeholder="Masalan: manzil"
+                placeholder="Например: location"
               />
             </div>
           </>
@@ -369,41 +369,41 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'condition' && (
           <>
             <div className="form-group">
-              <label className="form-label">Tekshiriladigan ma'lumot (O'zgaruvchi)</label>
+              <label className="form-label">Проверяемая переменная</label>
               <input
                 type="text"
                 className="input"
                 value={data.variable || ''}
                 onChange={(e) => onUpdate({ variable: e.target.value })}
-                placeholder="Masalan: ism"
+                placeholder="Например: name"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Tekshirish turi (Shart)</label>
+              <label className="form-label">Тип условия (Сравнение)</label>
               <select
                 className="input"
                 value={data.operator || '=='}
                 onChange={(e) => onUpdate({ operator: e.target.value })}
               >
-                <option value="==">Teng bo'lsa (==)</option>
-                <option value="!=">Teng emas bo'lsa (!=)</option>
-                <option value="contains">Matn ichida qatnashsa (Contains)</option>
-                <option value=">">Katta bo'lsa (&gt;)</option>
-                <option value="<">Kichik bo'lsa (&lt;)</option>
-                <option value="is_empty">Kiritilmagan bo'lsa (Bo'sh / Is Empty)</option>
-                <option value="is_filled">Kiritilgan bo'lsa (To'ldirilgan / Is Set)</option>
-                <option value="regex">Maxsus qolipga mos kelsa (Regex)</option>
+                <option value="==">Равно (==)</option>
+                <option value="!=">Не равно (!=)</option>
+                <option value="contains">Содержит подстроку (Contains)</option>
+                <option value=">">Больше (&gt;)</option>
+                <option value="<">Меньше (&lt;)</option>
+                <option value="is_empty">Не заполнено (Пусто / Is Empty)</option>
+                <option value="is_filled">Заполнено (Есть значение / Is Set)</option>
+                <option value="regex">Соответствует регулярному выражению (Regex)</option>
               </select>
             </div>
             {!(data.operator === 'is_empty' || data.operator === 'is_filled') && (
               <div className="form-group">
-                <label className="form-label">Solishtiriladigan qiymat (Nima bilan solishtiramiz?)</label>
+                <label className="form-label">Значение для сравнения</label>
                 <input
                   type="text"
                   className="input"
                   value={data.value || ''}
                   onChange={(e) => onUpdate({ value: e.target.value })}
-                  placeholder={data.operator === 'regex' ? 'Masalan: ^[0-9]+$ (Faqat raqamlar)' : 'Qiymat yozing...'}
+                  placeholder={data.operator === 'regex' ? 'Например: ^[0-9]+$ (Только цифры)' : 'Введите значение...'}
                 />
               </div>
             )}
@@ -415,17 +415,17 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'subscription' && (
           <>
             <div className="form-group">
-              <label className="form-label">Telegram kanal manzili</label>
+              <label className="form-label">Адрес Telegram канала</label>
               <input
                 type="text"
                 className="input"
                 value={data.channel || ''}
                 onChange={(e) => onUpdate({ channel: e.target.value })}
-                placeholder="Masalan: @kanal_nomi"
+                placeholder="Например: @channel_name"
                 required
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                ⚠️ <b>Muhim eslatma:</b> Botimiz ushbu kanalda <b>Administrator (admin)</b> bo'lishi va foydalanuvchilar ro'yxatini ko'rish huquqiga ega bo'lishi shart, aks holda tekshira olmaydi!
+                ⚠️ <b>Важное примечание:</b> Бот должен быть назначен <b>Администратором</b> в данном канале с правами просмотра подписчиков, иначе проверка не сработает!
               </span>
             </div>
           </>
@@ -434,28 +434,28 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'variable' && (
           <>
             <div className="form-group">
-              <label className="form-label">Ma'lumot nomi (O'zgaruvchi)</label>
+              <label className="form-label">Имя переменной</label>
               <input
                 type="text"
                 className="input"
                 value={data.variableName || ''}
                 onChange={(e) => onUpdate({ variableName: e.target.value })}
-                placeholder="Masalan: buyurtma_soni"
+                placeholder="Например: order_count"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Unga beriladigan qiymat</label>
+              <label className="form-label">Присваиваемое значение</label>
               <input
                 type="text"
                 className="input"
                 value={data.variableValue || ''}
                 onChange={(e) => onUpdate({ variableValue: e.target.value })}
-                placeholder="Masalan: 1 yoki Matn..."
+                placeholder="Например: 1 или Текст..."
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                💡 <b>Nima yozsa bo'ladi:</b><br />
-                - Boshqa ma'lumotni qo'shish: <code>{`Salom {ism}!`}</code> (Mijoz ismini qo'yib beradi)<br />
-                - Matematik hisob-kitoblar: <code>{`{ball} + 1`}</code> (Mijoz ballariga 1 qo'shadi)
+                💡 <b>Примеры использования:</b><br />
+                - Подстановка других переменных: <code>{`Привет, {name}!`}</code><br />
+                - Математические вычисления: <code>{`{score} + 1`}</code>
               </span>
             </div>
           </>
@@ -465,16 +465,16 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {/* === VARIABLE DELETE NODE === */}
         {node.type === 'deleteVariable' && (
           <div className="form-group">
-            <label className="form-label">O'chiriladigan ma'lumotlar nomi</label>
+            <label className="form-label">Имена удаляемых переменных</label>
             <input
               type="text"
               className="input"
               value={data.variableName || ''}
               onChange={(e) => onUpdate({ variableName: e.target.value })}
-              placeholder="Masalan: ism, telefon"
+              placeholder="Например: name, phone"
             />
             <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-              💡 <b>Maslahat:</b> Bir nechta ma'lumotlarni birdaniga o'chirish uchun ularni vergul bilan ajratib yozing (Masalan: <code>ism, telefon, shahar</code>).
+              💡 <b>Подсказка:</b> Чтобы удалить сразу несколько переменных, перечислите их через запятую (например: <code>name, phone, city</code>).
             </span>
           </div>
         )}
@@ -484,7 +484,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'abTest' && (
           <>
             <div className="form-group">
-              <label className="form-label">Variant A oqimi foizi (%)</label>
+              <label className="form-label">Доля трафика для Варианта A (%)</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <input
                   type="range"
@@ -499,22 +499,22 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                <span>Variant A (Birinchi yo'nalish): {data.ratioA !== undefined ? data.ratioA : 50}%</span>
-                <span>Variant B (Ikkinchi yo'nalish): {100 - (data.ratioA !== undefined ? data.ratioA : 50)}%</span>
+                <span>Вариант A (Первое направление): {data.ratioA !== undefined ? data.ratioA : 50}%</span>
+                <span>Вариант B (Второе направление): {100 - (data.ratioA !== undefined ? data.ratioA : 50)}%</span>
               </div>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Guruh nomini eslab qolish uchun o'zgaruvchi (ixtiyoriy)</label>
+              <label className="form-label">Переменная для сохранения группы (опционально)</label>
               <input
                 type="text"
                 className="input"
                 value={data.variable || ''}
                 onChange={(e) => onUpdate({ variable: e.target.value })}
-                placeholder="Masalan: qaysi_guruh"
+                placeholder="Например: test_group"
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                Foydalanuvchi qaysi variantga tushganligini (A yoki B) eslab qoladi.
+                Сохраняет, в какой вариант (A или B) попал пользователь.
               </span>
             </div>
           </>
@@ -525,29 +525,29 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'javascript' && (
           <>
             <div className="form-group">
-              <label className="form-label">Matematik amal yoki formula</label>
+              <label className="form-label">JS Формула или выражение</label>
               <textarea
                 className="input"
                 rows={3}
                 value={data.code || ''}
                 onChange={(e) => onUpdate({ code: e.target.value })}
-                placeholder="Masalan: narx * 0.15"
+                placeholder="Например: price * 0.15"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Natijani eslab qolish uchun o'zgaruvchi nomi</label>
+              <label className="form-label">Имя переменной для результата</label>
               <input
                 type="text"
                 className="input"
                 value={data.variable || ''}
                 onChange={(e) => onUpdate({ variable: e.target.value })}
-                placeholder="Masalan: soliq_miqdori"
+                placeholder="Например: total_tax"
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                💡 <b>Foydalanish qoidalari:</b><br />
-                - Ma'lumotlarni to'g'ridan-to'g'ri ismlari bilan formulada ishlatish mumkin: <code>narx * 0.15</code> yoki <code>ism.toUpperCase()</code>.<br />
-                - Raqam ko'rinishidagi yozuvlar avtomatik ravishda haqiqiy songa aylantiriladi.<br />
-                - Matematik funksiyalarni ishlatish mumkin: <code>Math.max(10, ball)</code> yoki <code>Date.now()</code>.
+                💡 <b>Правила использования:</b><br />
+                - Переменные можно использовать напрямую: <code>price * 0.15</code> или <code>name.toUpperCase()</code>.<br />
+                - Числовые строки автоматически конвертируются в числа.<br />
+                - Доступны стандартные функции: <code>Math.max(10, score)</code> или <code>Date.now()</code>.
               </span>
             </div>
           </>
@@ -558,19 +558,19 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'http' && (
           <>
             <div className="form-group">
-              <label className="form-label">So'rov turi (GET yoki POST)</label>
+              <label className="form-label">Метод запроса (GET или POST)</label>
               <select
                 className="input"
                 value={data.method || 'GET'}
                 onChange={(e) => onUpdate({ method: e.target.value })}
               >
-                <option value="GET">GET (Ma'lumot olish)</option>
-                <option value="POST">POST (Ma'lumot yuborish)</option>
+                <option value="GET">GET (Получить данные)</option>
+                <option value="POST">POST (Отправить данные)</option>
               </select>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Tashqi tizim manzili (URL havola)</label>
+              <label className="form-label">URL адрес внешнего сервиса (API Endpoint)</label>
               <input
                 type="text"
                 className="input"
@@ -579,13 +579,13 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                 placeholder="https://api.example.com/endpoint"
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                Havola ichida o'zgaruvchilarni ishlatish mumkin. Masalan: <code>{`https://site.com/obhavo?shahar={shahar}`}</code>
+                В URL можно использовать переменные. Например: <code>{`https://site.com/weather?city={city}`}</code>
               </span>
             </div>
 
             {data.method === 'POST' && (
               <div className="form-group">
-                <label className="form-label">Yuboriladigan ma'lumotlar (Request Body - JSON formatda)</label>
+                <label className="form-label">Тело запроса (Request Body — JSON)</label>
                 <textarea
                   className="input"
                   rows={4}
@@ -594,33 +594,33 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                   placeholder='{"ism": "{ism}", "tel": "{telefon}"}'
                 />
                 <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                  JSON formatda ma'lumot jo'natishingiz mumkin. O'zgaruvchilar avtomatik joylashtiriladi.
+                  Передавайте данные в формате JSON. Переменные будут автоматически подставлены.
                 </span>
               </div>
             )}
 
             <div className="form-group">
-              <label className="form-label">Tizim javobini qaysi o'zgaruvchiga saqlaymiz?</label>
+              <label className="form-label">В какую переменную сохранить ответ API?</label>
               <input
                 type="text"
                 className="input"
                 value={data.variable || ''}
                 onChange={(e) => onUpdate({ variable: e.target.value })}
-                placeholder="Masalan: response_data"
+                placeholder="Например: response_data"
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Javobdan kerakli kalitni ajratib olish (JSON Path - Ixtiyoriy)</label>
+              <label className="form-label">Извлечь поле из JSON ответа (JSON Path, опционально)</label>
               <input
                 type="text"
                 className="input"
                 value={data.jsonPath || ''}
                 onChange={(e) => onUpdate({ jsonPath: e.target.value })}
-                placeholder="Masalan: obhavo.harorat yoki id"
+                placeholder="Например: data.temperature или id"
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                Agar tashqi tizim JSON javob qaytarsa, kerakli kalitni yozib faqat o'sha qiymatni ajratib olishingiz mumkin.
+                Если внешний API возвращает JSON, укажите ключ, чтобы сохранить только нужное поле.
               </span>
             </div>
           </>
@@ -630,18 +630,18 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'webhook' && (
           <>
             <div className="form-group">
-              <label className="form-label">Jo'natish turi (Method)</label>
+              <label className="form-label">Метод отправки (Method)</label>
               <select
                 className="input"
                 value={data.method || 'POST'}
                 onChange={(e) => onUpdate({ method: e.target.value })}
               >
-                <option value="POST">POST (Tavsiya etiladi - barcha ma'lumotlarni yuboradi)</option>
-                <option value="GET">GET (Faqat havolaga murojaat qiladi)</option>
+                <option value="POST">POST (Рекомендуется — отправляет все данные)</option>
+                <option value="GET">GET (Только переход по URL)</option>
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Tizim manzili (Webhook URL)</label>
+              <label className="form-label">Адрес вебхука (Webhook URL)</label>
               <input
                 type="text"
                 className="input"
@@ -650,7 +650,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                 placeholder="https://hook.us1.make.com/..."
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                💡 <b>Tushuntirish:</b> Ushbu blok botdagi barcha to'plangan mijoz ma'lumotlarini (ism, telefon va hk.) avtomatik ravishda boshqa servisga (masalan: Make.com, Zapier yoki Google Sheets) yuborish uchun xizmat qiladi. Havola ichida o'zgaruvchilarni ham ishlatish mumkin.
+                💡 <b>Описание:</b> Блок автоматически отправляет все собранные ботом данные клиента (имя, телефон и т.д.) во внешний сервис (Make.com, Zapier, n8n). Поддерживаются переменные в URL.
               </span>
             </div>
           </>
@@ -666,12 +666,12 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                 value={data.method || 'POST'}
                 onChange={(e) => onUpdate({ method: e.target.value })}
               >
-                <option value="POST">POST (Tavsiya etiladi - avtomatik ma'lumot uzatish)</option>
-                <option value="GET">GET (O'zgaruvchilarni havola orqali uzatish)</option>
+                <option value="POST">POST (Рекомендуется — автоматическая запись)</option>
+                <option value="GET">GET (Передача через query-параметры)</option>
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Google Web App (Jadval) havolasi</label>
+              <label className="form-label">URL Google Web App (Таблицы)</label>
               <input
                 type="text"
                 className="input"
@@ -680,8 +680,8 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                 placeholder="https://script.google.com/macros/s/.../exec"
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                💡 <b>Tushuntirish:</b> Ushbu blok yordamida botdagi ma'lumotlarni Google Jadvalingizga (Google Sheets) avtomatik yozishingiz mumkin. Google Apps Script havolasini kiriting.<br />
-                - Agar <code>GET</code> tanlansa, o'zgaruvchilarni havola ichida yuborishingiz mumkin: <code>.../exec?ism={"{ism}"}&amp;tel={"{telefon}"}</code>.
+                💡 <b>Описание:</b> Автоматически записывает данные из бота в Google Таблицу. Укажите URL веб-приложения Google Apps Script.<br />
+                - При выборе <code>GET</code> переменные передаются в строке запроса: <code>.../exec?name={"{name}"}&amp;phone={"{phone}"}</code>.
               </span>
             </div>
           </>
@@ -701,13 +701,13 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Javobni eslab qolish uchun o'zgaruvchi</label>
+              <label className="form-label">Переменная для сохранения ответа таблицы</label>
               <input
                 type="text"
                 className="input"
                 value={data.variable || ''}
                 onChange={(e) => onUpdate({ variable: e.target.value })}
-                placeholder="Masalan: jadval_javobi"
+                placeholder="Например: sheet_response"
               />
             </div>
             <div className="form-group">
@@ -717,10 +717,10 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                 className="input"
                 value={data.jsonPath || ''}
                 onChange={(e) => onUpdate({ jsonPath: e.target.value })}
-                placeholder="Masalan: kurs.usd yoki narx"
+                placeholder="Например: rate.usd или price"
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                💡 <b>Tushuntirish:</b> Google Jadvaldan ma'lumotlarni yuklab olish uchun mo'ljallangan. Agar jadval skripti JSON formatida javob qaytarsa, kerakli kalitni yozib, o'sha qiymatni ajratib olish mumkin.
+                💡 <b>Описание:</b> Загружает данные из Google Таблицы. Если скрипт возвращает JSON, укажите ключ для извлечения нужного значения.
               </span>
             </div>
           </>
@@ -734,18 +734,18 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'getCourse' && (
           <>
             <div className="form-group">
-              <label className="form-label">Amal turi (GetCourse Action)</label>
+              <label className="form-label">Действие в GetCourse</label>
               <select
                 className="input"
                 value={data.action || 'deal'}
                 onChange={(e) => onUpdate({ action: e.target.value })}
               >
-                <option value="deal">Buyurtma yaratish (Deal / Order)</option>
-                <option value="user">Mijoz qo'shish (Add / Register User)</option>
+                <option value="deal">Создать заказ (Deal / Order)</option>
+                <option value="user">Зарегистрировать пользователя (Add User)</option>
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">GetCourse Maktab manzili (Domain)</label>
+              <label className="form-label">Домен онлайн-школы GetCourse</label>
               <input
                 type="text"
                 className="input"
@@ -755,17 +755,17 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
               />
             </div>
             <div className="form-group">
-              <label className="form-label">API Kalit (API Key)</label>
+              <label className="form-label">Секретный API ключ</label>
               <input
                 type="text"
                 className="input"
                 value={data.apiKey || ''}
                 onChange={(e) => onUpdate({ apiKey: e.target.value })}
-                placeholder="GetCourse profilingizdan olingan API Kalit..."
+                placeholder="API ключ из профиля GetCourse..."
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Mijoz ismi saqlangan o'zgaruvchi</label>
+              <label className="form-label">Переменная с именем клиента</label>
               <input
                 type="text"
                 className="input"
@@ -775,7 +775,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Telefon raqami saqlangan o'zgaruvchi</label>
+              <label className="form-label">Переменная с номером телефона</label>
               <input
                 type="text"
                 className="input"
@@ -785,7 +785,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Email manzili saqlangan o'zgaruvchi</label>
+              <label className="form-label">Переменная с Email клиента</label>
               <input
                 type="text"
                 className="input"
@@ -796,7 +796,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
             </div>
             {data.action === 'deal' && (
               <div className="form-group">
-                <label className="form-label">Tarif kodi (Offer Code)</label>
+                <label className="form-label">Код тарифа / предложения (Offer Code)</label>
                 <input
                   type="text"
                   className="input"
@@ -805,7 +805,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                   placeholder="Masalan: premium_tarif"
                 />
                 <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                  💡 GetCourse dagi taklif (offer) kodi. O'zgaruvchilarni ham ishlatish mumkin (Masalan: <code>{`{tarif}`}</code>).
+                  💡 Код оффера в GetCourse. Можно использовать переменные (например: <code>{`{tariff_code}`}</code>).
                 </span>
               </div>
             )}
@@ -816,7 +816,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'yclients' && (
           <>
             <div className="form-group">
-              <label className="form-label">Kompaniya ID (Company / Salon ID)</label>
+              <label className="form-label">ID компании / филиала (Company ID)</label>
               <input
                 type="text"
                 className="input"
@@ -826,27 +826,27 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Hamkor kaliti (Partner Token / API Key)</label>
+              <label className="form-label">Партнерский токен (Partner Token)</label>
               <input
                 type="text"
                 className="input"
                 value={data.apiKey || ''}
                 onChange={(e) => onUpdate({ apiKey: e.target.value })}
-                placeholder="Yclients hamkorlik kaliti..."
+                placeholder="Партнерский токен Yclients..."
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Foydalanuvchi kaliti (User Token - ixtiyoriy)</label>
+              <label className="form-label">Токен пользователя (User Token, опционально)</label>
               <input
                 type="text"
                 className="input"
                 value={data.userToken || ''}
                 onChange={(e) => onUpdate({ userToken: e.target.value })}
-                placeholder="Yclients xodimining shaxsiy kaliti..."
+                placeholder="Токен сотрудника Yclients..."
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Mijoz ismi saqlangan o'zgaruvchi</label>
+              <label className="form-label">Переменная с именем клиента</label>
               <input
                 type="text"
                 className="input"
@@ -856,7 +856,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Telefon raqami saqlangan o'zgaruvchi</label>
+              <label className="form-label">Переменная с номером телефона</label>
               <input
                 type="text"
                 className="input"
@@ -866,7 +866,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Email manzili saqlangan o'zgaruvchi</label>
+              <label className="form-label">Переменная с Email клиента</label>
               <input
                 type="text"
                 className="input"
@@ -875,7 +875,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                 placeholder="Masalan: email"
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                💡 <b>Tushuntirish:</b> Bot orqali kelgan yangi mijozlar ro'yxatini Yclients bazasiga avtomatik ravishda yangi mijoz kartasi qilib yozib boradi.
+                💡 <b>Описание:</b> Автоматически создает карточку нового клиента в CRM Yclients при прохождении блока.
               </span>
             </div>
           </>
@@ -886,26 +886,26 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {['payme', 'click', 'yookassa', 'cryptopay'].includes(node.type || '') && (
           <>
             <div className="form-group">
-              <label className="form-label">Mahsulot yoki xizmat nomi</label>
+              <label className="form-label">Название товара или услуги</label>
               <input
                 type="text"
                 className="input"
                 value={data.title || ''}
                 onChange={(e) => onUpdate({ title: e.target.value })}
-                placeholder="Masalan: Kurs uchun to'lov"
+                placeholder="Например: Оплата онлайн-курса"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Narxi (so'mda)</label>
+              <label className="form-label">Стоимость (UZS / валюта)</label>
               <input
                 type="text"
                 className="input"
                 value={data.price || ''}
                 onChange={(e) => onUpdate({ price: e.target.value })}
-                placeholder="Masalan: 99000 yoki {jami_narx}"
+                placeholder="Например: 99000 или {total_price}"
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                💡 Maydonga to'g'ridan-to'g'ri raqam yozish yoki oldingi hisoblangan narx o'zgaruvchisini qavs ichida yozish mumkin (Masalan: <code>{`{jami_narx}`}</code>).
+                💡 Укажите число или имя переменной с рассчитанной ценой (например: <code>{`{total_price}`}</code>).
               </span>
             </div>
             <div className="form-group">
@@ -917,10 +917,10 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                 className="input"
                 value={data.providerToken || ''}
                 onChange={(e) => onUpdate({ providerToken: e.target.value })}
-                placeholder="Provider Token..."
+                placeholder="Токен провайдера платежей..."
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                💡 Ushbu kalit Telegramdagi @BotFather boti orqali to'lov tizimini ulanganda beriladi.
+                💡 Этот токен выдается ботом @BotFather при подключении платежного провайдера.
               </span>
             </div>
           </>
@@ -929,35 +929,35 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {/* === CRM BLOCK (DEALSTAGE, ASSIGNEE) === */}
         {node.type === 'dealStage' && (
           <div className="form-group">
-            <label className="form-label">Mijozning CRM dagi bosqichi (Ustun)</label>
+            <label className="form-label">Стадия клиента в CRM (Колонка)</label>
             <select
               className="input"
               value={data.stage || 'Yangi'}
               onChange={(e) => onUpdate({ stage: e.target.value })}
             >
-              <option value="Yangi">Yangi (New)</option>
-              <option value="Jarayonda">Jarayonda (In Progress)</option>
-              <option value="Muvaffaqiyatli">Muvaffaqiyatli (Done)</option>
-              <option value="Rad etildi">Rad etildi (Rejected)</option>
+              <option value="Yangi">Новый (New)</option>
+              <option value="Jarayonda">В обработке (In Progress)</option>
+              <option value="Muvaffaqiyatli">Успешно (Done)</option>
+              <option value="Rad etildi">Отказ (Rejected)</option>
             </select>
             <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-              💡 <b>Tushuntirish:</b> Mijoz ushbu bosqichga yetib kelganida, u Mazaika panelidagi (Kanban doskasi) mos ustunga avtomatik ravishda ko'chib o'tadi (Masalan: to'lov qilgandan keyin "Muvaffaqiyatli" ustuniga).
+              💡 <b>Описание:</b> При прохождении блока клиент автоматически перемещается в соответствующую колонку на канбан-доске CRM (например, после оплаты — в «Успешно»).
             </span>
           </div>
         )}
 
         {node.type === 'assignee' && (
           <div className="form-group">
-            <label className="form-label">Mas'ul xodim (Adminga biriktirish)</label>
+            <label className="form-label">Ответственный менеджер</label>
             <input
               type="text"
               className="input"
               value={data.agent || ''}
               onChange={(e) => onUpdate({ agent: e.target.value })}
-              placeholder="Masalan: Azizbek"
+              placeholder="Например: Алексей"
             />
             <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-              💡 <b>Tushuntirish:</b> Ushbu mijoz bilan yozishmalarni nazorat qilishni belgilangan mas'ul xodimga avtomatik ravishda topshiradi.
+              💡 <b>Описание:</b> Автоматически закрепляет диалог с клиентом за выбранным сотрудником.
             </span>
           </div>
         )}
@@ -966,27 +966,27 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'cart' && (
           <>
             <div className="form-group">
-              <label className="form-label">Savat amali (Action)</label>
+              <label className="form-label">Действие с корзиной</label>
               <select
                 className="input"
                 value={data.cartAction || 'add'}
                 onChange={(e) => onUpdate({ cartAction: e.target.value })}
               >
-                <option value="add">Mahsulot qo'shish (Add to cart)</option>
-                <option value="remove">Mahsulotni o'chirish (Remove from cart)</option>
-                <option value="clear">Savatni tozalash (Clear cart)</option>
+                <option value="add">Добавить товар (Add to cart)</option>
+                <option value="remove">Удалить товар (Remove from cart)</option>
+                <option value="clear">Очистить корзину (Clear cart)</option>
               </select>
             </div>
             
             {data.cartAction !== 'clear' && (
               <div className="form-group">
-                <label className="form-label">Mahsulot nomi</label>
+                <label className="form-label">Название товара</label>
                 <input
                   type="text"
                   className="input"
                   value={data.itemName || ''}
                   onChange={(e) => onUpdate({ itemName: e.target.value })}
-                  placeholder="Masalan: Pizza Margerita"
+                  placeholder="Например: Пицца Маргарита"
                 />
               </div>
             )}
@@ -994,7 +994,7 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
             {data.cartAction === 'add' && (
               <>
                 <div className="form-group">
-                  <label className="form-label">Mahsulot narxi (so'mda - ixtiyoriy)</label>
+                  <label className="form-label">Цена товара (UZS, опционально)</label>
                   <input
                     type="text"
                     className="input"
@@ -1004,23 +1004,23 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Mahsulot soni / miqdori (ixtiyoriy)</label>
+                  <label className="form-label">Количество товара (опционально)</label>
                   <input
                     type="text"
                     className="input"
                     value={data.itemQty || ''}
                     onChange={(e) => onUpdate({ itemQty: e.target.value })}
-                    placeholder="Masalan: 1 yoki {miqdori}"
+                    placeholder="Например: 1 или {qty}"
                   />
                 </div>
               </>
             )}
 
             <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block', marginTop: 8 }}>
-              💡 <b>Tushuntirish:</b> Savat avtomatik ravishda quyidagi o'zgaruvchilarni yangilaydi va ularni keyingi xabarlarda ishlatish mumkin:<br />
-              - <code>{`{cart_text}`}</code>: Savatdagi mahsulotlar ro'yxati matni.<br />
-              - <code>{`{cart_total}`}</code>: Savatdagi jami summa (Payme/Click ga berish uchun).<br />
-              - <code>{`{cart_items_count}`}</code>: Savatdagi jami mahsulotlar soni.
+              💡 <b>Описание:</b> Корзина автоматически обновляет переменные для использования в сообщениях:<br />
+              - <code>{`{cart_text}`}</code>: Текстовый список товаров в корзине.<br />
+              - <code>{`{cart_total}`}</code>: Итоговая сумма корзины.<br />
+              - <code>{`{cart_items_count}`}</code>: Общее количество товаров.
             </span>
           </>
         )}
@@ -1028,26 +1028,26 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {node.type === 'orderList' && (
           <>
             <div className="form-group">
-              <label className="form-label">Savat bo'sh bo'lgandagi xabar</label>
+              <label className="form-label">Сообщение при пустой корзине</label>
               <input
                 type="text"
                 className="input"
                 value={data.emptyMessage || ''}
                 onChange={(e) => onUpdate({ emptyMessage: e.target.value })}
-                placeholder="Masalan: Savatingiz hozircha bo'sh."
+                placeholder="Например: Ваша корзина пока пуста."
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Buyurtma ro'yxati sarlavhasi</label>
+              <label className="form-label">Заголовок списка товаров</label>
               <input
                 type="text"
                 className="input"
                 value={data.headerText || ''}
                 onChange={(e) => onUpdate({ headerText: e.target.value })}
-                placeholder="Masalan: Sizning buyurtmalaringiz:"
+                placeholder="Например: Содержимое вашего заказа:"
               />
               <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                💡 <b>Tushuntirish:</b> Ushbu blok mijozga uning savatidagi barcha mahsulotlarni, ularning narxi, soni va jami hisob-kitob summasini to'liq ko'rsatib beradi.
+                💡 <b>Описание:</b> Отображает клиенту детальный состав корзины с ценами, количеством и итоговой суммой.
               </span>
             </div>
           </>
@@ -1057,32 +1057,32 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {/* === SUBSCRIBER MANAGEMENT (ADDTAG, REMOVETAG) === */}
         {node.type === 'addTag' && (
           <div className="form-group">
-            <label className="form-label">Qo'shiladigan teg (kategoriya) nomi</label>
+            <label className="form-label">Название присваиваемого тега</label>
             <input
               type="text"
               className="input"
               value={data.tagName || ''}
               onChange={(e) => onUpdate({ tagName: e.target.value })}
-              placeholder="Masalan: VIP, Doimiy_mijoz, Kurs_talabasi"
+              placeholder="Например: VIP, Постоянный, Студент"
             />
             <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-              💡 <b>Tushuntirish:</b> Mijoz ushbu bosqichga yetib kelganida, uning profiliga ushbu belgi (teg) avtomatik ravishda yopishtiriladi. Keyinchalik admin panelda mijozlarni teglari bo'yicha saralash juda oson bo'ladi.
+              💡 <b>Описание:</b> При прохождении блока клиенту автоматически присваивается тег для быстрой сегментации в панели управления.
             </span>
           </div>
         )}
 
         {node.type === 'removeTag' && (
           <div className="form-group">
-            <label className="form-label">O'chiriladigan teg (kategoriya) nomi</label>
+            <label className="form-label">Название удаляемого тега</label>
             <input
               type="text"
               className="input"
               value={data.tagName || ''}
               onChange={(e) => onUpdate({ tagName: e.target.value })}
-              placeholder="Masalan: Yangi_mijoz"
+              placeholder="Например: Новый_клиент"
             />
             <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-              💡 <b>Tushuntirish:</b> Mijoz ushbu bosqichga kelganda, uning profilidan belgilangan teg (belgi) avtomatik tarzda olib tashlanadi (Masalan: doimiy mijozga aylanganida "Yangi_mijoz" tegi o'chiriladi).
+              💡 <b>Описание:</b> Удаляет указанный тег из карточки клиента (например, тег «Новый_клиент» при первой покупке).
             </span>
           </div>
         )}
@@ -1090,32 +1090,32 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {/* === BALANCE MANAGEMENT (TOPUPBALANCE, DEBITBALANCE) === */}
         {node.type === 'topUpBalance' && (
           <div className="form-group">
-            <label className="form-label">Balansni to'ldirish summasi (so'mda)</label>
+            <label className="form-label">Сумма пополнения баланса</label>
             <input
               type="text"
               className="input"
               value={data.amount || ''}
               onChange={(e) => onUpdate({ amount: e.target.value })}
-              placeholder="Masalan: 5000 yoki {bonus_summasi}"
+              placeholder="Например: 5000 или {cashback_sum}"
             />
             <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-              💡 <b>Tushuntirish:</b> Mijozning bot ichidagi shaxsiy virtual hamyonini belgilangan summaga to'ldiradi (Keshbek yoki sodiqlik bonuslari uchun). O'zgaruvchilarni qavs ichida yozish mumkin (Masalan: <code>{`{cashback}`}</code>).
+              💡 <b>Описание:</b> Пополняет виртуальный счет пользователя в боте (бонусы, кэшбэк). Поддерживаются переменные (например: <code>{`{cashback}`}</code>).
             </span>
           </div>
         )}
 
         {node.type === 'debitBalance' && (
           <div className="form-group">
-            <label className="form-label">Balansdan yechib olish summasi (so'mda)</label>
+            <label className="form-label">Сумма списания с баланса</label>
             <input
               type="text"
               className="input"
               value={data.amount || ''}
               onChange={(e) => onUpdate({ amount: e.target.value })}
-              placeholder="Masalan: 3000 yoki {yechish_summasi}"
+              placeholder="Например: 3000 или {debit_sum}"
             />
             <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-              💡 <b>Tushuntirish:</b> Mijozning bot ichidagi virtual hamyonidan belgilangan summani yechib oladi (Masalan: bonus ballar hisobiga chegirma berish uchun).
+              💡 <b>Описание:</b> Списывает сумму с виртуального счета клиента (например, при оплате бонусами).
             </span>
           </div>
         )}
@@ -1123,18 +1123,18 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {/* === DELETEUSER BLOCK === */}
         {node.type === 'deleteUser' && (
           <div className="form-group">
-            <label className="form-label">Tozalash / O'chirish turi</label>
+            <label className="form-label">Тип сброса / удаления</label>
             <select
               className="input"
               value={data.deleteType || 'memory'}
               onChange={(e) => onUpdate({ deleteType: e.target.value })}
             >
-              <option value="memory">Faqat bot xotirasini tozalash (Wipe variables)</option>
-              <option value="database">Mijozni CRM bazasidan butunlay o'chirish (Delete Contact)</option>
+              <option value="memory">Очистить только переменные сессии (Wipe memory)</option>
+              <option value="database">Полностью удалить контакт из базы CRM (Delete Contact)</option>
             </select>
             <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8, display: 'block' }}>
-              💡 <b>Bot xotirasi tozalanganda:</b> Mijozning barcha to'plangan o'zgaruvchilari (ism, telefon, email va h.k.) va savat ma'lumotlari o'chiriladi. Mijoz CRM panelida saqlanib qoladi.<br /><br />
-              💡 <b>CRM bazasidan o'chirilganda:</b> Mijoz profili, u bilan bo'lgan barcha chat yozishmalari va ma'lumotlar butunlay o'chiriladi. Mijoz botga qayta kirganida yangi obunachi sifatida boshlaydi.
+              💡 <b>При очистке переменных:</b> Удаляются все сохраненные переменные (имя, телефон, корзина). Сам контакт сохраняется в базе CRM.<br /><br />
+              💡 <b>При удалении из CRM:</b> Контакт и вся история переписки удаляются полностью. При следующем старте пользователь начнет как новый подписчик.
             </span>
           </div>
         )}
@@ -1142,25 +1142,25 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {/* === VOTING BLOCKS === */}
         {node.type === 'voterRegister' && (
           <div className="form-group">
-            <label className="form-label">Nomzod yoki loyiha nomi</label>
+            <label className="form-label">Имя кандидата или название проекта</label>
             <input
               type="text"
               className="input"
               value={data.candidate || ''}
               onChange={(e) => onUpdate({ candidate: e.target.value })}
-              placeholder="Masalan: Nomzod A yoki {tanlov}"
+              placeholder="Например: Кандидат 1 или {candidate}"
             />
             <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-              💡 <b>Tushuntirish:</b> Mijoz ushbu blokdan o'tganida u ko'rsatilgan nomzod uchun 1 ta ovoz beradi. Tizim takroriy ovoz berishni (nakrutkani) butunlay cheklaydi (bir kishi faqat 1 marta ovoz beradi).
+              💡 <b>Описание:</b> Добавляет 1 голос за указанного кандидата с защитой от накрутки (один голос на пользователя).
             </span>
           </div>
         )}
 
         {node.type === 'voteLeaders' && (
           <div className="form-group">
-            <label className="form-label">Reytingni ko'rsatish sozlamasi</label>
+            <label className="form-label">Настройки отображения рейтинга</label>
             <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              💡 Ushbu blok mijozga barcha nomzodlarning to'plagan ovozlarini real vaqtda saralab (eng ko'p ovoz olganidan kamiga) ko'rsatib beradi. Qo'shimcha sozlamalar talab etilmaydi.
+              💡 Выводит рейтинг кандидатов в реальном времени, отсортированный по убыванию голосов. Дополнительных настроек не требуется.
             </p>
           </div>
         )}
@@ -1168,41 +1168,41 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {/* === NEW MEDIA BLOCKS === */}
         {node.type === 'photo' && (
           <div className="form-group">
-            <label className="form-label">Rasm havolasi (URL)</label>
+            <label className="form-label">URL ссылка на фото</label>
             <input type="text" className="input" value={data.fileUrl || ''} onChange={(e) => onUpdate({ fileUrl: e.target.value })} placeholder="https://site.com/photo.jpg" />
-            <label className="form-label" style={{marginTop: 12}}>Taglavha (Caption)</label>
-            <textarea className="input" rows={2} value={data.caption || ''} onChange={(e) => onUpdate({ caption: e.target.value })} placeholder="Rasm ostidagi matn..." />
+            <label className="form-label" style={{marginTop: 12}}>Подпись к медиа (Caption)</label>
+            <textarea className="input" rows={2} value={data.caption || ''} onChange={(e) => onUpdate({ caption: e.target.value })} placeholder="Текст под фото..." />
           </div>
         )}
         {node.type === 'video' && (
           <div className="form-group">
-            <label className="form-label">Video havolasi (URL yoki File ID)</label>
+            <label className="form-label">URL видео или Telegram File ID</label>
             <input type="text" className="input" value={data.fileUrl || ''} onChange={(e) => onUpdate({ fileUrl: e.target.value })} placeholder="https://site.com/video.mp4" />
             <label className="form-label" style={{marginTop: 12}}>Taglavha (Caption)</label>
-            <textarea className="input" rows={2} value={data.caption || ''} onChange={(e) => onUpdate({ caption: e.target.value })} placeholder="Video ostidagi matn..." />
+            <textarea className="input" rows={2} value={data.caption || ''} onChange={(e) => onUpdate({ caption: e.target.value })} placeholder="Текст под видео..." />
           </div>
         )}
         {node.type === 'document' && (
           <div className="form-group">
-            <label className="form-label">Hujjat havolasi (URL)</label>
+            <label className="form-label">URL документа (PDF, DOCX)</label>
             <input type="text" className="input" value={data.fileUrl || ''} onChange={(e) => onUpdate({ fileUrl: e.target.value })} placeholder="https://site.com/doc.pdf" />
-            <label className="form-label" style={{marginTop: 12}}>Fayl nomi (ixtiyoriy)</label>
-            <input type="text" className="input" value={data.fileName || ''} onChange={(e) => onUpdate({ fileName: e.target.value })} placeholder="Masalan: hisobot.pdf" />
+            <label className="form-label" style={{marginTop: 12}}>Имя файла (необязательно)</label>
+            <input type="text" className="input" value={data.fileName || ''} onChange={(e) => onUpdate({ fileName: e.target.value })} placeholder="Например: report.pdf" />
           </div>
         )}
         {node.type === 'audio' && (
           <div className="form-group">
-            <label className="form-label">Audio havolasi (URL)</label>
+            <label className="form-label">URL аудиозаписи (MP3)</label>
             <input type="text" className="input" value={data.fileUrl || ''} onChange={(e) => onUpdate({ fileUrl: e.target.value })} placeholder="https://site.com/audio.mp3" />
             <label className="form-label" style={{marginTop: 12}}>Taglavha (Caption)</label>
-            <textarea className="input" rows={2} value={data.caption || ''} onChange={(e) => onUpdate({ caption: e.target.value })} placeholder="Audio izohi..." />
+            <textarea className="input" rows={2} value={data.caption || ''} onChange={(e) => onUpdate({ caption: e.target.value })} placeholder="Описание аудиозаписи..." />
           </div>
         )}
         {node.type === 'sticker' && (
           <div className="form-group">
             <label className="form-label">Sticker File ID</label>
             <input type="text" className="input" value={data.fileId || ''} onChange={(e) => onUpdate({ fileId: e.target.value })} placeholder="CAACAgIAAxkBAAE..." />
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Telegram stikerining file_id raqamini kiriting.</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Укажите file_id стикера из Telegram.</span>
           </div>
         )}
 
@@ -1210,19 +1210,19 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {(node.type === 'poll' || node.type === 'quiz') && (
           <>
             <div className="form-group">
-              <label className="form-label">Savol (So'rovnoma matni)</label>
-              <textarea className="input" rows={2} value={data.question || ''} onChange={(e) => onUpdate({ question: e.target.value })} placeholder="Savolingizni yozing..." />
+              <label className="form-label">Текст вопроса (Опрос / Викторина)</label>
+              <textarea className="input" rows={2} value={data.question || ''} onChange={(e) => onUpdate({ question: e.target.value })} placeholder="Введите текст вопроса..." />
             </div>
             <div className="form-group">
-              <label className="form-label">Variantlar</label>
+              <label className="form-label">Варианты ответов</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {(data.options || []).map((opt: string, i: number) => (
                   <div key={i} style={{ display: 'flex', gap: '8px' }}>
                     <input type="text" className="input" value={opt} onChange={(e) => {
                       const newOpts = [...data.options]; newOpts[i] = e.target.value; onUpdate({ options: newOpts });
-                    }} placeholder={`Variant ${i + 1}`} />
+                    }} placeholder={`Вариант ${i + 1}`} />
                     {node.type === 'quiz' && (
-                      <input type="radio" name="correctOption" checked={data.correctIndex === i} onChange={() => onUpdate({ correctIndex: i })} title="To'g'ri javob" />
+                      <input type="radio" name="correctOption" checked={data.correctIndex === i} onChange={() => onUpdate({ correctIndex: i })} title="Правильный ответ" />
                     )}
                     <button className="btn btn-ghost btn-icon" onClick={() => {
                       const newOpts = data.options.filter((_: any, idx: number) => idx !== i); onUpdate({ options: newOpts });
@@ -1230,21 +1230,21 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                   </div>
                 ))}
                 <button className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => onUpdate({ options: [...(data.options || []), 'Yangi variant'] })}>
-                  <Plus size={14} /> Variant qo'shish
+                  <Plus size={14} /> Добавить вариант
                 </button>
               </div>
               {node.type === 'poll' && (
                 <div style={{marginTop: 12}}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-main)' }}>
                     <input type="checkbox" checked={data.isMultiple || false} onChange={(e) => onUpdate({ isMultiple: e.target.checked })} />
-                    Ko'p variantli (Multiple choice)
+                    Множественный выбор (Multiple choice)
                   </label>
                 </div>
               )}
               {node.type === 'quiz' && (
                 <div className="form-group" style={{marginTop: 12}}>
-                  <label className="form-label">Tushuntirish (To'g'ri javob topilganda yoki xato qilinganda ko'rinadi)</label>
-                  <input type="text" className="input" value={data.explanation || ''} onChange={(e) => onUpdate({ explanation: e.target.value })} placeholder="Masalan: To'g'ri javob A edi, chunki..." />
+                  <label className="form-label">Пояснение (Показывается при выборе ответа)</label>
+                  <input type="text" className="input" value={data.explanation || ''} onChange={(e) => onUpdate({ explanation: e.target.value })} placeholder="Например: Правильный ответ А, потому что..." />
                 </div>
               )}
             </div>
@@ -1262,44 +1262,44 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
               <option value="gpt-4o-mini">OpenAI GPT-4o Mini</option>
               <option value="claude-3-5-sonnet">Anthropic Claude 3.5 Sonnet</option>
             </select>
-            <label className="form-label" style={{marginTop: 12}}>Sistemaviy prompt (Prompts)</label>
-            <textarea className="input" rows={4} value={data.prompt || ''} onChange={(e) => onUpdate({ prompt: e.target.value })} placeholder="Sen foydali yordamchisan..." />
+            <label className="form-label" style={{marginTop: 12}}>Системный промпт (Инструкция для AI)</label>
+            <textarea className="input" rows={4} value={data.prompt || ''} onChange={(e) => onUpdate({ prompt: e.target.value })} placeholder="Ты — профессиональный консультант компании..." />
             <label className="form-label" style={{marginTop: 12}}>Max tokens</label>
             <input type="number" className="input" value={data.maxTokens || 1000} onChange={(e) => onUpdate({ maxTokens: parseInt(e.target.value) })} />
           </div>
         )}
         {node.type === 'aiAnalyze' && (
           <div className="form-group">
-            <label className="form-label">Tahlil qilinadigan matn</label>
+            <label className="form-label">Текст для AI анализа</label>
             <input type="text" className="input" value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="{user_message}" />
-            <label className="form-label" style={{marginTop: 12}}>Ajratib olinadigan ma'lumot</label>
-            <input type="text" className="input" value={data.field || ''} onChange={(e) => onUpdate({ field: e.target.value })} placeholder="Masalan: ism, telefon raqam" />
-            <label className="form-label" style={{marginTop: 12}}>Natijani saqlash (O'zgaruvchi)</label>
+            <label className="form-label" style={{marginTop: 12}}>Извлекаемая информация</label>
+            <input type="text" className="input" value={data.field || ''} onChange={(e) => onUpdate({ field: e.target.value })} placeholder="Например: имя, телефон, дата" />
+            <label className="form-label" style={{marginTop: 12}}>Сохранить результат в переменную</label>
             <input type="text" className="input" value={data.variable || ''} onChange={(e) => onUpdate({ variable: e.target.value })} placeholder="Masalan: extracted_phone" />
           </div>
         )}
         {node.type === 'aiTranslate' && (
           <div className="form-group">
-            <label className="form-label">Asl matn</label>
+            <label className="form-label">Исходный текст для перевода</label>
             <input type="text" className="input" value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="{user_message}" />
             <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
               <div style={{flex: 1}}>
-                <label className="form-label">Qaysi tildan</label>
+                <label className="form-label">С какого языка</label>
                 <input type="text" className="input" value={data.fromLang || 'auto'} onChange={(e) => onUpdate({ fromLang: e.target.value })} placeholder="auto" />
               </div>
               <div style={{flex: 1}}>
-                <label className="form-label">Qaysi tilga</label>
+                <label className="form-label">На какой язык</label>
                 <input type="text" className="input" value={data.toLang || 'UZ'} onChange={(e) => onUpdate({ toLang: e.target.value })} placeholder="UZ" />
               </div>
             </div>
-            <label className="form-label" style={{marginTop: 12}}>Natijani saqlash (O'zgaruvchi)</label>
+            <label className="form-label" style={{marginTop: 12}}>Сохранить результат (Переменная)</label>
             <input type="text" className="input" value={data.variable || 'translated_text'} onChange={(e) => onUpdate({ variable: e.target.value })} placeholder="translated_text" />
           </div>
         )}
         {node.type === 'aiImage' && (
           <div className="form-group">
-            <label className="form-label">Rasm g'oyasi (Prompt)</label>
-            <textarea className="input" rows={3} value={data.prompt || ''} onChange={(e) => onUpdate({ prompt: e.target.value })} placeholder="Dengiz bo'yida quyosh botishi..." />
+            <label className="form-label">Промпт для генерации картинки</label>
+            <textarea className="input" rows={3} value={data.prompt || ''} onChange={(e) => onUpdate({ prompt: e.target.value })} placeholder="Закат на морском побережье, фотореализм..." />
             <label className="form-label" style={{marginTop: 12}}>Model</label>
             <select className="input" value={data.model || 'dall-e-3'} onChange={(e) => onUpdate({ model: e.target.value })}>
               <option value="dall-e-3">DALL-E 3</option>
@@ -1312,45 +1312,45 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
         {/* === NEW NOTIFICATION BLOCKS === */}
         {node.type === 'notifyOperator' && (
           <div className="form-group">
-            <label className="form-label">Operator Telegram ID</label>
+            <label className="form-label">Telegram ID оператора</label>
             <input type="text" className="input" value={data.chatId || ''} onChange={(e) => onUpdate({ chatId: e.target.value })} placeholder="123456789" />
-            <label className="form-label" style={{marginTop: 12}}>Xabar matni</label>
-            <textarea className="input" rows={3} value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="Yangi mijoz: {user_name}..." />
+            <label className="form-label" style={{marginTop: 12}}>Текст сообщения</label>
+            <textarea className="input" rows={3} value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="Новый клиент: {name}, телефон: {phone}..." />
           </div>
         )}
         {node.type === 'notifyGroup' && (
           <div className="form-group">
-            <label className="form-label">Guruh ID</label>
+            <label className="form-label">ID группы Telegram</label>
             <input type="text" className="input" value={data.groupId || ''} onChange={(e) => onUpdate({ groupId: e.target.value })} placeholder="-1001234567890" />
-            <label className="form-label" style={{marginTop: 12}}>Xabar matni</label>
-            <textarea className="input" rows={3} value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="Guruhga xabar..." />
+            <label className="form-label" style={{marginTop: 12}}>Текст сообщения</label>
+            <textarea className="input" rows={3} value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="Сообщение для группы..." />
           </div>
         )}
         {node.type === 'notifyChannel' && (
           <div className="form-group">
-            <label className="form-label">Kanal ID</label>
-            <input type="text" className="input" value={data.channelId || ''} onChange={(e) => onUpdate({ channelId: e.target.value })} placeholder="@kanal_username yoki -100123" />
-            <label className="form-label" style={{marginTop: 12}}>Xabar matni</label>
-            <textarea className="input" rows={3} value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="Kanalga xabar..." />
+            <label className="form-label">ID или @username канала</label>
+            <input type="text" className="input" value={data.channelId || ''} onChange={(e) => onUpdate({ channelId: e.target.value })} placeholder="@channel_name или -100123" />
+            <label className="form-label" style={{marginTop: 12}}>Текст сообщения</label>
+            <textarea className="input" rows={3} value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="Текст сообщения для канала..." />
           </div>
         )}
         {node.type === 'email_notify' && (
           <div className="form-group">
-            <label className="form-label">Email manzil</label>
+            <label className="form-label">Email адрес получателя</label>
             <input type="email" className="input" value={data.to || ''} onChange={(e) => onUpdate({ to: e.target.value })} placeholder="admin@site.com" />
-            <label className="form-label" style={{marginTop: 12}}>Mavzu (Subject)</label>
-            <input type="text" className="input" value={data.subject || ''} onChange={(e) => onUpdate({ subject: e.target.value })} placeholder="Yangi buyurtma" />
-            <label className="form-label" style={{marginTop: 12}}>Xabar matni</label>
-            <textarea className="input" rows={3} value={data.body || ''} onChange={(e) => onUpdate({ body: e.target.value })} placeholder="Mijoz ma'lumotlari: {user_name}..." />
+            <label className="form-label" style={{marginTop: 12}}>Тема письма (Subject)</label>
+            <input type="text" className="input" value={data.subject || ''} onChange={(e) => onUpdate({ subject: e.target.value })} placeholder="Новый заказ с бота" />
+            <label className="form-label" style={{marginTop: 12}}>Текст сообщения</label>
+            <textarea className="input" rows={3} value={data.body || ''} onChange={(e) => onUpdate({ body: e.target.value })} placeholder="Данные клиента: {name}, телефон: {phone}..." />
           </div>
         )}
 
         {/* === NEW SCHEDULER BLOCKS === */}
         {node.type === 'schedule' && (
           <div className="form-group">
-            <label className="form-label">Cron jadvali</label>
+            <label className="form-label">Расписание Cron</label>
             <input type="text" className="input" value={data.cron || '* * * * *'} onChange={(e) => onUpdate({ cron: e.target.value })} placeholder="0 9 * * 1-5" />
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Vaqti-vaqti bilan avtomatik yuborish (Cron format).</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Периодическая автоматическая рассылка в формате Cron.</span>
           </div>
         )}
         {node.type === 'reminder' && (
@@ -1364,88 +1364,88 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
                 <option value="days">Kun</option>
               </select>
             </div>
-            <label className="form-label" style={{marginTop: 12}}>Eslatma xabari</label>
-            <textarea className="input" rows={2} value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="Siz xaridingizni unutingiz..." />
+            <label className="form-label" style={{marginTop: 12}}>Текст напоминания</label>
+            <textarea className="input" rows={2} value={data.text || ''} onChange={(e) => onUpdate({ text: e.target.value })} placeholder="Вы не завершили оформление заказа в корзине..." />
           </div>
         )}
         {node.type === 'sequence' && (
           <div className="form-group">
-            <label className="form-label">Ketma-ket xabarlar soni</label>
+            <label className="form-label">Количество сообщений в цепочке</label>
             <input type="number" className="input" value={data.count || 3} onChange={(e) => onUpdate({ count: parseInt(e.target.value) })} />
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Ushbu blok orqali bir necha kunga mo'ljallangan avtomatik funnel qursangiz bo'ladi.</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Позволяет настроить автоматическую воронку сообщений по дням.</span>
           </div>
         )}
 
         {/* === NEW REFERRAL BLOCKS === */}
         {node.type === 'refCreate' && (
           <div className="form-group">
-            <label className="form-label">Referal havola o'zgaruvchisi</label>
+            <label className="form-label">Переменная для реферальной ссылки</label>
             <input type="text" className="input" value={data.variable || 'ref_link'} onChange={(e) => onUpdate({ variable: e.target.value })} placeholder="ref_link" />
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Mijozning shaxsiy referal havolasi shu nomli o'zgaruvchiga saqlanadi.</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Персональная реферальная ссылка клиента будет сохранена в эту переменную.</span>
           </div>
         )}
         {node.type === 'refCheck' && (
           <div className="form-group">
-            <label className="form-label">Taklif qilgan odamga bonus (so'm/ball)</label>
+            <label className="form-label">Бонус пригласившему (баллы / рубли)</label>
             <input type="number" className="input" value={data.bonus || 0} onChange={(e) => onUpdate({ bonus: parseInt(e.target.value) })} placeholder="5000" />
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Yangi foydalanuvchi referal link orqali kirsa, egasiga shu miqdorda bonus yoziladi.</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>При переходе нового пользователя пригласивший автоматически получает эту сумму бонусов.</span>
           </div>
         )}
         {node.type === 'refLeaders' && (
           <div className="form-group">
-            <label className="form-label">Top nechta yetakchi ko'rsatilsin</label>
+            <label className="form-label">Количество участников в топе</label>
             <input type="number" className="input" value={data.count || 10} onChange={(e) => onUpdate({ count: parseInt(e.target.value) })} placeholder="10" />
-            <label className="form-label" style={{marginTop: 12}}>Sarlavha</label>
-            <input type="text" className="input" value={data.title || 'Referal yetakchilar:'} onChange={(e) => onUpdate({ title: e.target.value })} />
+            <label className="form-label" style={{marginTop: 12}}>Заголовок топа</label>
+            <input type="text" className="input" value={data.title || '🏆 Топ лидеров по рефералам:'} onChange={(e) => onUpdate({ title: e.target.value })} />
           </div>
         )}
 
         {/* === NEW PAYMENT BLOCKS === */}
         {node.type === 'stars' && (
           <div className="form-group">
-            <label className="form-label">Telegram Stars miqdori</label>
-            <input type="number" className="input" value={data.amount || ''} onChange={(e) => onUpdate({ amount: parseInt(e.target.value) || 0 })} placeholder="Masalan: 50" />
-            <label className="form-label" style={{marginTop: 12}}>Mahsulot/Xizmat nomi</label>
-            <input type="text" className="input" value={data.title || ''} onChange={(e) => onUpdate({ title: e.target.value })} placeholder="VIP Obuna" />
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Mijoz bevosita Telegram bot ichida Stars orqali to'lov qila oladi.</span>
+            <label className="form-label">Количество Telegram Stars</label>
+            <input type="number" className="input" value={data.amount || ''} onChange={(e) => onUpdate({ amount: parseInt(e.target.value) || 0 })} placeholder="Например: 50" />
+            <label className="form-label" style={{marginTop: 12}}>Название товара или услуги</label>
+            <input type="text" className="input" value={data.title || ''} onChange={(e) => onUpdate({ title: e.target.value })} placeholder="VIP Подписка" />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Клиент оплачивает покупку напрямую через Telegram Stars в один клик.</span>
           </div>
         )}
         {node.type === 'uzumbank' && (
           <div className="form-group">
-            <label className="form-label">Narx (UZS)</label>
+            <label className="form-label">Сумма к оплате (UZS)</label>
             <input type="number" className="input" value={data.price || ''} onChange={(e) => onUpdate({ price: parseInt(e.target.value) || 0 })} placeholder="Masalan: 50000" />
-            <label className="form-label" style={{marginTop: 12}}>To'lov maqsadi</label>
-            <input type="text" className="input" value={data.title || ''} onChange={(e) => onUpdate({ title: e.target.value })} placeholder="To'lov maqsadi..." />
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Uzum Bank orqali to'lov qabul qilish havolasi yaratiladi.</span>
+            <label className="form-label" style={{marginTop: 12}}>Назначение платежа</label>
+            <input type="text" className="input" value={data.title || ''} onChange={(e) => onUpdate({ title: e.target.value })} placeholder="Оплата заказа..." />
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Создает ссылку для быстрой оплаты через Uzum Bank.</span>
           </div>
         )}
 
         {/* === NEW CRM INTEGRATION BLOCKS === */}
         {node.type === 'amocrm' && (
           <div className="form-group">
-            <label className="form-label">AmoCRM Harakati</label>
+            <label className="form-label">Действие в AmoCRM</label>
             <select className="input" value={data.action || 'create_contact'} onChange={(e) => onUpdate({ action: e.target.value })}>
-              <option value="create_contact">Kontakt yaratish</option>
-              <option value="create_lead">Bitim (Lead) yaratish</option>
-              <option value="add_note">Izoh qo'shish</option>
+              <option value="create_contact">Создать контакт</option>
+              <option value="create_lead">Создать сделку (Lead)</option>
+              <option value="add_note">Добавить примечание</option>
             </select>
-            <label className="form-label" style={{marginTop: 12}}>Ism o'zgaruvchisi</label>
+            <label className="form-label" style={{marginTop: 12}}>Переменная с именем</label>
             <input type="text" className="input" value={data.nameVar || '{name}'} onChange={(e) => onUpdate({ nameVar: e.target.value })} />
-            <label className="form-label" style={{marginTop: 12}}>Telefon o'zgaruvchisi</label>
+            <label className="form-label" style={{marginTop: 12}}>Переменная с телефоном</label>
             <input type="text" className="input" value={data.phoneVar || '{phone}'} onChange={(e) => onUpdate({ phoneVar: e.target.value })} />
           </div>
         )}
         {node.type === 'bitrix' && (
           <div className="form-group">
-            <label className="form-label">Bitrix24 Harakati</label>
+            <label className="form-label">Действие в Bitrix24</label>
             <select className="input" value={data.action || 'crm.lead.add'} onChange={(e) => onUpdate({ action: e.target.value })}>
-              <option value="crm.lead.add">Lead yaratish</option>
-              <option value="crm.contact.add">Kontakt yaratish</option>
-              <option value="crm.deal.add">Deal (Bitim) yaratish</option>
+              <option value="crm.lead.add">Создать лид</option>
+              <option value="crm.contact.add">Создать контакт</option>
+              <option value="crm.deal.add">Создать сделку</option>
             </select>
-            <label className="form-label" style={{marginTop: 12}}>Ism o'zgaruvchisi</label>
+            <label className="form-label" style={{marginTop: 12}}>Переменная с именем</label>
             <input type="text" className="input" value={data.nameVar || '{name}'} onChange={(e) => onUpdate({ nameVar: e.target.value })} />
-            <label className="form-label" style={{marginTop: 12}}>Telefon o'zgaruvchisi</label>
+            <label className="form-label" style={{marginTop: 12}}>Переменная с телефоном</label>
             <input type="text" className="input" value={data.phoneVar || '{phone}'} onChange={(e) => onUpdate({ phoneVar: e.target.value })} />
           </div>
         )}
@@ -1454,10 +1454,10 @@ export function PropertiesPanel({ node, nodes, onClose, onUpdate, onDelete }: Pr
       <div className="properties-footer" style={{ display: 'flex', gap: '8px' }}>
         {onDelete && (
           <button className="btn btn-error" onClick={onDelete} style={{ padding: '8px 12px' }}>
-            <Trash2 size={14}/> O'chirish
+            <Trash2 size={14}/> Удалить
           </button>
         )}
-        <button className="btn btn-primary flex-1" onClick={onClose}><Save size={14}/> Yopish</button>
+        <button className="btn btn-primary flex-1" onClick={onClose}><Save size={14}/> Закрыть</button>
       </div>
     </div>
   )

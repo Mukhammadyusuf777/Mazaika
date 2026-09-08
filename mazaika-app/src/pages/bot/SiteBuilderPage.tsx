@@ -86,7 +86,8 @@ export default function SiteBuilderPage() {
   const [siteDesc, setSiteDesc] = useState('')
   const [updateCounter, setUpdateCounter] = useState(0)
   const [selfHealingStatus, setSelfHealingStatus] = useState<'idle' | 'healing' | 'failed'>('idle')
-  const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview')
+  const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'split'>('preview')
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
   const [activeFile, setActiveFile] = useState<string>('index.html')
   const [cloudflareUrl, setCloudflareUrl] = useState<string>('')
   const [isDeployingCloudflare, setIsDeployingCloudflare] = useState<boolean>(false)
@@ -159,17 +160,17 @@ export default function SiteBuilderPage() {
       const res = await backendApi.publishToCloudflare(botId, html, config.appName)
       if (res && res.url) {
         setCloudflareUrl(res.url)
-        alert(res.message || `Loyiha muvaffaqiyatli nashr etildi!\nHavola: ${res.url}`)
+        setToast({ message: `Сайт успешно опубликован на Cloudflare! Ссылка: ${res.url}`, type: 'success' })
       } else {
         const edgeUrl = getLiveSiteUrl(botId)
         setCloudflareUrl(edgeUrl)
-        alert(`Loyiha Mazaika Edge serverida faol!\nHavola: ${edgeUrl}`)
+        setToast({ message: `Сайт активен на сервере Mazaika Edge! Ссылка: ${edgeUrl}`, type: 'success' })
       }
     } catch (err) {
       console.error('Cloudflare deploy error:', err)
       const edgeUrl = getLiveSiteUrl(botId)
       setCloudflareUrl(edgeUrl)
-      alert(`Loyiha Mazaika Edge serverida faol!\nHavola: ${edgeUrl}`)
+      setToast({ message: `Сайт активен на сервере Mazaika Edge! Ссылка: ${edgeUrl}`, type: 'success' })
     } finally {
       setIsDeployingCloudflare(false)
     }
@@ -180,10 +181,16 @@ export default function SiteBuilderPage() {
     if (botId) setProjectId(botId)
   }, [botId, setProjectId])
 
-  // Automatically switch to 'code' tab when AI starts generating
+  // Track generation completion to automatically switch back to 'preview'
+  const wasGeneratingRef = useRef(false)
   useEffect(() => {
     if (isGenerating) {
-      setActiveTab('code')
+      wasGeneratingRef.current = true
+    } else if (wasGeneratingRef.current) {
+      wasGeneratingRef.current = false
+      setActiveTab('preview') // Always return to visual preview!
+      setToast({ message: 'Сайт успешно сгенерирован и готов к просмотру!', type: 'success' })
+      setTimeout(() => setToast(null), 4000)
     }
   }, [isGenerating])
 
@@ -262,7 +269,8 @@ export default function SiteBuilderPage() {
       const compressed = await compressImage(file)
       setPendingImage(compressed)
     } catch (err) {
-      alert('Rasm yuklashda xatolik yuz berdi')
+      setToast({ message: 'Ошибка при загрузке изображения', type: 'error' })
+      setTimeout(() => setToast(null), 3000)
     }
     e.target.value = ''
   }
@@ -275,15 +283,24 @@ export default function SiteBuilderPage() {
     setPromptInput('')
     setPendingImage(null)
     if (textareaRef.current) textareaRef.current.style.height = '44px'
+
+    const currentCode = config?.source_code || ''
+    const hasExistingCode = currentCode.trim().length > 50
+    const isExplicitNew = /(yarat|tuz|yangi|boshla|sozla|qur|создай|сделай|разработай|новый|с нуля|сгенерируй|create|build|generate|new|start)/i.test(msg)
+    const isExplicitEdit = /(o'zgartir|qo'sh|rang|almashtir|tahrirla|yangila|olib tashla|o'chir|tuzat|измени|поменяй|добавь|удали|исправь|обнови|перекрась|edit|change|update|modify|add|remove|fix)/i.test(msg)
+
+    const mode: 'FULL_GENERATION' | 'PATCH' = (hasExistingCode && (isExplicitEdit || !isExplicitNew))
+      ? 'PATCH'
+      : 'FULL_GENERATION'
     
     await sendMessage(
       msg,
-      'FULL_GENERATION',
+      mode,
       'site_only',
       image?.base64,
       image?.mimeType
     )
-  }, [promptInput, pendingImage, isGenerating, sendMessage])
+  }, [promptInput, pendingImage, isGenerating, sendMessage, config])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -308,9 +325,14 @@ export default function SiteBuilderPage() {
         await updateBot(botId, { name: config.appName })
       }
       setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 3000)
+      setToast({ message: 'Сайт успешно сохранен!', type: 'success' })
+      setTimeout(() => {
+        setSaveSuccess(false)
+        setToast(null)
+      }, 3000)
     } catch (e) {
-      alert('Saqlashda xatolik yuz berdi!')
+      setToast({ message: 'Ошибка при сохранении!', type: 'error' })
+      setTimeout(() => setToast(null), 3000)
     } finally {
       setIsSaving(false)
     }
@@ -563,28 +585,38 @@ export default function SiteBuilderPage() {
         {/* Canvas Controls Bar */}
         <div className="sb-canvas-controls">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* Code / Preview Switcher */}
+            {/* Code / Preview / Split Switcher */}
             <div className="sb-toggle-group">
               <button 
                 className={`sb-toggle-btn ${activeTab === 'preview' ? 'active preview' : ''}`}
                 onClick={() => setActiveTab('preview')}
+                title="Визуальный интерактивный предпросмотр сайта"
               >
                 <Globe size={14} />
-                <span>Ko'rinish</span>
+                <span>Предпросмотр</span>
               </button>
               <button 
                 className={`sb-toggle-btn ${activeTab === 'code' ? 'active code' : ''}`}
                 onClick={() => setActiveTab('code')}
+                title="Редактор исходного HTML/CSS/JS кода"
               >
                 <Code size={14} />
-                <span>Kod (Monaco)</span>
+                <span>Код</span>
+              </button>
+              <button 
+                className={`sb-toggle-btn split ${activeTab === 'split' ? 'active' : ''}`}
+                onClick={() => setActiveTab('split')}
+                title="Код и предпросмотр бок о бок на одном экране"
+              >
+                <Zap size={14} />
+                <span>Сплит</span>
               </button>
             </div>
 
             {config.source_code && (
               <span style={{ fontSize: 11, color: '#10B981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 20, padding: '3px 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }} />
-                <span>{config.appName || 'Sayt'} Tayyor</span>
+                <span>{config.appName || 'Сайт'} готов</span>
               </span>
             )}
           </div>
@@ -597,14 +629,14 @@ export default function SiteBuilderPage() {
                 onClick={() => setDeviceMode('desktop')}
               >
                 <Laptop size={14} />
-                <span>Kompyuter</span>
+                <span>Компьютер</span>
               </button>
               <button 
                 className={`sb-toggle-btn ${deviceMode === 'mobile' ? 'active' : ''}`}
                 onClick={() => setDeviceMode('mobile')}
               >
                 <Smartphone size={14} />
-                <span>Telefon</span>
+                <span>Телефон</span>
               </button>
             </div>
           )}
@@ -757,6 +789,62 @@ export default function SiteBuilderPage() {
                 </div>
               </div>
             </div>
+          ) : activeTab === 'split' ? (
+            /* Split View: Left half Monaco Code, Right half Live Preview */
+            <div className="sb-split-container">
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', borderRight: '1px solid rgba(255,255,255,0.08)', background: '#090B12', overflow: 'hidden' }}>
+                <div style={{ height: 38, background: '#090B12', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ fontSize: 12, color: '#C084FC', fontWeight: 600 }}>
+                    💻 Исходный код ({activeFile})
+                  </div>
+                </div>
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <Editor
+                    height="100%"
+                    language={activeFile.endsWith('.html') ? 'html' : activeFile.endsWith('.css') ? 'css' : activeFile.endsWith('.js') ? 'javascript' : 'html'}
+                    theme="vs-dark"
+                    value={config.files ? (config.files[activeFile] || '') : (config.source_code || '')}
+                    onChange={(value) => {
+                      const files = config.files || { 'index.html': config.source_code || '' }
+                      setConfig(prev => ({
+                        ...prev,
+                        files: { ...files, [activeFile]: value || '' },
+                        source_code: activeFile === 'index.html' ? (value || '') : prev.source_code
+                      }))
+                    }}
+                    options={{ minimap: { enabled: false }, fontSize: 13, wordWrap: 'on' }}
+                  />
+                </div>
+              </div>
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#07090E', overflow: 'hidden' }}>
+                <div className="sb-browser-header">
+                  <div className="sb-traffic-lights">
+                    <div className="sb-dot red" />
+                    <div className="sb-dot yellow" />
+                    <div className="sb-dot green" />
+                  </div>
+                  <div className="sb-browser-url-bar">
+                    <span className="lock">🔒</span>
+                    <span>{cloudflareUrl || (botId ? getLiveSiteUrl(botId) : 'https://mazaika.app/sites/preview')}</span>
+                  </div>
+                  <div className="sb-browser-actions">
+                    <button onClick={() => setUpdateCounter(c => c + 1)} title="Обновить" style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer' }}>
+                      <RefreshCw size={13} />
+                    </button>
+                  </div>
+                </div>
+                <div className="sb-preview-viewport" style={{ background: '#07090E' }}>
+                  <iframe
+                    key={`split_${updateCounter}`}
+                    srcDoc={getSafeSourceCode(generateUnifiedHtml(config.files, config.source_code))}
+                    className="sb-site-iframe"
+                    title="Live Site Preview Split"
+                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                    style={{ width: '100%', height: '100%', border: 'none', background: 'transparent', backgroundColor: '#07090E' }}
+                  />
+                </div>
+              </div>
+            </div>
           ) : !Boolean(generateUnifiedHtml(config.files, config.source_code)?.trim()?.length > 30) ? (
             /* HOLOGRAPHIC WEBSITE STUDIO HUB (When empty - Solves Screenshot 3) */
             <div className="sb-empty-hub">
@@ -822,13 +910,14 @@ export default function SiteBuilderPage() {
                   </button>
                 </div>
               </div>
-              <div className="sb-preview-viewport">
+              <div className="sb-preview-viewport" style={{ background: '#07090E' }}>
                 <iframe
                   key={`desktop_${updateCounter}`}
                   srcDoc={getSafeSourceCode(generateUnifiedHtml(config.files, config.source_code))}
                   className="sb-site-iframe"
                   title="Live Site Preview"
                   sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                  style={{ width: '100%', height: '100%', border: 'none', background: 'transparent', backgroundColor: '#07090E' }}
                 />
               </div>
             </div>
@@ -911,6 +1000,31 @@ export default function SiteBuilderPage() {
             console.log(`Connected site ${botId} to bot ${connectedBotId} (${connectedBotName})`)
           }}
         />
+        {/* In-App Modern Glass Toast */}
+        {toast && (
+          <div style={{
+            position: 'fixed',
+            top: 24,
+            right: 24,
+            zIndex: 99999,
+            background: toast.type === 'error' ? 'rgba(239,68,68,0.92)' : 'rgba(13,17,26,0.96)',
+            border: `1px solid ${toast.type === 'error' ? '#ef4444' : '#10b981'}`,
+            color: '#fff',
+            padding: '12px 20px',
+            borderRadius: 16,
+            boxShadow: '0 10px 35px rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(20px)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            fontSize: 13,
+            fontWeight: 600,
+            animation: 'fadeIn 0.2s ease-out'
+          }}>
+            <span>{toast.type === 'error' ? '⚠️' : '✅'}</span>
+            <span>{toast.message}</span>
+          </div>
+        )}
       </div>
     </div>
   )

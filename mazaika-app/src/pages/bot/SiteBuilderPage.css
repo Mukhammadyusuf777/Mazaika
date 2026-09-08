@@ -1035,3 +1035,38 @@
     height: 50vh;
   }
 }
+
+/* Split View Styles */
+.sb-toggle-btn.split {
+  color: #C084FC;
+}
+.sb-toggle-btn.split.active {
+  background: rgba(168, 85, 247, 0.22);
+  color: #E9D5FF;
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+.sb-split-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100%;
+  width: 100%;
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.sb-site-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent !important;
+  background-color: #07090E !important;
+}
+
+@media (max-width: 900px) {
+  .sb-split-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+}
