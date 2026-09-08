@@ -119,7 +119,29 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
             state = { variables: {}, waitingFor: null };
             const parts = text.trim().split(/\s+/);
             if (parts.length > 1) {
-                state.variables['start_payload'] = parts[1];
+                const payload = parts[1];
+                state.variables['start_payload'] = payload;
+                if (payload.startsWith('ref_')) {
+                    const referrerId = payload.substring(4);
+                    state.variables['referrer_id'] = referrerId;
+                    try {
+                        const contactRef = this.firebaseService.db.collection('bots').doc(botId).collection('contacts').doc(contact.id);
+                        const contactDoc = await contactRef.get();
+                        const contactData = contactDoc.data() || {};
+                        if (!contactData.referredBy && referrerId !== contact.id && referrerId !== telegramId) {
+                            await contactRef.update({ referredBy: referrerId, updatedAt: new Date() });
+                            const refDocRef = this.firebaseService.db.collection('bots').doc(botId).collection('contacts').doc(referrerId);
+                            const refSnap = await refDocRef.get();
+                            if (refSnap.exists) {
+                                const refData = refSnap.data() || {};
+                                await refDocRef.update({ referralCount: (refData.referralCount || 0) + 1 });
+                            }
+                        }
+                    }
+                    catch (refErr) {
+                        this.logger.error(`Referral tracking error: ${refErr.message}`);
+                    }
+                }
             }
             currentNode = nodes.find(n => n.type === 'start');
             nextNode = currentNode;
@@ -220,7 +242,7 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 break;
             }
             visitedNodeIds.add(nextNode.id);
-            const { wait, stateUpdates } = await this.executeNodeAction(ctx, nextNode, contact.id, state.variables, botId, edges);
+            const { wait, stateUpdates } = await this.executeNodeAction(ctx, nextNode, contact.id, state.variables, botId, edges, bot);
             if (stateUpdates) {
                 state = { ...state, ...stateUpdates };
             }
@@ -237,6 +259,7 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
         const workflow = await this.firebaseService.getBotWorkflow(botId);
         if (!workflow)
             return;
+        const bot = await this.firebaseService.getBot(botId);
         const nodes = JSON.parse(workflow.nodes);
         const edges = JSON.parse(workflow.edges);
         const contactSnap = await this.firebaseService.db.collection('bots').doc(botId).collection('contacts').doc(contactId).get();
@@ -255,7 +278,7 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 break;
             }
             visitedNodeIds.add(nextNode.id);
-            const { wait, stateUpdates } = await this.executeNodeAction(ctx, nextNode, contact.id, state.variables, botId, edges);
+            const { wait, stateUpdates } = await this.executeNodeAction(ctx, nextNode, contact.id, state.variables, botId, edges, bot);
             if (stateUpdates) {
                 state = { ...state, ...stateUpdates };
             }
@@ -346,7 +369,7 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
         }
         return null;
     }
-    async executeNodeAction(ctx, node, contactId, variables, botId, edges) {
+    async executeNodeAction(ctx, node, contactId, variables, botId, edges, bot) {
         try {
             if (node.type === 'start') {
                 const text = node.data?.text;
@@ -874,7 +897,7 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 }
                 return { wait: false };
             }
-            if (['payme', 'click', 'yookassa', 'cryptopay'].includes(node.type)) {
+            if (['payme', 'click', 'yookassa', 'cryptopay', 'uzumbank'].includes(node.type)) {
                 let title = node.data?.title || 'To\'lov';
                 for (const [k, v] of Object.entries(variables)) {
                     title = title.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
@@ -885,7 +908,7 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 }
                 const price = parseInt(rawPrice) || 0;
                 const providerToken = node.data?.providerToken;
-                const currency = node.type === 'yookassa' ? 'RUB' : 'UZS';
+                const currency = node.type === 'yookassa' ? 'RUB' : (node.type === 'cryptopay' ? 'USD' : 'UZS');
                 if (providerToken && price > 0) {
                     try {
                         await ctx.replyWithInvoice({
@@ -906,6 +929,35 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 }
                 else {
                     await ctx.reply(`[Hisob-faktura] To'lov sozlangan emas yoki narxi xato kiritilgan.`);
+                }
+                return { wait: false };
+            }
+            if (node.type === 'stars') {
+                let title = node.data?.title || 'Telegram Stars To\'lovi ⭐';
+                for (const [k, v] of Object.entries(variables)) {
+                    title = title.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                let rawPrice = node.data?.price || node.data?.stars || '10';
+                for (const [k, v] of Object.entries(variables)) {
+                    rawPrice = rawPrice.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                const starsAmount = Math.max(1, parseInt(rawPrice) || 10);
+                let description = node.data?.description || `${title} (${starsAmount} Stars ⭐)`;
+                try {
+                    await ctx.replyWithInvoice({
+                        title,
+                        description,
+                        payload: `stars_${contactId}_${Date.now()}`,
+                        provider_token: '',
+                        currency: 'XTR',
+                        prices: [{ label: title, amount: starsAmount }]
+                    });
+                    await this.firebaseService.addMessage(botId, contactId, `[Stars Invoice sent: ${title} - ${starsAmount} XTR]`, 'outbound');
+                    return { wait: true, stateUpdates: { waitingFor: 'payment' } };
+                }
+                catch (err) {
+                    this.logger.error(`Failed to send Telegram Stars invoice: ${err.message}`);
+                    await ctx.reply(`Telegram Stars to'lovini ochib bo'lmadi. Iltimos keyinroq urinib ko'ring.`);
                 }
                 return { wait: false };
             }
@@ -1210,6 +1262,353 @@ let WorkflowService = WorkflowService_1 = class WorkflowService {
                 catch (err) {
                     this.logger.error(`Failed to load vote leaders: ${err.message}`);
                     await ctx.reply("Reytingni yuklab bo'lmadi. Iltimos keyinroq urinib ko'ring.");
+                }
+                return { wait: false };
+            }
+            if (node.type === 'refCreate') {
+                let botUsername = bot?.username;
+                if (!botUsername) {
+                    try {
+                        const me = await ctx.telegram.getMe();
+                        botUsername = me.username;
+                    }
+                    catch (e) {
+                        botUsername = 'bot';
+                    }
+                }
+                const refLink = `https://t.me/${botUsername}?start=ref_${contactId}`;
+                let text = node.data?.text || "🔗 Sizning shaxsiy taklif havolangiz:\n{ref_link}\n\nUshbu havolani do'stlaringizga yuboring va har bir yangi a'zo uchun ball / chegirmalarga ega bo'ling!";
+                text = text.replace(/{ref_link}/g, refLink);
+                for (const [k, v] of Object.entries(variables)) {
+                    text = text.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                const shareText = node.data?.shareText || "Ushbu foydali botga qo'shiling!";
+                const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(shareText)}`;
+                await ctx.reply(text, {
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{ text: "📤 Do'stlarga ulashish", url: shareUrl }]
+                        ]
+                    }
+                });
+                await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
+                return { wait: false, stateUpdates: { variables: { ...variables, ref_link: refLink } } };
+            }
+            if (node.type === 'refCheck') {
+                let refCount = 0;
+                try {
+                    const contactDoc = await this.firebaseService.db.collection('bots').doc(botId).collection('contacts').doc(contactId).get();
+                    if (contactDoc.exists) {
+                        refCount = contactDoc.data()?.referralCount || 0;
+                    }
+                }
+                catch (e) {
+                    this.logger.error(`Error checking referrals: ${e.message}`);
+                }
+                const varName = node.data?.variable || 'ref_count';
+                let notify = node.data?.notifyUser !== false;
+                if (notify) {
+                    let text = node.data?.text || `📊 Sizning statistikangiz:\nSiz hozirgacha {ref_count} ta do'stingizni taklif qildingiz!`;
+                    text = text.replace(/{ref_count}/g, refCount.toString());
+                    for (const [k, v] of Object.entries(variables)) {
+                        text = text.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                    }
+                    await ctx.reply(text);
+                    await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
+                }
+                return { wait: false, stateUpdates: { variables: { ...variables, [varName]: refCount.toString(), ref_count: refCount.toString() } } };
+            }
+            if (node.type === 'refLeaders') {
+                try {
+                    const topSnap = await this.firebaseService.db.collection('bots').doc(botId).collection('contacts')
+                        .where('referralCount', '>', 0)
+                        .orderBy('referralCount', 'desc')
+                        .limit(10)
+                        .get();
+                    let text = "🏆 Eng ko'p do'stlarini taklif qilgan liderlar (Top-10):\n\n";
+                    if (topSnap.empty) {
+                        text += "Hozircha yetakchilar mavjud emas. Birinchi bo'lib do'stlaringizni taklif qiling!";
+                    }
+                    else {
+                        topSnap.docs.forEach((d, i) => {
+                            const data = d.data();
+                            const name = data.firstName || (data.username ? `@${data.username}` : `Foydalanuvchi #${i + 1}`);
+                            text += `${i + 1}. ${name} — ${data.referralCount} ta taklif\n`;
+                        });
+                    }
+                    await ctx.reply(text);
+                    await this.firebaseService.addMessage(botId, contactId, text, 'outbound');
+                }
+                catch (err) {
+                    this.logger.error(`Failed to get referral leaders: ${err.message}`);
+                    await ctx.reply("Reytingni yuklashda xatolik yuz berdi.");
+                }
+                return { wait: false };
+            }
+            if (node.type === 'photo') {
+                const url = node.data?.mediaUrl || node.data?.url || node.data?.fileId;
+                let caption = node.data?.caption || node.data?.text || '';
+                for (const [k, v] of Object.entries(variables)) {
+                    caption = caption.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                const buttons = node.data?.buttons || [];
+                const inlineKeyboard = buttons.map((btn, idx) => {
+                    const btnText = typeof btn === 'string' ? btn : (btn.text || 'Tugma');
+                    const parts = btnText.split('|');
+                    if (parts.length > 1) {
+                        const label = parts[0].trim();
+                        const urlVal = parts[1].trim();
+                        if (urlVal.startsWith('webapp:')) {
+                            return [{ text: label, web_app: { url: urlVal.substring(7).trim() } }];
+                        }
+                        else if (urlVal.startsWith('http://') || urlVal.startsWith('https://')) {
+                            return [{ text: label, url: urlVal }];
+                        }
+                    }
+                    return [{ text: btnText, callback_data: `btn_${idx}` }];
+                });
+                const extra = {};
+                if (caption)
+                    extra.caption = caption;
+                if (inlineKeyboard.length > 0) {
+                    extra.reply_markup = { inline_keyboard: inlineKeyboard };
+                }
+                if (url) {
+                    try {
+                        await ctx.replyWithPhoto(url, extra);
+                    }
+                    catch (e) {
+                        this.logger.error(`Photo sending failed: ${e.message}`);
+                        if (caption)
+                            await ctx.reply(caption, extra);
+                    }
+                }
+                else if (caption) {
+                    await ctx.reply(caption, extra);
+                }
+                if (buttons.length > 0)
+                    return { wait: true, stateUpdates: { waitingFor: 'button' } };
+                return { wait: false };
+            }
+            if (node.type === 'video') {
+                const url = node.data?.mediaUrl || node.data?.url || node.data?.fileId;
+                let caption = node.data?.caption || node.data?.text || '';
+                for (const [k, v] of Object.entries(variables)) {
+                    caption = caption.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                if (url) {
+                    try {
+                        await ctx.replyWithVideo(url, { caption: caption || undefined });
+                    }
+                    catch (e) {
+                        this.logger.error(`Video sending failed: ${e.message}`);
+                        if (caption)
+                            await ctx.reply(caption);
+                    }
+                }
+                return { wait: false };
+            }
+            if (node.type === 'document') {
+                const url = node.data?.mediaUrl || node.data?.url || node.data?.fileId;
+                let caption = node.data?.caption || node.data?.text || '';
+                for (const [k, v] of Object.entries(variables)) {
+                    caption = caption.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                if (url) {
+                    try {
+                        await ctx.replyWithDocument(url, { caption: caption || undefined });
+                    }
+                    catch (e) {
+                        this.logger.error(`Document sending failed: ${e.message}`);
+                        if (caption)
+                            await ctx.reply(caption);
+                    }
+                }
+                return { wait: false };
+            }
+            if (node.type === 'audio') {
+                const url = node.data?.mediaUrl || node.data?.url || node.data?.fileId;
+                let caption = node.data?.caption || node.data?.text || '';
+                for (const [k, v] of Object.entries(variables)) {
+                    caption = caption.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                if (url) {
+                    try {
+                        await ctx.replyWithAudio(url, { caption: caption || undefined });
+                    }
+                    catch (e) {
+                        this.logger.error(`Audio sending failed: ${e.message}`);
+                        if (caption)
+                            await ctx.reply(caption);
+                    }
+                }
+                return { wait: false };
+            }
+            if (node.type === 'sticker') {
+                const stickerId = node.data?.stickerId || node.data?.fileId || node.data?.url;
+                if (stickerId) {
+                    try {
+                        await ctx.replyWithSticker(stickerId);
+                    }
+                    catch (e) {
+                        this.logger.error(`Sticker sending failed: ${e.message}`);
+                    }
+                }
+                return { wait: false };
+            }
+            if (node.type === 'poll' || node.type === 'quiz') {
+                let question = node.data?.question || node.data?.text || 'Savol:';
+                for (const [k, v] of Object.entries(variables)) {
+                    question = question.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                const options = Array.isArray(node.data?.options) && node.data.options.length >= 2
+                    ? node.data.options
+                    : ['Variant A', 'Variant B'];
+                const isQuiz = node.type === 'quiz' || node.data?.isQuiz;
+                const correctId = parseInt(node.data?.correctOptionId) || 0;
+                try {
+                    await ctx.replyWithPoll(question, options, {
+                        is_anonymous: false,
+                        type: isQuiz ? 'quiz' : 'regular',
+                        correct_option_id: isQuiz ? Math.min(correctId, options.length - 1) : undefined
+                    });
+                }
+                catch (e) {
+                    this.logger.error(`Poll/quiz failed: ${e.message}`);
+                }
+                return { wait: false };
+            }
+            if (node.type === 'notifyOperator') {
+                const targetChatId = node.data?.chatId || node.data?.operatorId || bot?.ownerTelegramId;
+                let message = node.data?.message || node.data?.text || `🔔 Yangi murojaat!\nMijoz: ${contactId}\nTelefon: {user_phone}`;
+                for (const [k, v] of Object.entries(variables)) {
+                    message = message.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                if (targetChatId) {
+                    try {
+                        await ctx.telegram.sendMessage(targetChatId, message);
+                    }
+                    catch (e) {
+                        this.logger.error(`Failed to notify operator: ${e.message}`);
+                    }
+                }
+                return { wait: false };
+            }
+            if (node.type === 'notifyGroup' || node.type === 'notifyChannel') {
+                const targetChatId = node.data?.chatId || node.data?.channelId;
+                let message = node.data?.message || node.data?.text || '';
+                for (const [k, v] of Object.entries(variables)) {
+                    message = message.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                if (targetChatId && message) {
+                    try {
+                        await ctx.telegram.sendMessage(targetChatId, message);
+                    }
+                    catch (e) {
+                        this.logger.error(`Failed to send notification to ${targetChatId}: ${e.message}`);
+                    }
+                }
+                return { wait: false };
+            }
+            if (node.type === 'email_notify') {
+                let text = node.data?.text || 'Email bildirishnomasi';
+                for (const [k, v] of Object.entries(variables)) {
+                    text = text.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                this.logger.log(`[Email Notification for bot ${botId}]: ${text}`);
+                return { wait: false };
+            }
+            if (node.type === 'schedule' || node.type === 'reminder' || node.type === 'sequence') {
+                const amount = parseInt(node.data?.delayAmount) || parseInt(node.data?.hours) || 1;
+                const unit = node.data?.delayUnit || 'hours';
+                let ms = amount * 3600000;
+                if (unit === 'minutes')
+                    ms = amount * 60000;
+                else if (unit === 'seconds')
+                    ms = amount * 1000;
+                else if (unit === 'days')
+                    ms = amount * 86400000;
+                const executeAt = Date.now() + ms;
+                const nextNode = this.getNextNode(node, null, edges, [], {});
+                const nextNodeId = nextNode?.id || null;
+                await this.firebaseService.db.collection('bots').doc(botId).collection('timers').add({
+                    contactId,
+                    currentNodeId: node.id,
+                    nextNodeId,
+                    executeAt,
+                    createdAt: Date.now()
+                });
+                return { wait: true, stateUpdates: { waitingFor: 'timer' } };
+            }
+            if (node.type === 'aiReply' || node.type === 'aiAnalyze' || node.type === 'aiTranslate') {
+                const userPrompt = node.data?.text || variables.last_user_message || ctx.message?.text || 'Assalomu alaykum';
+                let systemPrompt = node.data?.prompt || "Siz Telegram bot yordamchisisiz. Foydalanuvchining savoliga qisqa, aniq va xushmuomala javob bering.";
+                if (node.type === 'aiTranslate') {
+                    const targetLang = node.data?.targetLang || 'uzbek';
+                    systemPrompt = `Translate the user's message accurately into ${targetLang}. Return only the translation.`;
+                }
+                else if (node.type === 'aiAnalyze') {
+                    systemPrompt = `Analyze the sentiment, intent, and key details of the user's input. Return a concise structured analysis.`;
+                }
+                let replyText = '';
+                if (process.env.GEMINI_API_KEY) {
+                    try {
+                        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+                        const res = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                system_instruction: { parts: [{ text: systemPrompt }] },
+                                contents: [{ parts: [{ text: userPrompt }] }]
+                            })
+                        });
+                        const data = await res.json();
+                        replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    }
+                    catch (e) {
+                        this.logger.error(`AI API call failed: ${e.message}`);
+                    }
+                }
+                if (!replyText) {
+                    replyText = `Mazaika AI: Xabaringiz qabul qilindi. Sizga qanday yordam bera olaman?`;
+                }
+                await ctx.reply(replyText);
+                await this.firebaseService.addMessage(botId, contactId, replyText, 'outbound');
+                return { wait: false, stateUpdates: { variables: { ...variables, ai_response: replyText } } };
+            }
+            if (node.type === 'aiImage') {
+                let prompt = node.data?.prompt || 'Beautiful digital art';
+                for (const [k, v] of Object.entries(variables)) {
+                    prompt = prompt.replace(new RegExp(`{${k}}`, 'g'), v !== undefined && v !== null ? v.toString() : '');
+                }
+                const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=800&height=800&nologo=true`;
+                try {
+                    await ctx.replyWithPhoto(imageUrl, { caption: `🎨 AI tomonidan yaratildi: ${prompt}` });
+                }
+                catch (e) {
+                    this.logger.error(`AI image failed: ${e.message}`);
+                }
+                return { wait: false };
+            }
+            if (node.type === 'amocrm' || node.type === 'bitrix') {
+                const webhookUrl = node.data?.webhookUrl || node.data?.url;
+                if (webhookUrl) {
+                    try {
+                        await fetch(webhookUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                crm: node.type,
+                                contactId,
+                                variables,
+                                timestamp: new Date().toISOString()
+                            })
+                        });
+                        this.logger.log(`${node.type} CRM webhook triggered for contact ${contactId}`);
+                    }
+                    catch (e) {
+                        this.logger.error(`${node.type} CRM failed: ${e.message}`);
+                    }
                 }
                 return { wait: false };
             }

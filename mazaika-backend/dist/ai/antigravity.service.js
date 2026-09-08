@@ -698,6 +698,36 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
     </div>
   </header>
 
+  <!-- Stories Bar (Instagram / Telegram Stories) -->
+  <section class="max-w-5xl mx-auto px-4 pt-3 pb-1 w-full overflow-x-auto scrollbar-none flex gap-3.5 items-center">
+    <div class="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0" onclick="openStory(0)">
+      <div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-cyan-400 via-blue-500 to-purple-600 animate-pulse">
+        <img src="${products[0].img}" class="w-full h-full rounded-full object-cover border-2 border-[#07090E]" />
+      </div>
+      <span class="text-[11px] text-slate-300 font-medium">${isRu ? "Хиты 🔥" : "Xitlar 🔥"}</span>
+    </div>
+    <div class="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0" onclick="openStory(1)">
+      <div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-amber-400 via-rose-500 to-pink-500">
+        <img src="${products[1].img}" class="w-full h-full rounded-full object-cover border-2 border-[#07090E]" />
+      </div>
+      <span class="text-[11px] text-slate-300 font-medium">${isRu ? "Скидки 🎁" : "Aksiya 🎁"}</span>
+    </div>
+    <div class="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0" onclick="openStory(2)">
+      <div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-emerald-400 to-cyan-500">
+        <img src="${products[2].img}" class="w-full h-full rounded-full object-cover border-2 border-[#07090E]" />
+      </div>
+      <span class="text-[11px] text-slate-300 font-medium">${isRu ? "Новинки ✨" : "Yangilar ✨"}</span>
+    </div>
+    <div class="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0" onclick="toggleWheelModal()">
+      <div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-yellow-400 to-amber-600 animate-bounce">
+        <div class="w-full h-full rounded-full bg-[#0D111A] flex items-center justify-center text-2xl border-2 border-[#07090E]">
+          🎡
+        </div>
+      </div>
+      <span class="text-[11px] text-amber-400 font-bold">${isRu ? "Рулетка 🎁" : "Yutuq 🎡"}</span>
+    </div>
+  </section>
+
   <!-- Hero Banner -->
   <section class="max-w-5xl mx-auto px-4 pt-6 pb-2 w-full">
     <div class="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-cyan-950/40 via-slate-900/60 to-purple-950/30 border border-cyan-500/20 glow-cyan">
@@ -798,6 +828,83 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
           <i class="fa-solid fa-paper-plane"></i>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Full-Screen Story Viewer Modal -->
+  <div id="storyModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="relative w-full max-w-sm h-[80vh] rounded-2xl overflow-hidden bg-slate-900 border border-white/20 flex flex-col justify-between p-4 shadow-2xl">
+      <div class="flex gap-1.5 z-10">
+        <div class="h-1 flex-1 bg-white/30 rounded-full overflow-hidden">
+          <div id="storyProgress0" class="h-full bg-white transition-all duration-300 w-0"></div>
+        </div>
+        <div class="h-1 flex-1 bg-white/30 rounded-full overflow-hidden">
+          <div id="storyProgress1" class="h-full bg-white transition-all duration-300 w-0"></div>
+        </div>
+        <div class="h-1 flex-1 bg-white/30 rounded-full overflow-hidden">
+          <div id="storyProgress2" class="h-full bg-white transition-all duration-300 w-0"></div>
+        </div>
+      </div>
+      
+      <button onclick="closeStory()" class="absolute top-7 right-4 z-20 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <img id="storyImage" src="" class="absolute inset-0 w-full h-full object-cover" />
+      <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40"></div>
+
+      <div class="relative z-10 mt-auto pt-6 text-white space-y-2">
+        <span id="storyTag" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-cyan-500 text-black">Aksiya</span>
+        <h3 id="storyTitle" class="text-lg font-bold"></h3>
+        <p id="storyDesc" class="text-xs text-slate-300"></p>
+        <button id="storyActionBtn" onclick="storyAddToCart()" class="w-full py-2.5 rounded-xl bg-cyan-500 text-black font-bold text-xs hover:bg-cyan-400 transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-cart-shopping"></i>
+          <span>${isRu ? "Заказать со скидкой" : "Chegirma bilan olish"}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wheel of Fortune Modal -->
+  <div id="wheelModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="relative w-full max-w-sm bg-[#0D111A] border border-cyan-500/30 rounded-3xl p-6 text-center space-y-4 shadow-2xl glow-cyan">
+      <button onclick="toggleWheelModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 text-slate-400 hover:text-white flex items-center justify-center">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="text-center space-y-1">
+        <span class="text-xs font-bold px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          🎡 ${isRu ? "Колесо Фортуны" : "Omad G'ildiragi"}
+        </span>
+        <h3 class="text-xl font-black text-white">${isRu ? "Крути и выигрывай!" : "Aylantiring va yuting!"}</h3>
+        <p class="text-xs text-slate-400">${isRu ? "Каждый участник гарантированно получает приз" : "Har bir ishtirokchi kafolatlangan sovg'a oladi"}</p>
+      </div>
+
+      <div class="relative w-64 h-64 mx-auto flex items-center justify-center">
+        <div class="absolute -top-2 z-20 text-red-500 text-2xl filter drop-shadow">▼</div>
+        <canvas id="wheelCanvas" width="256" height="256" class="rounded-full shadow-xl transition-transform duration-4000 ease-out"></canvas>
+      </div>
+
+      <div id="wheelPrizeBox" class="hidden p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-center">
+        <div class="text-xs text-slate-400">${isRu ? "Ваш выигрыш:" : "Sizning yutug'ingiz:"}</div>
+        <div id="wheelPrizeText" class="text-base font-black text-cyan-400"></div>
+      </div>
+
+      <button id="spinBtn" onclick="spinWheel()" class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-black font-black text-sm transition shadow-lg flex items-center justify-center gap-2">
+        <i class="fa-solid fa-gift"></i>
+        <span>${isRu ? "Вращать колесо!" : "G'ildirakni aylantirish!"}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Live Social Proof Toast -->
+  <div id="socialProofToast" class="fixed bottom-4 left-4 z-40 bg-[#0D111A]/95 border border-cyan-500/30 backdrop-blur-md rounded-2xl p-3 shadow-2xl flex items-center gap-3 max-w-xs transition-all duration-500 -translate-x-full opacity-0 pointer-events-none">
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white text-lg flex-shrink-0">
+      🔥
+    </div>
+    <div class="text-left leading-tight">
+      <div id="socialProofText" class="text-xs font-bold text-white"></div>
+      <div id="socialProofSub" class="text-[10px] text-slate-400"></div>
     </div>
   </div>
 
@@ -978,6 +1085,209 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
       }
     }
 
+    // LocalStorage Cart Persistence
+    try {
+      const savedCart = localStorage.getItem('mazaika_cart_${appName.replace(/\s+/g, '_')}');
+      if (savedCart) {
+        cart = JSON.parse(savedCart);
+        updateCartState();
+      }
+    } catch(e) {}
+
+    // --- STORIES COMPONENT JS ---
+    const STORIES_DATA = [
+      {
+        tag: '${isRu ? "Хит продаж 🔥" : "Ommabop xit 🔥"}',
+        title: '${products[0].title}',
+        desc: '${isRu ? "Лучший выбор наших покупателей со скидкой 15% сегодня!" : "Xaridorlarimizning sevimli tanlovi, bugun 15% chegirma bilan!"}',
+        img: '${products[0].img}',
+        prodId: ${products[0].id}
+      },
+      {
+        tag: '${isRu ? "Эксклюзив ✨" : "Eksklyuziv ✨"}',
+        title: '${products[1].title}',
+        desc: '${isRu ? "Новая коллекция премиального качества с быстрой доставкой." : "Kafolatlangan premium sifatli yangi to'plam."}',
+        img: '${products[1].img}',
+        prodId: ${products[1].id}
+      },
+      {
+        tag: '${isRu ? "Специальная цена 🎁" : "Aksiya narxi 🎁"}',
+        title: '${products[2].title}',
+        desc: '${isRu ? "Ограниченное количество на складе! Успейте заказать." : "Omborda cheklangan miqdorda qoldi! Buyurtma berishga shoshiling."}',
+        img: '${products[2].img}',
+        prodId: ${products[2].id}
+      }
+    ];
+
+    let currentStoryIdx = 0;
+    let storyTimer = null;
+
+    function openStory(idx) {
+      currentStoryIdx = idx;
+      const modal = document.getElementById('storyModal');
+      modal.classList.remove('hidden');
+      loadStoryContent();
+    }
+
+    function closeStory() {
+      const modal = document.getElementById('storyModal');
+      modal.classList.add('hidden');
+      if (storyTimer) clearTimeout(storyTimer);
+    }
+
+    function loadStoryContent() {
+      const story = STORIES_DATA[currentStoryIdx];
+      document.getElementById('storyImage').src = story.img;
+      document.getElementById('storyTag').innerText = story.tag;
+      document.getElementById('storyTitle').innerText = story.title;
+      document.getElementById('storyDesc').innerText = story.desc;
+
+      [0, 1, 2].forEach(i => {
+        const bar = document.getElementById('storyProgress' + i);
+        if (i < currentStoryIdx) bar.style.width = '100%';
+        else if (i === currentStoryIdx) bar.style.width = '100%';
+        else bar.style.width = '0%';
+      });
+
+      if (storyTimer) clearTimeout(storyTimer);
+      storyTimer = setTimeout(() => {
+        if (currentStoryIdx < STORIES_DATA.length - 1) {
+          openStory(currentStoryIdx + 1);
+        } else {
+          closeStory();
+        }
+      }, 5000);
+    }
+
+    function storyAddToCart() {
+      const story = STORIES_DATA[currentStoryIdx];
+      addToCart(story.prodId);
+      closeStory();
+      toggleCart();
+    }
+
+    // --- WHEEL OF FORTUNE GAMIFICATION JS ---
+    const PRIZES = [
+      '${isRu ? "Скидка 10%" : "10% Chegirma"}',
+      '${isRu ? "Бесплатная доставка" : "Bepul yetkazish"}',
+      '${isRu ? "Скидка 20%" : "20% Chegirma"}',
+      '${isRu ? "Секретный подарок 🎁" : "Sirli sovg'a 🎁"}',
+      '${isRu ? "Скидка 15%" : "15% Chegirma"}',
+      '${isRu ? "Промокод 50K" : "50 000 so'm kupon"}'
+    ];
+
+    let isSpinning = false;
+    let wheelDrawn = false;
+    let currentRotation = 0;
+
+    function toggleWheelModal() {
+      const modal = document.getElementById('wheelModal');
+      modal.classList.toggle('hidden');
+      if (!wheelDrawn && !modal.classList.contains('hidden')) {
+        setTimeout(drawWheel, 100);
+        wheelDrawn = true;
+      }
+    }
+
+    function drawWheel() {
+      const canvas = document.getElementById('wheelCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const numSegments = PRIZES.length;
+      const arc = (2 * Math.PI) / numSegments;
+      const colors = ['#00D9FF', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6', '#3B82F6'];
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < numSegments; i++) {
+        const angle = i * arc;
+        ctx.beginPath();
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.moveTo(128, 128);
+        ctx.arc(128, 128, 124, angle, angle + arc);
+        ctx.fill();
+        ctx.strokeStyle = '#07090E';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(128, 128);
+        ctx.rotate(angle + arc / 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 10px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(PRIZES[i], 114, 4);
+        ctx.restore();
+      }
+    }
+
+    function spinWheel() {
+      if (isSpinning) return;
+      isSpinning = true;
+      const btn = document.getElementById('spinBtn');
+      btn.disabled = true;
+      btn.classList.add('opacity-50');
+
+      const wonIndex = Math.floor(Math.random() * PRIZES.length);
+      const segmentAngle = 360 / PRIZES.length;
+      const extraSpins = 360 * 5;
+      const stopAngle = extraSpins + (360 - (wonIndex * segmentAngle) - segmentAngle / 2);
+
+      currentRotation += stopAngle;
+      const canvas = document.getElementById('wheelCanvas');
+      canvas.style.transform = 'rotate(' + currentRotation + 'deg)';
+
+      setTimeout(() => {
+        isSpinning = false;
+        btn.disabled = false;
+        btn.classList.remove('opacity-50');
+
+        const wonPrize = PRIZES[wonIndex];
+        const prizeBox = document.getElementById('wheelPrizeBox');
+        const prizeText = document.getElementById('wheelPrizeText');
+        prizeText.innerText = wonPrize;
+        prizeBox.classList.remove('hidden');
+
+        if (window.Telegram?.WebApp) {
+          window.Telegram.WebApp.sendData(JSON.stringify({
+            action: 'prize',
+            prize: wonPrize,
+            code: 'WIN' + Math.floor(100000 + Math.random() * 900000)
+          }));
+        }
+      }, 4200);
+    }
+
+    // --- LIVE SOCIAL PROOF TOASTS JS ---
+    const BUYERS = [
+      { name: '${isRu ? "Азиз (Ташкент)" : "Aziz (Toshkent)"}', item: '${products[0].title}', time: '${isRu ? "2 мин назад" : "2 daqiqa oldin"}' },
+      { name: '${isRu ? "Сардор (Самарканд)" : "Sardor (Samarqand)"}', item: '${products[1].title}', time: '${isRu ? "5 мин назад" : "5 daqiqa oldin"}' },
+      { name: '${isRu ? "Малика (Бухара)" : "Malika (Buxoro)"}', item: '${products[2].title}', time: '${isRu ? "1 мин назад" : "1 daqiqa oldin"}' },
+      { name: '${isRu ? "Дилноза (Андижан)" : "Dilnoza (Andijon)"}', item: '${products[3]?.title || products[0].title}', time: '${isRu ? "8 мин назад" : "8 daqiqa oldin"}' }
+    ];
+
+    let buyerIdx = 0;
+    const actionLabel = '${isRu ? "заказал(а)" : "xarid qildi"}';
+    const badgeLabel = '${isRu ? "Проверенный покупатель" : "Tasdiqlangan xaridor"}';
+    function cycleSocialProof() {
+      const toast = document.getElementById('socialProofToast');
+      if (!toast) return;
+      const b = BUYERS[buyerIdx];
+      document.getElementById('socialProofText').innerText = b.name + ' ' + actionLabel + ' ' + b.item;
+      document.getElementById('socialProofSub').innerText = '🔥 ' + b.time + ' • ' + badgeLabel;
+
+      toast.classList.remove('-translate-x-full', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('-translate-x-full', 'opacity-0');
+      }, 4500);
+
+      buyerIdx = (buyerIdx + 1) % BUYERS.length;
+    }
+
+    setTimeout(() => {
+      cycleSocialProof();
+      setInterval(cycleSocialProof, 14000);
+    }, 3000);
+
     renderProducts(ALL_PRODUCTS);
   </script>
 </body>
@@ -990,11 +1300,39 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
                 data: { label: isRu ? "Старт" : "Boshlash", emoji: "▶", color: "#10d974", text: "/start" }
             },
             {
+                id: "node_sub",
+                type: "subscription",
+                position: { x: 400, y: 150 },
+                data: {
+                    label: isRu ? "Проверка подписки" : "Kanalga a'zolik",
+                    emoji: "📢",
+                    color: "#8b5cf6",
+                    channel: "@mazaika_official"
+                }
+            },
+            {
+                id: "node_sub_msg",
+                type: "message",
+                position: { x: 400, y: 380 },
+                data: {
+                    label: isRu ? "Требуется подписка" : "Kanalga obuna",
+                    emoji: "⚠️",
+                    color: "#f59e0b",
+                    text: isRu
+                        ? "Для доступа к функциям бота, пожалуйста, подпишитесь на наш официальный Telegram канал:"
+                        : "Bot imkoniyatlaridan foydalanish uchun, iltimos rasmiy kanalimizga a'zo bo'ling:",
+                    buttons: [
+                        isRu ? "📢 Перейти в канал | https://t.me/mazaika_official" : "📢 Kanalga o'tish | https://t.me/mazaika_official",
+                        isRu ? "✅ Проверить подписку" : "✅ Tekshirish"
+                    ]
+                }
+            },
+            {
                 id: "node_2",
                 type: "message",
-                position: { x: 450, y: 150 },
+                position: { x: 750, y: 150 },
                 data: {
-                    label: isRu ? "Приветствие" : "Xush kelibsiz",
+                    label: isRu ? "Главное меню" : "Asosiy menyu",
                     emoji: "💬",
                     color: "#1e90ff",
                     text: isRu
@@ -1002,16 +1340,29 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
                         : `Assalomu alaykum! ${appName}ga xush kelibsiz. Quyidagi bo'limlardan birini tanlang:`,
                     buttons: [
                         isRu ? "🛍 Открыть Mini App" : "🛍 Mini App-ni ochish",
+                        isRu ? "🔗 Пригласить друзей" : "🔗 Do'stlarni taklif qilish",
                         isRu ? "🛒 Корзина" : "🛒 Savat",
-                        isRu ? "📞 Связаться с нами" : "📞 Bog'lanish",
-                        isRu ? "ℹ️ О нас" : "ℹ️ Biz haqimizda"
+                        isRu ? "📞 Связаться с нами" : "📞 Bog'lanish"
                     ]
+                }
+            },
+            {
+                id: "node_ref",
+                type: "refCreate",
+                position: { x: 1100, y: 150 },
+                data: {
+                    label: isRu ? "Реферальная ссылка" : "Referral havola",
+                    emoji: "🔗",
+                    color: "#00f5c4",
+                    text: isRu
+                        ? "🔗 Ваша персональная ссылка для приглашений:\n{ref_link}\n\nПриглашайте друзей и получайте бонусы за каждого участника!"
+                        : "🔗 Sizning taklif havolangiz:\n{ref_link}\n\nDo'stlaringizni taklif qiling va har bir do'stingiz uchun ballarga ega bo'ling!"
                 }
             },
             {
                 id: "node_3",
                 type: "phone",
-                position: { x: 150, y: 380 },
+                position: { x: 750, y: 380 },
                 data: {
                     label: isRu ? "Номер телефона" : "Telefon raqam",
                     emoji: "📱",
@@ -1023,7 +1374,7 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
             {
                 id: "node_4",
                 type: "condition",
-                position: { x: 450, y: 380 },
+                position: { x: 750, y: 600 },
                 data: {
                     label: isRu ? "Проверка" : "Tekshiruv",
                     emoji: "🔀",
@@ -1036,7 +1387,7 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
             {
                 id: "node_5",
                 type: "cart",
-                position: { x: 800, y: 380 },
+                position: { x: 1100, y: 380 },
                 data: {
                     label: isRu ? "Корзина" : "Savat",
                     emoji: "🛒",
@@ -1047,7 +1398,7 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
             {
                 id: "node_6",
                 type: "payme",
-                position: { x: 200, y: 620 },
+                position: { x: 450, y: 820 },
                 data: {
                     label: "Payme To'lov",
                     emoji: "💳",
@@ -1059,7 +1410,7 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
             {
                 id: "node_7",
                 type: "click",
-                position: { x: 500, y: 620 },
+                position: { x: 750, y: 820 },
                 data: {
                     label: "Click To'lov",
                     emoji: "💳",
@@ -1069,28 +1420,46 @@ Bot Edges: ${JSON.stringify(currentBotEdges.slice(0, 20))}`;
                 }
             },
             {
+                id: "node_stars",
+                type: "stars",
+                position: { x: 1050, y: 820 },
+                data: {
+                    label: "Telegram Stars ⭐",
+                    emoji: "⭐",
+                    color: "#fbbf24",
+                    price: 50,
+                    description: isRu ? "Оплата 50 Telegram Stars" : "Buyurtma uchun 50 Telegram Stars"
+                }
+            },
+            {
                 id: "node_8",
                 type: "message",
-                position: { x: 500, y: 840 },
+                position: { x: 750, y: 1040 },
                 data: {
                     label: isRu ? "Подтверждение" : "Tasdiq xabari",
                     emoji: "✅",
                     color: "#10d974",
                     text: isRu
-                        ? "Спасибо! Ваш заказ принят. Мы свяжемся с вами в течение 10 минут."
-                        : "Rahmat! Buyurtmangiz qabul qilindi. Tez orada operatorimiz siz bilan bog'lanadi."
+                        ? "Спасибо! Ваш заказ успешно принят. Мы свяжемся с вами в течение нескольких минут."
+                        : "Rahmat! Buyurtmangiz muvaffaqiyatli qabul qilindi. Tez orada operatorimiz siz bilan bog'lanadi."
                 }
             }
         ];
         const bot_edges = [
-            { id: "e1-2", source: "node_1", target: "node_2", animated: true },
+            { id: "e1-sub", source: "node_1", target: "node_sub", animated: true },
+            { id: "esub-2", source: "node_sub", target: "node_2", sourceHandle: "true" },
+            { id: "esub-msg", source: "node_sub", target: "node_sub_msg", sourceHandle: "false" },
+            { id: "emsg-sub", source: "node_sub_msg", target: "node_sub" },
+            { id: "e2-ref", source: "node_2", target: "node_ref" },
             { id: "e2-3", source: "node_2", target: "node_3" },
             { id: "e3-4", source: "node_3", target: "node_4" },
             { id: "e2-5", source: "node_2", target: "node_5" },
             { id: "e4-6", source: "node_4", target: "node_6" },
             { id: "e4-7", source: "node_4", target: "node_7" },
+            { id: "e4-stars", source: "node_4", target: "node_stars" },
             { id: "e6-8", source: "node_6", target: "node_8" },
-            { id: "e7-8", source: "node_7", target: "node_8" }
+            { id: "e7-8", source: "node_7", target: "node_8" },
+            { id: "estars-8", source: "node_stars", target: "node_8" }
         ];
         const bot_code = `// =============================================
 // ${appName.toUpperCase()} TELEGRAM BOT SERVER
