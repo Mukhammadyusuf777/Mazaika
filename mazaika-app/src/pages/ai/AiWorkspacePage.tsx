@@ -23,7 +23,7 @@ export default function AiWorkspacePage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuthStore()
-  const { chats, isLoading, sendMessage, activeConfig, setActiveConfig, clearMessages, projectId, setProjectId } = useChatStore()
+  const { chats, isLoading, sendMessage, activeConfig, setActiveConfig, clearMessages, projectId, setProjectId, startNewChat } = useChatStore()
   const messages = chats[projectId] || []
   const isGenerating = isLoading
   const activeProjectId = projectId
@@ -98,7 +98,7 @@ export default function AiWorkspacePage() {
     setImageBase64(null)
   }
 
-  const handleSendPrompt = async (textToUse?: string) => {
+  const handleSendPrompt = async (textToUse?: string, forceNew = false) => {
     const text = textToUse || promptInput
     if (!text.trim() || isGenerating) return
     if (!textToUse) setPromptInput('')
@@ -107,6 +107,10 @@ export default function AiWorkspacePage() {
     const imgMime = imageMimeType || undefined
     setImagePreview(null)
     setImageBase64(null)
+
+    if (forceNew) {
+      startNewChat('project')
+    }
 
     await sendMessage(text, 'FULL_GENERATION', aiTargetEntity, imgB64, imgMime)
   }
@@ -336,10 +340,10 @@ export default function AiWorkspacePage() {
             <div className="drawer-list">
               <div 
                 className="drawer-item new-draft"
-                onClick={() => { switchProject('default', null); setDrawerOpen(false) }}
+                onClick={() => { startNewChat('project'); setDrawerOpen(false) }}
               >
                 <Plus size={16} />
-                <span>Yangi Loyiha (Qoralama)</span>
+                <span>+ Yangi Loyiha (Toza chat)</span>
               </div>
               {projects.map(p => (
                 <div 
@@ -416,6 +420,30 @@ export default function AiWorkspacePage() {
             </button>
           )}
 
+          <button
+            className="topbar-new-chat-btn"
+            onClick={() => startNewChat('project')}
+            title="Yangi toza loyiha va chat ochish"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 14px',
+              borderRadius: '8px',
+              fontSize: '12px',
+              fontWeight: 600,
+              background: 'linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(168, 85, 247, 0.2))',
+              border: '1px solid rgba(0, 217, 255, 0.4)',
+              color: '#00D9FF',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              boxShadow: '0 0 15px rgba(0, 217, 255, 0.15)'
+            }}
+          >
+            <Plus size={14} />
+            <span>+ Yangi Loyiha</span>
+          </button>
+
           <button className="topbar-clear-btn" onClick={clearMessages} title="Chatni tozalash">
             <Trash2 size={15} />
             <span>Tozalash</span>
@@ -446,7 +474,10 @@ export default function AiWorkspacePage() {
               <button
                 key={tmpl.id}
                 className="preset-chip-btn"
-                onClick={() => handleSendPrompt(tmpl.prompt)}
+                onClick={() => {
+                  startNewChat('template')
+                  handleSendPrompt(tmpl.prompt, false)
+                }}
               >
                 <span>{tmpl.emoji}</span>
                 <span>{tmpl.title}</span>
@@ -775,7 +806,10 @@ console.log('Bot muvaffaqiyatli ishga tushdi!');`}
                 <div className="holo-starters-grid">
                   <div 
                     className="holo-starter-card"
-                    onClick={() => handleSendPrompt(PRESET_TEMPLATES[0].prompt)}
+                    onClick={() => {
+                      startNewChat('template')
+                      handleSendPrompt(PRESET_TEMPLATES[0].prompt, false)
+                    }}
                   >
                     <div className="card-top">
                       <span className="card-emoji">🛒</span>
@@ -788,7 +822,10 @@ console.log('Bot muvaffaqiyatli ishga tushdi!');`}
 
                   <div 
                     className="holo-starter-card"
-                    onClick={() => handleSendPrompt(PRESET_TEMPLATES[1].prompt)}
+                    onClick={() => {
+                      startNewChat('template')
+                      handleSendPrompt(PRESET_TEMPLATES[1].prompt, false)
+                    }}
                   >
                     <div className="card-top">
                       <span className="card-emoji">🍕</span>
@@ -801,7 +838,10 @@ console.log('Bot muvaffaqiyatli ishga tushdi!');`}
 
                   <div 
                     className="holo-starter-card"
-                    onClick={() => handleSendPrompt(PRESET_TEMPLATES[2].prompt)}
+                    onClick={() => {
+                      startNewChat('template')
+                      handleSendPrompt(PRESET_TEMPLATES[2].prompt, false)
+                    }}
                   >
                     <div className="card-top">
                       <span className="card-emoji">🎓</span>
@@ -814,7 +854,10 @@ console.log('Bot muvaffaqiyatli ishga tushdi!');`}
 
                   <div 
                     className="holo-starter-card"
-                    onClick={() => handleSendPrompt(PRESET_TEMPLATES[3].prompt)}
+                    onClick={() => {
+                      startNewChat('template')
+                      handleSendPrompt(PRESET_TEMPLATES[3].prompt, false)
+                    }}
                   >
                     <div className="card-top">
                       <span className="card-emoji">🤖</span>

@@ -7,7 +7,7 @@ export interface ChatMessage {
   id: string
   sender: 'user' | 'agent'
   text: string
-  timestamp: Date
+  timestamp: Date | string
   imageUrl?: string
   projectData?: any
   patchOperations?: PatchOperation[]
@@ -16,19 +16,21 @@ export interface ChatMessage {
 
 export interface ChatState {
   chats: Record<string, ChatMessage[]> // projectId -> messages
+  configs: Record<string, any> // projectId -> activeConfig
   isOpen: boolean
   isLoading: boolean
   projectId: string
+  activeConfig: any
   
   // Actions
-  setProjectId: (id: string) => void
+  setProjectId: (id: string, initialConfig?: any) => void
+  startNewChat: (prefix?: string) => string
   setIsOpen: (isOpen: boolean) => void
   toggleOpen: () => void
   addMessage: (msg: ChatMessage) => void
   clearMessages: () => void
   
   // Config state
-  activeConfig: any
   setActiveConfig: (config: any) => void
   applyPatchOperations: (ops: PatchOperation[]) => void
 
@@ -38,7 +40,7 @@ export interface ChatState {
     targetEntity?: 'bot_and_mini_app' | 'site_only',
     imageBase64?: string,
     imageMimeType?: string,
-    activeConfig?: any
+    customConfig?: any
   ) => Promise<AgentResponsePayload | null>
 
   migrateHistory: (oldId: string, newId: string) => void
@@ -46,14 +48,14 @@ export interface ChatState {
 }
 
 function makeWelcomeMessages(projectId: string): ChatMessage[] {
-  const isNew = projectId === 'default'
+  const isDraft = projectId.startsWith('draft_') || projectId === 'default'
   return [{
     id: 'welcome_' + Date.now(),
     sender: 'agent',
-    text: isNew
+    text: isDraft
       ? `Salom! Men **Mazaika AI** — sizning shaxsiy AI developeringizman! 🚀\n\nMen quyidagilarda yordam bera olaman:\n- 🤖 **Telegram bot** yaratish\n- 🌐 **Sayt** yaratish\n- ✨ **Mini App** yaratish\n\nG'oyangizni yozing yoki rasm yuboring!`
-      : `Bu loyiha uchun AI tayyor! ✨\n\nBotni yaxshilash yoki dizaynni o'zgartirish uchun yozing.`,
-    timestamp: new Date()
+      : `Loyiha uchun AI tayyor! ✨\n\nBotni yaxshilash, yangi sahifa qo'shish yoki dizaynni o'zgartirish uchun yozing.`,
+    timestamp: new Date().toISOString()
   }]
 }
 
@@ -63,12 +65,23 @@ export const useChatStore = create<ChatState>()(
       chats: {
         'default': makeWelcomeMessages('default')
       },
+      configs: {},
       isOpen: false,
       isLoading: false,
       projectId: 'default',
       activeConfig: null,
 
-      setActiveConfig: (config) => set({ activeConfig: typeof config === 'function' ? config(get().activeConfig) : config }),
+      setActiveConfig: (config) => set((state) => {
+        const currId = state.projectId
+        const newConf = typeof config === 'function' ? config(state.activeConfig) : config
+        return {
+          activeConfig: newConf,
+          configs: {
+            ...state.configs,
+            [currId]: newConf
+          }
+        }
+      }),
       
       applyPatchOperations: (ops) => {
         if (!ops || ops.length === 0) return
@@ -89,14 +102,33 @@ export const useChatStore = create<ChatState>()(
         }
       },
 
-      setProjectId: (id) => set((state) => {
-        if (state.projectId === id) return {}
-        const newChats = { ...state.chats }
-        if (!newChats[id]) {
-          newChats[id] = makeWelcomeMessages(id)
+      setProjectId: (id: string, initialConfig?: any) => set((state) => {
+        const existingMessages = state.chats[id] || makeWelcomeMessages(id)
+        const existingConfig = initialConfig !== undefined ? initialConfig : (state.configs[id] || null)
+        return { 
+          projectId: id, 
+          chats: { ...state.chats, [id]: existingMessages },
+          configs: { ...state.configs, [id]: existingConfig },
+          activeConfig: existingConfig
         }
-        return { projectId: id, chats: newChats }
       }),
+
+      startNewChat: (prefix = 'draft') => {
+        const newId = `${prefix}_${Date.now()}`
+        set((state) => ({
+          projectId: newId,
+          chats: {
+            ...state.chats,
+            [newId]: makeWelcomeMessages(newId)
+          },
+          configs: {
+            ...state.configs,
+            [newId]: null
+          },
+          activeConfig: null
+        }))
+        return newId
+      },
 
       setIsOpen: (isOpen) => set({ isOpen }),
       toggleOpen: () => set((state) => ({ isOpen: !state.isOpen })),
@@ -118,36 +150,51 @@ export const useChatStore = create<ChatState>()(
           chats: {
             ...state.chats,
             [id]: makeWelcomeMessages(id)
-          }
+          },
+          configs: {
+            ...state.configs,
+            [id]: null
+          },
+          activeConfig: null
         }
       }),
 
       migrateHistory: (oldId, newId) => set((state) => {
         const history = state.chats[oldId] || []
-        // We only migrate if there's actual history (more than just welcome message)
-        if (history.length <= 1) return {} 
+        const savedConfig = state.configs[oldId] || state.activeConfig
         
-        const newChats = { ...state.chats }
-        newChats[newId] = history.map(msg => ({ ...msg })) // clone
-        delete newChats[oldId] // optional, clean up workspace chat
+        const newChats = { ...state.chats, [newId]: history.map(msg => ({ ...msg })) }
+        const newConfigs = { ...state.configs, [newId]: savedConfig }
+
+        if (oldId !== newId && oldId.startsWith('draft_')) {
+          delete newChats[oldId]
+          delete newConfigs[oldId]
+        }
         
-        return { chats: newChats, projectId: newId }
+        return { 
+          chats: newChats, 
+          configs: newConfigs, 
+          projectId: newId,
+          activeConfig: savedConfig 
+        }
       }),
 
       clearAllChats: () => set({ 
         chats: { 'default': makeWelcomeMessages('default') },
+        configs: {},
         projectId: 'default',
         activeConfig: null
       }),
 
-      sendMessage: async (text, overrideMode, targetEntity, imageBase64, imageMimeType, activeConfig) => {
-        const { addMessage, projectId, chats } = get()
+      sendMessage: async (text, overrideMode, targetEntity, imageBase64, imageMimeType, customConfig) => {
+        const { addMessage, projectId, chats, activeConfig, configs, setActiveConfig } = get()
+        const configToUse = customConfig || activeConfig || configs[projectId] || null
         
         const userMsg: ChatMessage = {
           id: 'user_' + Date.now(),
           sender: 'user',
           text,
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
           imageUrl: imageBase64 ? `data:${imageMimeType || 'image/jpeg'};base64,${imageBase64}` : undefined
         }
         addMessage(userMsg)
@@ -166,7 +213,7 @@ export const useChatStore = create<ChatState>()(
             {
               executionMode: overrideMode,
               targetEntity: targetEntity,
-              currentConfig: activeConfig,
+              currentConfig: configToUse,
               chatHistory,
               imageBase64,
               imageMimeType
@@ -178,20 +225,22 @@ export const useChatStore = create<ChatState>()(
               id: 'agent_' + Date.now(),
               sender: 'agent',
               text: res.explanation || "Generatsiya yakunlandi.",
-              timestamp: new Date(),
+              timestamp: new Date().toISOString(),
               projectData: res.execution_mode === 'FULL_GENERATION' ? res : undefined,
               patchOperations: res.execution_mode === 'PATCH' ? res.patch_operations : undefined
             }
             addMessage(agentMsg)
             
-            // ✅ AUTO-SYNC: Update activeConfig on FULL_GENERATION
+            // ✅ AUTO-SYNC: Update activeConfig and persist in configs[projectId] on FULL_GENERATION
             if (res.execution_mode === 'FULL_GENERATION' && res.project_data) {
-              const { activeConfig, setActiveConfig } = get()
-              setActiveConfig({
-                ...activeConfig,
+              const mergedConfig = {
+                ...(configToUse || {}),
                 ...res.project_data,
+                source_code: res.project_data.source_code || res.project_data.html || '',
+                files: res.project_data.files || { 'index.html': res.project_data.source_code || res.project_data.html || '' },
                 has_more: res.project_data.has_more
-              })
+              }
+              setActiveConfig(mergedConfig)
             }
             // ✅ AUTO-SYNC: Update activeConfig on PATCH
             if (res.execution_mode === 'PATCH' && res.patch_operations) {
@@ -200,12 +249,12 @@ export const useChatStore = create<ChatState>()(
             }
           }
           return res
-        } catch (e) {
+        } catch (e: any) {
           addMessage({
             id: 'err_' + Date.now(),
             sender: 'agent',
-            text: "Xatolik yuz berdi. Iltimos qayta urinib ko'ring.",
-            timestamp: new Date()
+            text: `Xatolik yuz berdi: ${e?.message || 'Qayta urinib ko\'ring'}.`,
+            timestamp: new Date().toISOString()
           })
           return null
         } finally {
@@ -214,9 +263,18 @@ export const useChatStore = create<ChatState>()(
       }
     }),
     {
-      name: 'mazaika-chat-storage', // name of the item in the storage (must be unique)
-      storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
-      partialize: (state) => ({ chats: state.chats, projectId: state.projectId }),
+      name: 'mazaika-chat-storage-v2', // bump version to avoid legacy contaminated state
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({ 
+        chats: state.chats, 
+        configs: state.configs, 
+        projectId: state.projectId 
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state && state.projectId && state.configs) {
+          state.activeConfig = state.configs[state.projectId] || null
+        }
+      }
     }
   )
 )

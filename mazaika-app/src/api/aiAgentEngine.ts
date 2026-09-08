@@ -44,6 +44,7 @@ export async function queryAntigravityAgent(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         prompt,
+        executionMode: contextMeta?.executionMode,
         currentHtml: contextMeta?.currentConfig?.source_code || contextMeta?.currentConfig?.html || '',
         html: contextMeta?.currentConfig?.source_code || contextMeta?.currentConfig?.html || '',
         siteHtml: contextMeta?.currentConfig?.source_code || contextMeta?.currentConfig?.html || '',
@@ -104,15 +105,28 @@ export async function queryAntigravityAgent(
         data.site_code ||
         data.code ||
         ''
-      const targetEntity = (htmlCode || data.type === 'site') ? 'site_only' : (data.target_entity || 'site_only')
+      let targetEntity: any = 'bot_and_mini_app'
+      if (data.target_entity) {
+        targetEntity = data.target_entity
+      } else if (contextMeta?.targetEntity) {
+        targetEntity = contextMeta.targetEntity
+      } else if (data.type === 'site' || projectData.type === 'site') {
+        targetEntity = 'site_only'
+      } else if (data.type === 'bot' || projectData.type === 'bot') {
+        targetEntity = 'bot'
+      }
+
       const isRu = /[а-яА-ЯёЁ]/.test(prompt)
+      const defaultExplanation = isRu
+        ? (targetEntity === 'bot_and_mini_app'
+            ? 'Ваш Telegram бот и Mini App успешно созданы! 🚀 Вы можете протестировать их в правой панели.'
+            : 'Ваш проект успешно создан! 🚀 Вы можете просмотреть его в панели справа.')
+        : (targetEntity === 'bot_and_mini_app'
+            ? 'Telegram bot va Mini App muvaffaqiyatli yaratildi! 🚀 O\'ng tomondagi jonli oynada ko\'rishingiz mumkin.'
+            : 'Loyiha muvaffaqiyatli yaratildi! 🚀 O\'ng tomondagi jonli oynada ko\'rishingiz mumkin.')
 
       return {
-        explanation: data.explanation || (
-          isRu
-            ? 'Ваш сайт успешно создан! 🚀 Вы можете просмотреть его в панели справа.'
-            : 'Sayt muvaffaqiyatli yaratildi! 🚀 O\'ng tomondagi jonli oynada ko\'rishingiz mumkin.'
-        ),
+        explanation: data.explanation || defaultExplanation,
         execution_mode: 'FULL_GENERATION',
         target_entity: targetEntity,
         project_data: {
@@ -121,10 +135,11 @@ export async function queryAntigravityAgent(
           theme: projectData.theme || 'glassmorphism',
           themeColor: projectData.themeColor || '#1e90ff',
           source_code: htmlCode,
+          files: projectData.files || data.files || (htmlCode ? { 'index.html': htmlCode } : {}),
           blocks: projectData.blocks || [],
-          // ✅ FIX: bot_edges was missing — now preserved
-          bot_blocks: projectData.bot_blocks || [],
-          bot_edges: projectData.bot_edges || [],
+          bot_blocks: projectData.bot_blocks || data.bot_blocks || [],
+          bot_edges: projectData.bot_edges || data.bot_edges || [],
+          bot_code: projectData.bot_code || data.bot_code || '',
           site_blocks: projectData.site_blocks || [],
           has_more: data.has_more || false
         }

@@ -746,7 +746,7 @@ export default function SiteBuilderPage() {
                 </div>
               </div>
             </div>
-          ) : !config.source_code ? (
+          ) : !Boolean(generateUnifiedHtml(config.files, config.source_code)?.trim()?.length > 30) ? (
             /* HOLOGRAPHIC WEBSITE STUDIO HUB (When empty - Solves Screenshot 3) */
             <div className="sb-empty-hub">
               <div className="sb-hub-center">
@@ -832,7 +832,7 @@ export default function SiteBuilderPage() {
                 <iframe
                   key={`mobile_${updateCounter}`}
                   srcDoc={getSafeSourceCode(generateUnifiedHtml(config.files, config.source_code))}
-                  style={{ width: '100%', flex: 1, border: 'none', background: '#FFF' }}
+                  style={{ width: '100%', flex: 1, border: 'none', background: '#0B0E17' }}
                   title="Mobile Site Preview"
                   sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
                 />

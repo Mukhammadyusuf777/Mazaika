@@ -18,4 +18,5 @@ export declare class AntigravityService {
     private callCloudflareAI;
     private callGemini;
     private extractJsonObjectWithSelfHeal;
+    private generateRichFallbackProject;
 }
