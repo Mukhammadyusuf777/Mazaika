@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { 
   Plus, Bot, Settings, BarChart2, Zap, MessageSquare, 
   TrendingUp, Users, Activity, Globe, Trash2, Sparkles, 
-  AppWindow, Search, Copy, Check, ExternalLink, ArrowRight, 
+  Search, Copy, Check, ExternalLink, ArrowRight, 
   Cpu, LogOut, Smartphone, Eye
 } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
@@ -26,17 +26,31 @@ interface TemplateItem {
   emoji: string
   color: string
   desc: string
-  category: 'ecommerce' | 'service' | 'ai' | 'food' | 'education'
+  category: 'bot' | 'miniapp' | 'site' | 'game'
   tag: string
+  type: 'bot' | 'site'
 }
 
 const TEMPLATES: TemplateItem[] = [
-  { id: 'shop', name: "Интернет-магазин", emoji: '🛒', color: '#00D9FF', desc: "Витрина Telegram Mini App, корзина и прием оплат Payme/Click/ЮKassa", category: 'ecommerce', tag: 'Топ Выбор' },
-  { id: 'delivery', name: 'Служба доставки', emoji: '🚚', color: '#00F5C4', desc: "Прием заказов, геолокация и оповещения курьеров", category: 'service', tag: 'Быстрый' },
-  { id: 'restaurant', name: 'Ресторан & Кафе', emoji: '🍕', color: '#F59E0B', desc: "Интерактивное меню, бронь столов и авто-расчет чека", category: 'food', tag: 'Популярный' },
-  { id: 'ai-faq', name: 'Mazaika AI Консультант', emoji: '🤖', color: '#7C3AED', desc: "Умный LLM-бот 24/7 с ответами на вопросы клиентов", category: 'ai', tag: 'DeepSeek-R1' },
-  { id: 'courses', name: 'Онлайн-школа & Курсы', emoji: '🎓', color: '#EC4899', desc: "Каталог уроков, видеоматериалы и прием платежей", category: 'education', tag: 'Автоматика' },
-  { id: 'referral', name: 'Рефералы & Кэшбэк', emoji: '🤝', color: '#10B981', desc: "Многоуровневая реферальная система, баллы и бонусы", category: 'service', tag: "Вирусный рост" },
+  // Bots
+  { id: 'shop', name: "Интернет-магазин (Бот)", emoji: '🛒', color: '#00D9FF', desc: "Каталог товаров, корзина и прием оплат Payme / Click", category: 'bot', tag: 'Топ Выбор', type: 'bot' },
+  { id: 'appointment', name: 'Онлайн-запись и бронирование', emoji: '📅', color: '#38BDF8', desc: "Запись на прием к врачу, в салон красоты или на услугу с выбором времени", category: 'bot', tag: 'Услуги', type: 'bot' },
+  { id: 'delivery', name: 'Служба доставки & Ресторан', emoji: '🍕', color: '#F59E0B', desc: "Прием заказов еды, выбор адреса доставки и оповещения курьеров", category: 'bot', tag: 'Еда & Доставка', type: 'bot' },
+  { id: 'ai-faq', name: 'Mazaika AI Консультант 24/7', emoji: '🤖', color: '#7C3AED', desc: "Умный нейросетевой бот с автоответами на вопросы клиентов и интеграцией в CRM", category: 'bot', tag: 'Нейросеть', type: 'bot' },
+  { id: 'courses', name: 'Онлайн-школа & Обучение', emoji: '🎓', color: '#EC4899', desc: "Каталог курсов, автоматический прием оплат и выдача доступа к урокам", category: 'bot', tag: 'Инфобизнес', type: 'bot' },
+  
+  // Gamified Mini Apps
+  { id: 'spin-wheel', name: 'Колесо Фортуны (Mini App)', emoji: '🎰', color: '#10B981', desc: "Интерактивная рулетка на Canvas с реальными призами, вибрацией и промокодами", category: 'game', tag: 'HOT Геймификация', type: 'site' },
+  { id: 'scratch-card', name: 'Скретч-карта со скидкой', emoji: '🎫', color: '#06B6D4', desc: "Моментальная лотерея: стирание защитного слоя пальцем и выдача промокода", category: 'game', tag: 'Вирусный рост', type: 'site' },
+  
+  // Mini Apps
+  { id: 'product-catalog', name: 'Премиум Каталог (Mini App)', emoji: '🛍️', color: '#00F5C4', desc: "Telegram WebApp витрина товаров с фильтрами по категориям и корзиной", category: 'miniapp', tag: 'E-commerce', type: 'site' },
+  { id: 'restaurant-menu', name: 'Меню Ресторана (Mini App)', emoji: '🍔', color: '#F97316', desc: "Цифровое ресторанное меню для столов и доставки прямо в Telegram", category: 'miniapp', tag: 'HoReCa', type: 'site' },
+  { id: 'business-card', name: 'Цифровая Визитка (Mini App)', emoji: '💼', color: '#8B5CF6', desc: "Стильная интерактивная визитка с контактами, соцсетями и геолокацией", category: 'miniapp', tag: 'Личный бренд', type: 'site' },
+
+  // Websites
+  { id: 'saas-landing', name: 'SaaS Лендинг для IT-сервиса', emoji: '🚀', color: '#1E90FF', desc: "Современный сайт в темной теме с неоновым свечением, тарифами и формой заявки", category: 'site', tag: 'Веб-сайт', type: 'site' },
+  { id: 'startup', name: 'Стартап & Презентация продукта', emoji: '⚡', color: '#A855F7', desc: "Инновационная презентационная страница с интерактивными карточками преимуществ", category: 'site', tag: 'Веб-сайт', type: 'site' },
 ]
 
 const QUICK_PROMPT_PILLS = [
@@ -69,6 +83,7 @@ export default function DashboardPage() {
   const [newBotName, setNewBotName] = useState('')
   const [newBotToken, setNewBotToken] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState<string>('')
+  const [selectedTemplateCat, setSelectedTemplateCat] = useState<string>('all')
   const [creationType, setCreationType] = useState<'bot_only' | 'bot_and_webapp'>('bot_and_webapp')
   
   const [aiPrompt, setAiPrompt] = useState('')
@@ -177,13 +192,22 @@ export default function DashboardPage() {
     }
   }
 
-  const handleTemplateClick = (templateName: string) => {
-    setSelectedTemplate(templateName)
-    setNewBotName(templateName + ' (Бот)')
-    setNewBotToken('')
-    setCreationType('bot_and_webapp')
-    setModalType('bot')
-    setShowCreateModal(true)
+    const handleTemplateClick = (template: TemplateItem | string) => {
+    if (typeof template === 'string') {
+      setSelectedTemplate(template)
+      setNewBotName(template)
+      setNewBotToken('')
+      setCreationType('bot_and_webapp')
+      setModalType('bot')
+      setShowCreateModal(true)
+    } else {
+      setSelectedTemplate(template.name)
+      setNewBotName(template.name)
+      setNewBotToken('')
+      setModalType(template.type)
+      setCreationType(template.type === 'site' ? 'bot_only' : 'bot_and_webapp')
+      setShowCreateModal(true)
+    }
   }
 
   const handleCopyToken = (e: React.MouseEvent, id: string, token?: string) => {
@@ -1019,52 +1043,67 @@ export default function DashboardPage() {
                   <Zap size={13} />
                   <span>Каталог готовых решений</span>
                 </div>
-                <h1 className="dash-welcome-title">Шаблоны и готовые решения</h1>
+                <h1 className="dash-welcome-title">Витрина Шаблонов Mazaika</h1>
                 <p className="dash-welcome-subtitle">
-                  Запустите проект мгновенно: выберите отраслевой шаблон и настройте под свой бренд
+                  Запустите готовый Telegram-бот, геймифицированное Mini App или веб-сайт за 1 минуту без программирования
                 </p>
               </div>
             </div>
 
-            <div className="templates-categories-row">
+            {/* Category Filter Pills */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
               {[
-                { name: 'Шаблоны ботов', icon: <Bot size={28} />, color: '#00D9FF', desc: "Готовые сценарии и воронки для Telegram ботов" },
-                { name: 'Mini App Dizaynlari', icon: <AppWindow size={28} />, color: '#00F5C4', desc: "Telegram WebApp ilovasi uchun vizual interfeyslar" },
-                { name: 'Veb-Saytlar', icon: <Globe size={28} />, color: '#F59E0B', desc: "Landing page va kompaniya sahifalari" },
-                { name: 'Mazaika AI Agentlar', icon: <Sparkles size={28} />, color: '#7C3AED', desc: "Sun'iy intellekt asosidagi avtomatik yordamchilar" },
-              ].map((cat, idx) => (
-                <div 
-                  key={idx} 
-                  className="template-cat-box"
-                  onClick={() => handleTemplateClick(cat.name)}
+                { id: 'all', label: 'Все шаблоны (' + TEMPLATES.length + ')' },
+                { id: 'bot', label: '🤖 Telegram Боты' },
+                { id: 'game', label: '🎰 Геймификация (NEW)' },
+                { id: 'miniapp', label: '📱 Telegram Mini Apps' },
+                { id: 'site', label: '🌐 Веб-сайты и Лендинги' },
+              ].map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedTemplateCat(cat.id)}
+                  style={{
+                    background: selectedTemplateCat === cat.id ? 'linear-gradient(135deg, rgba(0,245,196,0.2), rgba(30,144,255,0.2))' : '#0F131E',
+                    color: selectedTemplateCat === cat.id ? '#00F5C4' : '#94A3B8',
+                    border: `1px solid ${selectedTemplateCat === cat.id ? 'rgba(0,245,196,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                    borderRadius: 20,
+                    padding: '8px 16px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s'
+                  }}
                 >
-                  <div className="cat-box-icon" style={{ color: cat.color }}>{cat.icon}</div>
-                  <div className="cat-box-title">{cat.name}</div>
-                  <div className="cat-box-desc">{cat.desc}</div>
-                </div>
+                  {cat.label}
+                </button>
               ))}
             </div>
 
-            <h3 className="section-heading" style={{ marginTop: 40, marginBottom: 20 }}>Все шаблоны</h3>
+            {/* Templates Grid */}
             <div className="templates-cyber-grid">
-              {TEMPLATES.map((tItem) => (
-                <div 
-                  key={tItem.id}
-                  className="template-cyber-card"
-                  onClick={() => handleTemplateClick(tItem.name)}
-                >
-                  <div className="t-card-header">
-                    <span className="t-card-emoji">{tItem.emoji}</span>
-                    <span className="t-card-tag">{tItem.tag}</span>
+              {TEMPLATES
+                .filter(t => selectedTemplateCat === 'all' || t.category === selectedTemplateCat)
+                .map((tItem) => (
+                  <div 
+                    key={tItem.id}
+                    className="template-cyber-card"
+                    onClick={() => handleTemplateClick(tItem)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="t-card-header">
+                      <span className="t-card-emoji">{tItem.emoji}</span>
+                      <span className="t-card-tag" style={{ background: `${tItem.color}20`, color: tItem.color, border: `1px solid ${tItem.color}40` }}>
+                        {tItem.tag}
+                      </span>
+                    </div>
+                    <h4 className="t-card-title">{tItem.name}</h4>
+                    <p className="t-card-desc">{tItem.desc}</p>
+                    <div className="t-card-footer">
+                      <span style={{ color: tItem.color, fontWeight: 700 }}>Использовать шаблон</span>
+                      <ArrowRight size={13} style={{ color: tItem.color }} />
+                    </div>
                   </div>
-                  <h4 className="t-card-title">{tItem.name}</h4>
-                  <p className="t-card-desc">{tItem.desc}</p>
-                  <div className="t-card-footer">
-                    <span>Shablonni tanlash</span>
-                    <ArrowRight size={13} />
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         )}
