@@ -138,9 +138,20 @@ let BotManagerService = class BotManagerService {
         return { success: false, message: 'Bot not running' };
     }
     async setMenuButton(botId, text, url) {
-        const telegrafBot = this.activeBots.get(botId);
+        let telegrafBot = this.activeBots.get(botId);
+        if (!telegrafBot) {
+            try {
+                const bot = await this.firebaseService.getBot(botId);
+                if (bot && bot.token) {
+                    telegrafBot = new telegraf_1.Telegraf(bot.token);
+                }
+            }
+            catch (e) {
+                this.logger.warn(`Could not load bot for menu button: ${e.message}`);
+            }
+        }
         if (!telegrafBot)
-            return { success: false, message: 'Bot not running' };
+            return { success: false, message: 'Bot yoki uning tokeni topilmadi' };
         try {
             await telegrafBot.telegram.setChatMenuButton({
                 menuButton: {
@@ -157,9 +168,20 @@ let BotManagerService = class BotManagerService {
         }
     }
     async resetMenuButton(botId) {
-        const telegrafBot = this.activeBots.get(botId);
+        let telegrafBot = this.activeBots.get(botId);
+        if (!telegrafBot) {
+            try {
+                const bot = await this.firebaseService.getBot(botId);
+                if (bot && bot.token) {
+                    telegrafBot = new telegraf_1.Telegraf(bot.token);
+                }
+            }
+            catch (e) {
+                this.logger.warn(`Could not load bot for reset menu button: ${e.message}`);
+            }
+        }
         if (!telegrafBot)
-            return { success: false, message: 'Bot not running' };
+            return { success: false, message: 'Bot yoki uning tokeni topilmadi' };
         try {
             await telegrafBot.telegram.setChatMenuButton({
                 menuButton: {

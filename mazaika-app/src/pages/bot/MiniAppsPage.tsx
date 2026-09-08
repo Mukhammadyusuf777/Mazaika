@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Copy, Eye, Save, Check, RefreshCw, Sparkles, Cloud, Loader2 } from 'lucide-react'
-import { getBotById, updateBot, getSiteConfig, saveSiteConfig } from '../../api/firestore'
+import { Copy, Eye, Save, Check, RefreshCw, Sparkles, Cloud, Loader2, Globe } from 'lucide-react'
+import { getBotById, updateBot, getSiteConfig, saveSiteConfig, getBotsByUser } from '../../api/firestore'
 import { backendApi, getLiveSiteUrl } from '../../api/backendApi'
 import { useChatStore } from '../../store/useChatStore'
+import { useAuthStore } from '../../store/useAuthStore'
 
 export default function MiniAppsPage() {
   const { botId } = useParams<{ botId: string }>()
@@ -37,6 +38,12 @@ export default function MiniAppsPage() {
   // Simulator State Key to force reload iframe
   const [simKey, setSimKey] = useState(0)
 
+  // User Standalone Sites State
+  const { user } = useAuthStore()
+  const userId = user?.id || (user as any)?.uid
+  const [userSites, setUserSites] = useState<any[]>([])
+  const [selectedSiteId, setSelectedSiteId] = useState<string>('')
+
   useEffect(() => {
     const fetchData = async () => {
       if (!botId) return
@@ -51,6 +58,9 @@ export default function MiniAppsPage() {
         if (botData) {
           setMenuButtonEnabled(botData.menuButtonEnabled || false)
           setMenuButtonText(botData.menuButtonText || 'Mini App')
+          if (botData.linkedSiteId) {
+            setSelectedSiteId(botData.linkedSiteId)
+          }
         }
 
         if (siteData) {
@@ -62,6 +72,15 @@ export default function MiniAppsPage() {
         }
 
         setAppName(siteData?.appName || botData?.name || 'Mini App')
+
+        // Fetch user standalone sites
+        if (userId) {
+          const allUserBots = await getBotsByUser(userId)
+          if (allUserBots) {
+            const sites = allUserBots.filter((b: any) => b.projectType === 'site')
+            setUserSites(sites)
+          }
+        }
       } catch (err) {
         console.error(err)
       } finally {
@@ -69,7 +88,23 @@ export default function MiniAppsPage() {
       }
     }
     fetchData()
-  }, [botId])
+  }, [botId, userId])
+
+  const handleSelectSiteToLink = async (siteId: string) => {
+    setSelectedSiteId(siteId)
+    if (!siteId) return
+    const chosenSite = userSites.find(s => s.id === siteId)
+    if (!chosenSite) return
+
+    const siteLiveUrl = chosenSite.cloudflareUrl || getLiveSiteUrl(siteId)
+    setCloudflareUrl(siteLiveUrl)
+    if (chosenSite.name) {
+      setAppName(chosenSite.name)
+      setMenuButtonText(chosenSite.name.slice(0, 18))
+    }
+    setMenuButtonEnabled(true)
+    setSimKey(prev => prev + 1)
+  }
 
   const handleCopyLink = () => {
     const url = cloudflareUrl || getLiveSiteUrl(botId || '')
@@ -207,7 +242,7 @@ export default function MiniAppsPage() {
           <div style={{ flex: 1, position: 'relative' }}>
             <iframe 
               key={simKey}
-              src={botId ? getLiveSiteUrl(botId) : ''} 
+              src={cloudflareUrl || (botId ? getLiveSiteUrl(botId) : '')} 
               title="Mini App Live Preview" 
               style={{ width: '100%', height: '100%', border: 'none', background: '#090d16' }}
             />
@@ -319,6 +354,33 @@ export default function MiniAppsPage() {
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             
+            {/* Standalone Site Selector (1-Click Link) */}
+            {userSites.length > 0 && (
+              <div style={{ background: 'rgba(30, 41, 59, 0.4)', border: '1px solid rgba(0, 245, 196, 0.25)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-4)', marginBottom: 'var(--space-2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <Globe size={16} color="#00F5C4" />
+                  <span style={{ fontSize: 13, color: '#00F5C4', fontWeight: 700 }}>Mavjud Saytlardan Birini Bog'lash (1-Klik)</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 10, background: 'rgba(16,185,129,0.15)', color: '#10B981', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>$0 BEPUL</span>
+                </div>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, lineHeight: 1.4 }}>
+                  Alohida yaratgan veb-saytingizni tanlang. U avtomatik ravishda ushbu Telegram botingizga rasmiy Mini App sifatida ulanadi:
+                </p>
+                <select 
+                  className="input" 
+                  value={selectedSiteId} 
+                  onChange={e => handleSelectSiteToLink(e.target.value)}
+                  style={{ width: '100%', maxWidth: 440, background: '#090D16', color: '#FFFFFF', borderColor: 'rgba(0,245,196,0.3)' }}
+                >
+                  <option value="">-- Alohida yaratilgan saytni tanlang --</option>
+                  {userSites.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.name || 'Nomsiz sayt'} ({s.cloudflareUrl ? 'Cloudflare Pages' : 'Mazaika Edge Server'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
               <label style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Mini App va Bot Nomi (App Title)</label>
               <input 

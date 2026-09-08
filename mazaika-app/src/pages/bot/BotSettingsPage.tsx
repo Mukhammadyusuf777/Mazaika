@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Save, Copy, RefreshCw, AlertTriangle, Globe, Zap, CheckCircle, XCircle, Info } from 'lucide-react'
+import { Save, Copy, RefreshCw, AlertTriangle, Globe, Zap, CheckCircle, XCircle, Info, MessageCircle, Check } from 'lucide-react'
 import { getBotById, updateBot, deleteBot } from '../../api/firestore'
 import { apiClient } from '../../api/apiClient'
 import { useTranslation } from '../../hooks/useTranslation'
@@ -31,6 +31,7 @@ export default function BotSettingsPage() {
 
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
   const [testMessage, setTestMessage] = useState('')
+  const [widgetCopied, setWidgetCopied] = useState(false)
 
 
 
@@ -441,6 +442,64 @@ export default function BotSettingsPage() {
               )}
             </div>
           </div>
+          </div>
+        )}
+
+        {/* WEB CHAT WIDGET SECTION ($0 EXPANSION) */}
+        {projectType === 'bot' && (
+          <div style={{ background: 'var(--bg-card)', padding: 'var(--space-6)', borderRadius: 'var(--radius-xl)', border: '1px solid rgba(0,245,196,0.3)', boxShadow: '0 0 30px rgba(0,245,196,0.06)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
+              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600, margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: '#00F5C4' }}>
+                <MessageCircle size={18} /> Veb-Saytga Vidjet O'rnatish (Web Chat Widget)
+              </h3>
+              <span style={{ fontSize: 11, background: 'rgba(16,185,129,0.15)', color: '#10B981', padding: '3px 8px', borderRadius: 6, fontWeight: 700 }}>
+                100% BEPUL ($0)
+              </span>
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)', lineHeight: 1.5 }}>
+              Telegram botingizni istalgan tashqi veb-saytga (WordPress, Tilda, HTML, Shopify va h.k.) chat vidjeti sifatida joylashtiring. Mijozlar saytdan chiqmasdan botingiz bilan muloqot qiladi va buyurtma beradi!
+            </p>
+
+            <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Saytingizning &lt;body&gt; tegi oxiriga qo'yish uchun HTML kod:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const snippet = `<script src="https://mazaika.onrender.com/widget.js" data-bot="${botId}" data-color="#00F5C4"></script>`
+                    navigator.clipboard.writeText(snippet)
+                    setWidgetCopied(true)
+                    setTimeout(() => setWidgetCopied(false), 2000)
+                  }}
+                  style={{
+                    background: widgetCopied ? 'rgba(16,185,129,0.2)' : 'rgba(0,245,196,0.15)',
+                    border: `1px solid ${widgetCopied ? '#10B981' : 'rgba(0,245,196,0.3)'}`,
+                    color: widgetCopied ? '#10B981' : '#00F5C4',
+                    padding: '5px 12px',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {widgetCopied ? <Check size={13} /> : <Copy size={13} />}
+                  <span>{widgetCopied ? 'Nusxalandi!' : 'Kodni Nusxalash'}</span>
+                </button>
+              </div>
+
+              <pre style={{ margin: 0, padding: '10px 12px', background: '#090D16', borderRadius: 8, color: '#00D9FF', fontSize: 12.5, fontFamily: 'monospace', overflowX: 'auto', border: '1px solid rgba(255,255,255,0.06)' }}>
+                {`<script src="https://mazaika.onrender.com/widget.js" data-bot="${botId}" data-color="#00F5C4"></script>`}
+              </pre>
+
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                💡 <strong>Afzalliklari:</strong> Barcha xabarlar to'g'ridan-to'g'ri ushbu platformadagi CRM va «Chatlar» bo'limida ko'rinadi. JivoChat yoki Intercom kabi pullik servislarga pul to'lash shart emas.
+              </div>
+            </div>
           </div>
         )}
 

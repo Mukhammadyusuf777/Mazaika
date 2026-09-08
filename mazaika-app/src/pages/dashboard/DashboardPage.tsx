@@ -4,7 +4,7 @@ import {
   Plus, Bot, Settings, BarChart2, Zap, MessageSquare, 
   TrendingUp, Users, Activity, Globe, Trash2, Sparkles, 
   AppWindow, Search, Copy, Check, ExternalLink, ArrowRight, 
-  Cpu, LogOut
+  Cpu, LogOut, Smartphone, Eye
 } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -12,10 +12,12 @@ import { useAuthStore } from '../../store/useAuthStore'
 import { auth } from '../../api/firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 import { getBotsByUser, createBot, deleteBot, createOrUpdateUser } from '../../api/firestore'
+import { getLiveSiteUrl } from '../../api/backendApi'
 import { useTranslation } from '../../hooks/useTranslation'
 import type { Language } from '../../i18n/translations'
 import DonateModal from '../../components/modals/DonateModal'
 import TermsModal from '../../components/modals/TermsModal'
+import ConnectBotModal from '../../components/modals/ConnectBotModal'
 import './DashboardPage.css'
 
 interface TemplateItem {
@@ -78,6 +80,7 @@ export default function DashboardPage() {
   // Modals state
   const [showDonateModal, setShowDonateModal] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
+  const [connectModalSite, setConnectModalSite] = useState<{ id: string; name: string; url?: string } | null>(null)
 
   // Check if terms are accepted on account entry
   useEffect(() => {
@@ -847,40 +850,89 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="bots-cards-grid">
-                  {siteProjects.map(site => (
-                    <div 
-                      key={site.id}
-                      className="bot-card-cyber"
-                      onClick={() => navigate(`/bot/${site.id}/sitebuilder`)}
-                    >
-                      <div className="bot-card-top">
-                        <div className="bot-card-avatar" style={{ background: 'rgba(0,245,196,0.15)', color: '#00F5C4' }}>
-                          <Globe size={22} />
+                  {siteProjects.map(site => {
+                    const linkedBot = botProjects.find(b => b.linkedSiteId === site.id || (b.menuButtonUrl && b.menuButtonUrl.includes(site.id)))
+                    const liveSiteUrl = site.cloudflareUrl || getLiveSiteUrl(site.id)
+
+                    return (
+                      <div 
+                        key={site.id}
+                        className="bot-card-cyber"
+                        onClick={() => navigate(`/bot/${site.id}/sitebuilder`)}
+                      >
+                        <div className="bot-card-top">
+                          <div className="bot-card-avatar" style={{ background: 'rgba(0,245,196,0.15)', color: '#00F5C4' }}>
+                            <Globe size={22} />
+                          </div>
+                          <button 
+                            className="bot-delete-btn"
+                            title="Saytni o'chirish"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteBot(site.id, site.name)
+                            }}
+                          >
+                            <Trash2 size={15} />
+                          </button>
                         </div>
-                        <button 
-                          className="bot-delete-btn"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteBot(site.id, site.name)
-                          }}
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                      <div className="bot-card-body">
-                        <h3 className="bot-card-title">{site.name || 'Nomsiz sayt'}</h3>
-                        <div className="bot-card-token-pill">
-                          <code>Tashriflar: {(site.users || 0).toLocaleString()}</code>
+                        <div className="bot-card-body">
+                          <h3 className="bot-card-title">{site.name || 'Nomsiz sayt'}</h3>
+                          <div className="bot-card-token-pill">
+                            <code>Tashriflar: {(site.users || 0).toLocaleString()}</code>
+                          </div>
+                          {linkedBot && (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, background: 'rgba(0,245,196,0.12)', color: '#00F5C4', padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(0,245,196,0.25)', marginTop: 8 }}>
+                              <Smartphone size={11} />
+                              <span>{linkedBot.name} ga ulangan</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="bot-card-footer" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 12 }}>
+                          <button 
+                            className="bot-open-btn"
+                            style={{ flex: 1, minWidth: '110px' }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate(`/bot/${site.id}/sitebuilder`)
+                            }}
+                          >
+                            <span>Konstruktor</span>
+                            <ArrowRight size={13} />
+                          </button>
+                          <button 
+                            className="bot-open-btn"
+                            title="Telegram botga Mini App sifatida ulash ($0 bepul)"
+                            style={{ 
+                              background: 'linear-gradient(135deg, rgba(0,245,196,0.18) 0%, rgba(30,144,255,0.18) 100%)', 
+                              borderColor: 'rgba(0,245,196,0.4)', 
+                              color: '#00F5C4',
+                              padding: '7px 11px',
+                              fontSize: 12,
+                              fontWeight: 600
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setConnectModalSite({ id: site.id, name: site.name || 'Mening Saytim', url: liveSiteUrl })
+                            }}
+                          >
+                            <Smartphone size={13} />
+                            <span>Botga ulash</span>
+                          </button>
+                          <button 
+                            className="bot-open-btn"
+                            title="Saytni yangi oynada ochish"
+                            style={{ padding: '7px 10px', background: 'rgba(255,255,255,0.06)' }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              window.open(liveSiteUrl, '_blank')
+                            }}
+                          >
+                            <Eye size={13} />
+                          </button>
                         </div>
                       </div>
-                      <div className="bot-card-footer">
-                        <button className="bot-open-btn">
-                          <span>Konstruktorga o'tish</span>
-                          <ArrowRight size={13} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -1155,6 +1207,23 @@ export default function DashboardPage() {
         isOpen={showTermsModal} 
         onAccept={handleAcceptTerms} 
       />
+
+      {/* 1-Click Connect Website to Telegram Bot (Mini App) Modal */}
+      {connectModalSite && (
+        <ConnectBotModal
+          isOpen={!!connectModalSite}
+          onClose={() => setConnectModalSite(null)}
+          siteId={connectModalSite.id}
+          siteName={connectModalSite.name}
+          siteUrl={connectModalSite.url}
+          onSuccess={() => {
+            const uid = user?.id || (user as any)?.uid || ''
+            getBotsByUser(uid).then(res => {
+              if (res) setBots(res)
+            })
+          }}
+        />
+      )}
     </div>
   )
 }

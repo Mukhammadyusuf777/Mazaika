@@ -12,6 +12,7 @@ import { backendApi, getLiveSiteUrl } from '../../api/backendApi'
 import { useChatStore } from '../../store/useChatStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { siteTemplates } from '../../data/siteTemplates'
+import ConnectBotModal from '../../components/modals/ConnectBotModal'
 import './SiteBuilderPage.css'
 
 export interface Block {
@@ -89,6 +90,7 @@ export default function SiteBuilderPage() {
   const [activeFile, setActiveFile] = useState<string>('index.html')
   const [cloudflareUrl, setCloudflareUrl] = useState<string>('')
   const [isDeployingCloudflare, setIsDeployingCloudflare] = useState<boolean>(false)
+  const [isConnectBotOpen, setIsConnectBotOpen] = useState<boolean>(false)
 
   // Image upload state
   const [pendingImage, setPendingImage] = useState<{ base64: string; mimeType: string; previewUrl: string } | null>(null)
@@ -636,6 +638,15 @@ export default function SiteBuilderPage() {
               <span>{isDeployingCloudflare ? 'Nashr qilinmoqda...' : cloudflareUrl ? 'Cloudflare Pages' : 'Cloudflare Deploy'}</span>
               <span className="edge-live-dot" title="Mazaika Edge Server Faol" />
             </button>
+            <button 
+              className="sb-action-btn connect-bot-btn" 
+              onClick={() => setIsConnectBotOpen(true)}
+              title="Saytni Telegram Botga ulash va Mini App qilish ($0 bepul)"
+              style={{ background: 'linear-gradient(135deg, rgba(0,245,196,0.18) 0%, rgba(30,144,255,0.18) 100%)', borderColor: 'rgba(0,245,196,0.4)', color: '#00F5C4', fontWeight: 600 }}
+            >
+              <Smartphone size={14} />
+              <span>Botga ulash (Mini App)</span>
+            </button>
             <button className="sb-action-btn" onClick={handleOpenInNewTab}>
               <Eye size={14} />
               <span>Ochish</span>
@@ -888,6 +899,18 @@ export default function SiteBuilderPage() {
             </div>
           </div>
         )}
+
+        {/* Connect Bot Modal */}
+        <ConnectBotModal
+          isOpen={isConnectBotOpen}
+          onClose={() => setIsConnectBotOpen(false)}
+          siteId={botId || ''}
+          siteName={config.appName || siteTitle || 'Mening Saytim'}
+          siteUrl={cloudflareUrl || (botId ? getLiveSiteUrl(botId) : undefined)}
+          onSuccess={(connectedBotId, connectedBotName) => {
+            console.log(`Connected site ${botId} to bot ${connectedBotId} (${connectedBotName})`)
+          }}
+        />
       </div>
     </div>
   )

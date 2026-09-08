@@ -101,6 +101,26 @@ export const backendApi = {
     }
   },
 
+  async setMenuButton(botId: string, text: string, url: string): Promise<any> {
+    try {
+      const res = await apiClient.post(`/bots/${botId}/menu-button`, { text, url })
+      return res.data
+    } catch (err: any) {
+      console.warn(`Backend setMenuButton(${botId}) error:`, err)
+      return { success: false, message: err?.message }
+    }
+  },
+
+  async resetMenuButton(botId: string): Promise<any> {
+    try {
+      const res = await apiClient.delete(`/bots/${botId}/menu-button`)
+      return res.data
+    } catch (err: any) {
+      console.warn(`Backend resetMenuButton(${botId}) error:`, err)
+      return { success: false, message: err?.message }
+    }
+  },
+
   // SITES & MINI APPS
   async getSiteConfig(botIdOrSlug: string): Promise<any> {
     try {
